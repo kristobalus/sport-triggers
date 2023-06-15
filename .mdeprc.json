@@ -1,0 +1,32 @@
+{
+  "node": "18",
+  "repo": "gcr.io/peak-orbit-214114",
+  "nycCoverage": false,
+  "nycReport": false,
+  "test_framework": "mocha",
+  "tests": "./test/suites/**/*.ts",
+  "auto_compose": true,
+  "with_local_compose": true,
+  "services": [
+    "rabbitmq",
+    "redisCluster",
+    "redisSentinel"
+  ],
+  "extras": {
+    "redis": {
+      "ports": [
+        "6379:6379"
+      ]
+    },
+    "rabbitmq": {
+      "ports": [
+        "15672:15672"
+      ]
+    },
+    "tester": {
+      "environment": {
+        "SWC_NODE_PROJECT": "./tsconfig.test.json"
+      }
+    }
+  }
+}

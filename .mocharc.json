@@ -1,0 +1,9 @@
+{
+  "require": [
+    "@swc-node/register"
+  ],
+  "extension": ["ts"],
+  "timeout": 30000,
+  "bail": true,
+  "report": "spec"
+}

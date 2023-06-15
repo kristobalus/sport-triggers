@@ -1,0 +1,11 @@
+{
+    "$id": "studio.trigger.list",
+    "type": "object",
+    "additionalProperties": false,
+    "required": [],
+    "properties": {
+        "ping": {
+            "type": "boolean"
+        }
+    }
+  }
