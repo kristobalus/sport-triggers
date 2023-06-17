@@ -6,9 +6,10 @@ import { StudioService } from "../services/studio.service"
 let instance: StudioService
 
 export function init(parent: FleetApp) {
-
   parent.addConnector(ConnectorsTypes.application, async () => {
-    instance = parent.studioService = new StudioService(parent.log)
+    const { log, redis } = parent
+
+    instance = parent.studioService = new StudioService(log, redis)
   })
 
   parent.addDestructor(ConnectorsTypes.application, async () => {
@@ -16,7 +17,7 @@ export function init(parent: FleetApp) {
   })
 }
 
-export function getService() : StudioService {
+export function getService(): StudioService {
   if (instance) {
     return instance
   }

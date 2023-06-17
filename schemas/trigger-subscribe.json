@@ -1,5 +1,5 @@
 {
-    "$id": "studio.trigger.create",
+    "$id": "trigger.subscribe",
     "type": "object",
     "additionalProperties": false,
     "required": [],
@@ -8,4 +8,4 @@
             "type": "boolean"
         }
     }
-  }
+}

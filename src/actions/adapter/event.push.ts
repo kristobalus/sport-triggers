@@ -7,12 +7,13 @@ async function EventPushHandler(this: FleetApp, request: ServiceRequest): Promis
   const { event } = request.params as any
 
   const { adapterService } = this
+
   await adapterService.pushEvent(event)
 
   return { ok: true }
 }
 
-EventPushHandler.schema = 'adapter.event.push'
+EventPushHandler.schema = 'event.push'
 EventPushHandler.transports = [ActionTransport.http]
 
 export = EventPushHandler

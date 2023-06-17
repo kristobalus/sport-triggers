@@ -1,5 +1,5 @@
 {
-    "$id": "studio.trigger.delete",
+    "$id": "trigger.list",
     "type": "object",
     "additionalProperties": false,
     "required": [],
@@ -8,4 +8,4 @@
             "type": "boolean"
         }
     }
-  }
+}

@@ -4,6 +4,5 @@ export const redis = {
     port: '26379',
   }],
   name: 'mservice',
-  options: { keyPrefix: '{polls-importer}' }
+  options: { keyPrefix: '{triggers}' }
 }
-  

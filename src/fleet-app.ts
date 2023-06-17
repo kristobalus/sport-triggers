@@ -25,6 +25,7 @@ export class FleetApp extends Microfleet {
 
   constructor(options: Partial<CoreOptions>) {
     super(options)
+
     initAdapterService(this)
     initStudioService(this)
   }

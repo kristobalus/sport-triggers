@@ -6,9 +6,9 @@ import { FleetApp } from "../fleet-app"
 let instance: AdapterService
 
 export function init(parent: FleetApp) {
-
   parent.addConnector(ConnectorsTypes.application, async () => {
-    instance = parent.adapterService = new AdapterService(parent.log)
+    const { log, redis, amqp } = parent
+    instance = parent.adapterService = new AdapterService(log, redis, amqp)
   })
 
   parent.addDestructor(ConnectorsTypes.application, async () => {
@@ -16,7 +16,7 @@ export function init(parent: FleetApp) {
   })
 }
 
-export function getService() : AdapterService {
+export function getService(): AdapterService {
   if (instance) {
     return instance
   }
