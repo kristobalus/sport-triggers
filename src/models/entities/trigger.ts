@@ -1,4 +1,4 @@
-import { TriggerCondition } from "./trigger-condition"
+
 
 export interface Trigger {
   // uuid generated for each trigger
@@ -10,6 +10,6 @@ export interface Trigger {
   datasource: "sportradar"
   scope: "game"
   scopeId: string
-  conditions?: Partial<TriggerCondition>[]
+  activated: boolean
 }
 

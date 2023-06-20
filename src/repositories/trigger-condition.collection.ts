@@ -53,15 +53,14 @@ export class TriggerConditionCollection {
       // should add condition into list of trigger conditions
       pipe.sadd(conditionsByTriggerKey(condition.triggerId), condition.id)
       // should add trigger into list of event subscribers
-      // pipe.sadd(triggersByEvent(condition.event), triggerId)
-      pipe.sadd(triggersByScopeAndEvent(scope, scopeId, condition.event))
+      pipe.sadd(triggersByScopeAndEvent(scope, scopeId, condition.event), triggerId)
     }
 
     const results = await pipe.exec()
     assertNoError(results)
   }
 
-  async get(triggerId: string): Promise<TriggerCondition[]> {
+  async getByTrigger(triggerId: string): Promise<TriggerCondition[]> {
     const conditions = await this.redis.smembers(conditionsByTriggerKey(triggerId))
     const pipe = this.redis.pipeline()
 
@@ -74,7 +73,7 @@ export class TriggerConditionCollection {
   }
 
   async delete(triggerId: string) {
-    const conditions = await this.get(triggerId)
+    const conditions = await this.getByTrigger(triggerId)
 
     for (const item of conditions) {
       await this.redis.del(conditionKey(item.id))
@@ -83,7 +82,7 @@ export class TriggerConditionCollection {
     }
   }
 
-  async getTriggersByEvent(scope: string, scopeId: string, eventName: string) : Promise<string[]> {
+  async findTriggersByScopeAndEvent(scope: string, scopeId: string, eventName: string) : Promise<string[]> {
     return this.redis.smembers(triggersByScopeAndEvent(scope, scopeId, eventName))
   }
 

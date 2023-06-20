@@ -6,6 +6,6 @@ export const logger: Partial<CoreOptions['logger']> = {
   defaultLogger: true,
   debug: true,
   options: {
-    level: "debug"
+    level: "info"
   } as pino.LoggerOptions
 }

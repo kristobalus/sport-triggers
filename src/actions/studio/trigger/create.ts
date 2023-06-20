@@ -2,13 +2,14 @@
 import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
 
 import { FleetApp } from "../../../fleet-app"
+import { TriggerCreateRequest } from "../../../models/dto/trigger-create-request"
 
 async function CreateHandler(this: FleetApp, request: ServiceRequest): Promise<any> {
-  const { data } = request.params as any
+  const { conditions, trigger } = request.params as unknown as TriggerCreateRequest
 
   const { studioService } = this
 
-  await studioService.createTrigger(data)
+  await studioService.createTrigger(trigger, conditions)
 
   return { ok: true }
 }

@@ -10,7 +10,7 @@
     "lint": "eslint --ext .js,.jsx,.ts,.tsx src/ test/",
     "pretest": "pnpm lint && pnpm compile",
     "test": "pnpm clean && pnpm compile && mdep test run",
-    "test:unit": "mocha test/unit/**/*.unit.ts",
+    "test:unit": "mocha unit/**/*.unit.ts",
     "semantic-release": "semantic-release",
     "release": "pnpm i && pnpm run semantic-release",
     "prepublishOnly": "pnpm run compile",

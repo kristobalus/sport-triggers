@@ -1,14 +1,21 @@
+// start local redis instance (dir helper) to start test from IDE, faster than full integration tests via mdep
 
 import { randomUUID } from "crypto"
 import assert from "assert"
 
 import IORedis, { Redis } from "ioredis"
 
-import { TriggerConditionCollection } from "../../src/repositories/trigger-condition.collection"
-import { TriggerCollection } from "../../src/repositories/trigger.collection"
-import { Trigger } from "../../src/models/entities/trigger"
+import { TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
+import { TriggerCollection } from "../src/repositories/trigger.collection"
+import { Trigger } from "../src/models/entities/trigger"
 
 describe("ConditionCollection", function () {
+
+  const scope = "game"
+  const scopeId = randomUUID()
+  const eventName = "football.game.points.home"
+  const conditionType = "set-and-compare"
+
   const ctx: {
     id?: string
     trigger?: Trigger
@@ -28,8 +35,8 @@ describe("ConditionCollection", function () {
       name: "home points 30+",
       description: "should trigger when home points reach 30 or more",
       datasource: "sportradar",
-      scope: "game",
-      scopeId: "d8539eb6-3e27-40c8-906f-9cd1736321d8"
+      scope,
+      scopeId
     } as Partial<Trigger>)
     ctx.trigger = await ctx.triggers.getOneById(ctx.id)
     assert.ok(ctx.id)
@@ -37,20 +44,26 @@ describe("ConditionCollection", function () {
   })
 
   it('should add conditions', async () => {
-    await ctx.conditions.add(ctx.id, [
+    await ctx.conditions.add(ctx.id, scope, scopeId, [
       {
         id: randomUUID(),
-        event: "game.home_points",
-        type: "set-and-compare",
+        event: eventName,
+        type: conditionType,
         compare: "ge",
         target: 30
       }
     ])
   })
 
-  it('should get conditions', async () => {
-    const items = await ctx.conditions.get(ctx.id)
-
-    console.log(items)
+  it('should get triggers by event and scope', async () => {
+    const items = await ctx.conditions.findTriggersByScopeAndEvent(scope, scopeId, eventName)
+    assert.ok(items.length)
   })
+
+  it('should get conditions by trigger', async () => {
+    const items = await ctx.conditions.getByTrigger(ctx.id)
+    assert.ok(items.length)
+  })
+
+
 })

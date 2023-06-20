@@ -23,5 +23,5 @@ export interface TriggerCondition {
   log: Record<string, BaseEvent>
 }
 
-export type TriggerConditionImmutable = Pick<TriggerCondition, "id" | "triggerId" | "event" | "compare" | "type" | "target">
-export type TriggerConditionState = Pick<TriggerCondition, "current" | "activated" | "log">
+// export type TriggerConditionImmutable = Pick<TriggerCondition, "id" | "triggerId" | "event" | "compare" | "type" | "target">
+// export type TriggerConditionState = Pick<TriggerCondition, "current" | "activated" | "log">

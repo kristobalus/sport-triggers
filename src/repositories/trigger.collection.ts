@@ -19,14 +19,14 @@ export class TriggerCollection {
   ) {}
 
   async add(item: Partial<Trigger>): Promise<string> {
-    const { conditions, ...data } = item
 
-    if (!data.id) {
-      data.id = randomUUID()
+    if (!item.id) {
+      item.id = randomUUID()
     }
-    const count = await this.redis.hset(triggerKey(data.id), data)
-    await this.redis.sadd(triggerSetKey(item.scope, item.scopeId), data.id)
-    return count > 0 ? data.id : null
+
+    const count = await this.redis.hset(triggerKey(item.id), item as Record<string, any>)
+    await this.redis.sadd(triggerSetKey(item.scope, item.scopeId), item.id)
+    return count > 0 ? item.id : null
   }
 
   /**
@@ -39,14 +39,8 @@ export class TriggerCollection {
     return data.id ? data : null
   }
 
-  async getByScope(scope: string, scopeId: string) {
-    const triggers = await this.redis.smembers(triggerSetKey(scope, scopeId))
-    const result = []
-    for(const id of triggers){
-      const item = this.getOneById(id)
-      result.push(item)
-    }
-    return result
+  async findByScope(scope: string, scopeId: string) : Promise<string[]> {
+    return await this.redis.smembers(triggerSetKey(scope, scopeId))
   }
 
   /**
@@ -61,8 +55,6 @@ export class TriggerCollection {
 
   async update(id: string, item: Partial<Trigger>) {
     assert.ok(id)
-    const { conditions, ...data } = item
-
-    await this.redis.hset(triggerKey(id), data)
+    await this.redis.hset(triggerKey(id), item as Record<string, any>)
   }
 }

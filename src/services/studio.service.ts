@@ -5,6 +5,7 @@ import { Redis } from "ioredis"
 import { TriggerCollection } from "../repositories/trigger.collection"
 import { TriggerConditionCollection } from "../repositories/trigger-condition.collection"
 import { Trigger } from "../models/entities/trigger"
+import { TriggerCondition } from "../models/entities/trigger-condition"
 
 export class StudioService {
   private triggers: TriggerCollection
@@ -18,13 +19,12 @@ export class StudioService {
     this.conditions = new TriggerConditionCollection(this.redis)
   }
 
-  async createTrigger(data: Partial<Trigger>) {
-    this.log.debug({ data }, "create trigger")
+  async createTrigger(trigger: Partial<Trigger>, conditions: Partial<TriggerCondition>[]) {
+    this.log.debug({ trigger, conditions }, "create trigger")
 
-    const id = await this.triggers.add(data)
-    const { conditions } = data
+    const id = await this.triggers.add(trigger)
 
-    await this.conditions.add(id, data.scope, data.scopeId, conditions)
+    await this.conditions.add(id, trigger.scope, trigger.scopeId, conditions)
 
     return id
   }
