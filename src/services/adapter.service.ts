@@ -1,16 +1,15 @@
 import { Microfleet } from "@microfleet/core-types"
-// import { EventCollection } from "../repositories/event.collection"
+import { AMQPTransport } from "@microfleet/transport-amqp"
+
 import { Redis } from "ioredis"
+
 import { conditionKey, TriggerConditionCollection } from "../repositories/trigger-condition.collection"
 import { BaseEvent } from "../models/events/base.event"
-import { TriggerCondition } from "../models/entities/trigger-condition"
-import { AMQPTransport } from "@microfleet/transport-amqp"
+import { ChainOp, ConditionTypes, TriggerCondition } from "../models/entities/trigger-condition"
 import { TriggerSubscriptionCollection } from "../repositories/trigger-subscription.collection"
 import { TriggerCollection } from "../repositories/trigger.collection"
-import { Trigger } from "../models/entities/trigger"
 
 export class AdapterService {
-
   private conditions: TriggerConditionCollection
   private subscriptions: TriggerSubscriptionCollection
   private triggers: TriggerCollection
@@ -25,10 +24,6 @@ export class AdapterService {
     this.subscriptions = new TriggerSubscriptionCollection(this.redis)
   }
 
-  // private isScopeMatched(trigger: Trigger, event: BaseEvent) {
-  //   return trigger.scope === event.scope && trigger.scopeId === event.scopeId
-  // }
-
   async pushEvent(event: BaseEvent) {
     this.log.debug({ event }, `incoming event`)
 
@@ -36,25 +31,48 @@ export class AdapterService {
     const triggers = await this.conditions.findTriggersByScopeAndEvent(scope, scopeId, name)
 
     for (const triggerId of triggers) {
-      const trigger = await this.triggers.getOneById(triggerId)
       const conditions = await this.conditions.getByTriggerId(triggerId)
 
       for (const condition of conditions) {
         if (condition.event === event.name) {
-          if (condition.type === "set_and_compare") {
-            await this.setAndCompare(event, condition)
-          }
-          else if (condition.type === "set_and_compare_as_string") {
-            await this.setAndCompareAsString(event, condition)
-          }
-          else if (condition.type === "incr_and_compare") {
-            await this.incrAndCompare(event, trigger, condition)
-          } else {
-            this.log.fatal({ event }, `processing flow is not implemented`)
-          }
-        } // if condition event matched
-      } // for each condition
-    } // for each trigger subscribed
+          await this.evaluateCondition(event, condition)
+        }
+      }
+
+      let triggerResult = true
+
+      for (const condition of conditions) {
+        if (condition.chainOperation == ChainOp.AND) {
+          triggerResult = (triggerResult && condition.activated)
+        } else if (condition.chainOperation == ChainOp.OR) {
+          triggerResult = (triggerResult || condition.activated)
+        }
+      }
+
+      if (triggerResult) {
+        const trigger = await this.triggers.getOneById(triggerId)
+
+        trigger.activated = true
+        await this.triggers.updateOne(triggerId, { activated: true })
+        await this.notify(triggerId)
+
+        await this.triggers.deleteOne(triggerId)
+        await this.conditions.deleteByTriggerId(triggerId)
+        await this.subscriptions.deleteByTriggerId(triggerId)
+      }
+    }
+  }
+
+  private async evaluateCondition(event: BaseEvent, condition: TriggerCondition) {
+    if (condition.type === ConditionTypes.SetAndCompare) {
+      await this.setAndCompare(event, condition)
+    } else if (condition.type === ConditionTypes.SetAndCompareAsString) {
+      await this.setAndCompareAsString(event, condition)
+    } else if (condition.type === ConditionTypes.IncrAndCompare) {
+      await this.incrAndCompare(event, condition)
+    } else {
+      this.log.fatal({ event }, `processing flow is not implemented`)
+    }
   }
 
   private async setAndCompare(event: BaseEvent, condition: TriggerCondition) {
@@ -62,6 +80,9 @@ export class AdapterService {
     const value = event.value as number
 
     const result = await this.redis.set_and_compare(key, value)
+
+    condition.activated = !!result
+
     await this.conditions.appendToEventLog(condition.id, event)
 
     return result
@@ -72,28 +93,26 @@ export class AdapterService {
     const value = event.value as string
 
     const result = await this.redis.set_and_compare_as_string(key, value)
+
+    condition.activated = !!result
+
     await this.conditions.appendToEventLog(condition.id, event)
 
     return result
   }
 
-  private async incrAndCompare(_event: BaseEvent, trigger: Trigger, condition: TriggerCondition) {
+  private async incrAndCompare(_event: BaseEvent, _condition: TriggerCondition) {
     // run lua script
-    const result = true
-    if (result) {
-      await this.notify(trigger, condition)
-    }
   }
 
-  private async notify(_trigger: Trigger, condition: TriggerCondition) {
-    const subscriptions = await this.subscriptions.getListByTrigger(condition.triggerId)
-    console.log(`should notify`, subscriptions)
+  private async notify(triggerId: string) {
+    const subscriptions = await this.subscriptions.getListByTrigger(triggerId)
 
     for (const id of subscriptions) {
       const subscription = await this.subscriptions.getOne(id)
       const { route, payload } = subscription
+
       await this.amqp.publishAndWait(route, { ...payload })
     }
   }
-
 }

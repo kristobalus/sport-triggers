@@ -19,41 +19,36 @@ export class TriggerCollection {
   ) {}
 
   async add(item: Partial<Trigger>): Promise<string> {
-
     if (!item.id) {
       item.id = randomUUID()
     }
 
     const count = await this.redis.hset(triggerKey(item.id), item as Record<string, any>)
+
     await this.redis.sadd(triggerSetKey(item.scope, item.scopeId), item.id)
+
     return count > 0 ? item.id : null
   }
 
-  /**
-   * fetches trigger by id
-   * @param id
-   */
   async getOneById(id: string): Promise<Trigger> {
     const data = await this.redis.hgetall(triggerKey(id)) as unknown as Trigger
 
+    data.activated = (data.activated as unknown as string) == "true"
+    
     return data.id ? data : null
   }
 
-  async findByScope(scope: string, scopeId: string) : Promise<string[]> {
-    return await this.redis.smembers(triggerSetKey(scope, scopeId))
+  async findByScope(scope: string, scopeId: string): Promise<string[]> {
+    return this.redis.smembers(triggerSetKey(scope, scopeId))
   }
 
-  /**
-   * deletes trigger
-   * @param id
-   */
-  async delete(id: string): Promise<boolean> {
+  async deleteOne(id: string): Promise<boolean> {
     const result = await this.redis.del(triggerKey(id))
 
     return result == 1
   }
 
-  async update(id: string, item: Partial<Trigger>) {
+  async updateOne(id: string, item: Partial<Trigger>) {
     assert.ok(id)
     await this.redis.hset(triggerKey(id), item as Record<string, any>)
   }

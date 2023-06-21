@@ -1,5 +1,4 @@
 
-
 export interface TriggerSubscription {
   id: string
   triggerId: string

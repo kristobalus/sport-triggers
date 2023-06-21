@@ -1,5 +1,4 @@
 
-
 export enum Scope {
   Game="game"
 }

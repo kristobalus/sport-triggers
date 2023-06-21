@@ -1,6 +1,5 @@
 import { createFleetApp, FleetApp } from "./fleet-app"
 
-
 /**
  *
  * required for @microfleet/core mfleet.js to resolve package

@@ -1,10 +1,11 @@
+import * as assert from "assert"
+import { randomUUID } from "crypto"
+
 import { TriggerConditionCollection } from "../../src/repositories/trigger-condition.collection"
 import { init, stop } from "../helpers/common"
 import { TestContext } from "../module"
 import { TriggerCollection } from "../../src/repositories/trigger.collection"
 import { TriggerSubscriptionCollection } from "../../src/repositories/trigger-subscription.collection"
-import * as assert from "assert"
-import { randomUUID } from "crypto"
 
 interface SuitContext extends TestContext {
   triggerCollection?: TriggerCollection
@@ -14,7 +15,6 @@ interface SuitContext extends TestContext {
 }
 
 describe(`Collections`, function () {
-
   const ctx: SuitContext = {}
   const eventName = "football.game.points.home"
   const eventTarget = 1
@@ -48,6 +48,7 @@ describe(`Collections`, function () {
 
   it('should be able to add conditions', async () => {
     const { conditionCollection } = ctx
+
     await conditionCollection.add(ctx.triggerId, scope, scopeId, [
       {
         event: eventName,
@@ -62,6 +63,7 @@ describe(`Collections`, function () {
     const { triggerCollection } = ctx
 
     const trigger = await triggerCollection.getOneById(ctx.triggerId)
+
     assert.ok(trigger)
     assert.equal(trigger.id, ctx.triggerId)
   })
@@ -70,9 +72,11 @@ describe(`Collections`, function () {
     const { conditionCollection } = ctx
 
     const conditions = await conditionCollection.getByTriggerId(ctx.triggerId)
+
     assert.ok(conditions)
     assert.equal(conditions.length, 1)
     const [condition] = conditions
+
     assert.equal(condition.event, eventName)
     assert.equal(condition.target, eventTarget)
   })
@@ -81,8 +85,8 @@ describe(`Collections`, function () {
     const { conditionCollection } = ctx
 
     const triggers = await conditionCollection.findTriggersByScopeAndEvent(scope, scopeId, eventName)
+
     assert.ok(triggers)
     assert.equal(triggers[0], ctx.triggerId)
   })
-
 })

@@ -1,6 +1,4 @@
 
-
-
 export enum FootballEvents {
    GameLevel= "football.game.level",
    GamePointsHome= "football.game.points.home",

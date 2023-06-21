@@ -35,14 +35,15 @@ export class StudioService {
 
   async deleteTrigger(triggerId: string) {
     this.log.debug("delete trigger")
-    await this.triggers.delete(triggerId)
+    await this.triggers.deleteOne(triggerId)
     await this.conditions.deleteByTriggerId(triggerId)
     await this.subscriptions.deleteByTriggerId(triggerId)
   }
 
   async subscribeTrigger(triggerId: string, data: Partial<TriggerSubscription>) {
     this.log.debug("subscribe for trigger")
-    return await this.subscriptions.create(triggerId, data)
+
+    return this.subscriptions.create(triggerId, data)
   }
 
   async searchTriggers(_data: string) {
@@ -51,8 +52,7 @@ export class StudioService {
 
   async unsubscribeTrigger(subscriptionId: string) {
     this.log.debug("cancel subscription")
-    return await this.subscriptions.deleteOne(subscriptionId)
+
+    return this.subscriptions.deleteOne(subscriptionId)
   }
-
-
 }

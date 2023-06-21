@@ -1,7 +1,9 @@
 // import * as assert from "assert"
-import { Redis } from "ioredis"
-import { SerializedTriggerSubscription, TriggerSubscription } from "../models/entities/trigger-subscription"
 import { randomUUID } from "crypto"
+
+import { Redis } from "ioredis"
+
+import { SerializedTriggerSubscription, TriggerSubscription } from "../models/entities/trigger-subscription"
 import { assertNoError } from "../utils/pipeline-utils"
 
 export function subscriptionByTriggerKey(triggerId: string) {
@@ -19,7 +21,6 @@ export class TriggerSubscriptionCollection {
   }
 
   async create(triggerId: string, item: Partial<TriggerSubscription>): Promise<string> {
-
     const data: SerializedTriggerSubscription = {}
 
     data.id = randomUUID()
@@ -41,12 +42,13 @@ export class TriggerSubscriptionCollection {
   }
 
   async deleteOne(id: string): Promise<boolean> {
-
     const item = await this.getOne(id)
     const pipe = this.redis.pipeline()
+
     pipe.del(subscriptionKey(item.id))
     pipe.del(subscriptionByTriggerKey(item.triggerId))
     const result = await pipe.exec()
+
     assertNoError(result)
 
     return true
@@ -54,7 +56,8 @@ export class TriggerSubscriptionCollection {
 
   async deleteByTriggerId(triggerId: string) {
     const ids = await this.getListByTrigger(triggerId)
-    for(const id of ids){
+
+    for (const id of ids) {
       await this.deleteOne(id)
     }
   }
@@ -76,5 +79,4 @@ export class TriggerSubscriptionCollection {
   async getListByTrigger(triggerId: string): Promise<string[]> {
     return this.redis.smembers(subscriptionByTriggerKey(triggerId))
   }
-
 }

@@ -58,14 +58,14 @@ describe("TriggerCollection", function () {
   it('should be able to update trigger', async () => {
     const name = randomUUID()
 
-    await ctx.triggers.update(ctx.triggerId, { name } as Partial<Trigger>)
+    await ctx.triggers.updateOne(ctx.triggerId, { name } as Partial<Trigger>)
     const trigger = await ctx.triggers.getOneById(ctx.triggerId)
 
     assert.ok(trigger.name === name)
   })
 
   it('should be able to delete trigger', async () => {
-    const result = await ctx.triggers.delete(ctx.triggerId)
+    const result = await ctx.triggers.deleteOne(ctx.triggerId)
 
     assert.ok(result)
     const item = await ctx.triggers.getOneById(ctx.triggerId)

@@ -8,15 +8,15 @@ declare module 'ioredis' {
     set_and_compare(
       conditionKey: string,
       currentValue: number,
-    ): Promise<boolean>
+    ): Promise<number>
     set_and_compare_as_string(
       conditionKey: string,
       currentValue: string,
-    ): Promise<boolean>
+    ): Promise<number>
     incr_and_compare(
       conditionKey: string,
       currentValue: string,
       compareOp: string
-    ): Promise<void>
+    ): Promise<number>
   }
 }

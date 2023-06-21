@@ -8,6 +8,7 @@ let instance: AdapterService
 export function init(parent: FleetApp) {
   parent.addConnector(ConnectorsTypes.application, async () => {
     const { log, redis, amqp } = parent
+
     instance = parent.adapterService = new AdapterService(log, redis, amqp)
   })
 

@@ -35,8 +35,9 @@ export class TriggerConditionCollection {
 
     await this.deleteByTriggerId(triggerId)
 
-    for (let i=0; i< conditions.length; i++) {
+    for (let i = 0; i < conditions.length; i++) {
       const condition = conditions[i]
+
       if ( !condition.id ) {
         condition.id = randomUUID()
       }
@@ -64,6 +65,7 @@ export class TriggerConditionCollection {
     }
 
     const results = await pipe.exec()
+
     assertNoError(results)
   }
 
@@ -76,7 +78,8 @@ export class TriggerConditionCollection {
     }
     const results = await pipe.exec()
     const conditions = createArrayFromHGetAll(results) as TriggerCondition[]
-    for(const condition of conditions){
+
+    for (const condition of conditions) {
       condition.activated = (condition.activated as unknown as string) == "1"
       if ( condition.type == ConditionTypes.SetAndCompare ) {
         condition.current = parseFloat(condition.current as string)
@@ -99,24 +102,26 @@ export class TriggerConditionCollection {
     }
   }
 
-  async findTriggersByScopeAndEvent(scope: string, scopeId: string, eventName: string) : Promise<string[]> {
+  async findTriggersByScopeAndEvent(scope: string, scopeId: string, eventName: string): Promise<string[]> {
     return this.redis.smembers(triggersByScopeAndEvent(scope, scopeId, eventName))
   }
 
-  async appendToEventLog(conditionId: string, event: BaseEvent) : Promise<boolean> {
+  async appendToEventLog(conditionId: string, event: BaseEvent): Promise<boolean> {
     const result = await this.redis.hset(conditionLogKey(conditionId), event.id, JSON.stringify(event))
+    
     return result > 0
   }
 
-  async getEventLog(conditionId: string) : Promise<BaseEvent[]> {
+  async getEventLog(conditionId: string): Promise<BaseEvent[]> {
     const log = await this.redis.hgetall(conditionLogKey(conditionId))
     const result = []
-    for(const doc of Object.values(log)) {
+
+    for (const doc of Object.values(log)) {
       result.push(JSON.parse(doc))
     }
     inPlaceSort(result).asc('timestamp')
+    
     return result
   }
-
 }
 
