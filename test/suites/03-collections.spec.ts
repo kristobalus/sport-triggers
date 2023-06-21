@@ -69,7 +69,7 @@ describe(`Collections`, function () {
   it('should be able to fetch conditions by trigger id', async () => {
     const { conditionCollection } = ctx
 
-    const conditions = await conditionCollection.getByTrigger(ctx.triggerId)
+    const conditions = await conditionCollection.getByTriggerId(ctx.triggerId)
     assert.ok(conditions)
     assert.equal(conditions.length, 1)
     const [condition] = conditions

@@ -1,19 +1,19 @@
 
 import { BaseEvent } from "../base.event"
+import { FootballEvents } from "./football-events"
 
-export const GameLevelTypes = [
-  "start",
-  "quarter.start",
-  "half.start",
-  "quarter.end",
-  "half.end",
-  "end",
-  "under_review"] as const
-
-export type GameLevelType = typeof GameLevelTypes[number];
+export enum GameLevel {
+  Start="start",
+  QuarterStart="quarter.start",
+  HalfStart="half.start",
+  QuarterEnd="quarter.end",
+  HalfEnd="half.end",
+  End="end",
+  UnderReview="under_review"
+}
 
 export interface FootballGameLevelEvent extends BaseEvent {
-  name: "football.game.level"
-  value: GameLevelType
+  name: FootballEvents.GameLevel
+  value: GameLevel
 }
 

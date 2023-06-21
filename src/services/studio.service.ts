@@ -6,10 +6,13 @@ import { TriggerCollection } from "../repositories/trigger.collection"
 import { TriggerConditionCollection } from "../repositories/trigger-condition.collection"
 import { Trigger } from "../models/entities/trigger"
 import { TriggerCondition } from "../models/entities/trigger-condition"
+import { TriggerSubscriptionCollection } from "../repositories/trigger-subscription.collection"
+import { TriggerSubscription } from "../models/entities/trigger-subscription"
 
 export class StudioService {
   private triggers: TriggerCollection
   private conditions: TriggerConditionCollection
+  private subscriptions: TriggerSubscriptionCollection
 
   constructor(
     private log: Microfleet['log'],
@@ -17,6 +20,7 @@ export class StudioService {
   ) {
     this.triggers = new TriggerCollection(this.redis)
     this.conditions = new TriggerConditionCollection(this.redis)
+    this.subscriptions = new TriggerSubscriptionCollection(this.redis)
   }
 
   async createTrigger(trigger: Partial<Trigger>, conditions: Partial<TriggerCondition>[]) {
@@ -29,19 +33,26 @@ export class StudioService {
     return id
   }
 
-  async deleteTrigger(_data) {
+  async deleteTrigger(triggerId: string) {
     this.log.debug("delete trigger")
+    await this.triggers.delete(triggerId)
+    await this.conditions.deleteByTriggerId(triggerId)
+    await this.subscriptions.deleteByTriggerId(triggerId)
   }
 
-  async subscribeTrigger(_data) {
+  async subscribeTrigger(triggerId: string, data: Partial<TriggerSubscription>) {
     this.log.debug("subscribe for trigger")
+    return await this.subscriptions.create(triggerId, data)
   }
 
-  async unsubscribeTrigger(_data) {
-    this.log.debug("unsubscribe from trigger")
+  async searchTriggers(_data: string) {
+    this.log.debug("search for triggers by tags")
   }
 
-  async getTriggerList(_data) {
-    this.log.debug("get list of triggers")
+  async unsubscribeTrigger(subscriptionId: string) {
+    this.log.debug("cancel subscription")
+    return await this.subscriptions.deleteOne(subscriptionId)
   }
+
+
 }

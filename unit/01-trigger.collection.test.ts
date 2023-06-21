@@ -27,6 +27,10 @@ describe("TriggerCollection", function () {
     await ctx.redis.flushall()
   })
 
+  after(async () => {
+    ctx.redis.disconnect()
+  })
+
   it('should add trigger', async () => {
     ctx.triggerId = await ctx.triggers.add({
       name: "home points 30+",

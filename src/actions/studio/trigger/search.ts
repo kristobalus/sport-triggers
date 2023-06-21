@@ -8,7 +8,7 @@ async function ListHandler(this: FleetApp, request: ServiceRequest): Promise<any
 
   const { studioService  } = this
 
-  await studioService.getTriggerList(data)
+  await studioService.searchTriggers(data)
 
   return { ok: true }
 }

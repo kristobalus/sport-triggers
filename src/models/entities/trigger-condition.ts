@@ -1,5 +1,24 @@
 import { BaseEvent } from "../events/base.event"
 
+export enum ConditionTypes {
+  SetAndCompare = "set_and_compare",
+  IncrAndCompare = "incr_and_compare",
+  SetAndCompareAsString = "set_and_compare_as_string"
+}
+
+export enum CompareOp {
+  Equal="eq",
+  LessThan="lt",
+  GreaterThan="gt",
+  LessOrEqual="le",
+  GreaterOrEqual="ge"
+}
+
+export enum ChainOp {
+  AND="and",
+  OR="or"
+}
+
 export interface TriggerCondition {
   // uuid generated for each condition
   id: string
@@ -10,17 +29,21 @@ export interface TriggerCondition {
   scope: string
   scopeId: string
   // comparison operation, should be used to compare "current" and "target" and return a boolean
-  compare: "eq" | "lt" | "gt" | "le" | "ge"
+  compare: CompareOp
   // type of condition
-  type: "set-and-compare" | "incr-and-compare"
+  type: ConditionTypes
   // target value of the event, threshold value to compare with
   target: string | number
   // current value read from event
-  current: string | number
+  current?: string | number
   // true when compare(target, current) == true
-  activated: boolean
+  activated?: boolean
   // log of events consumed by condition
-  log: Record<string, BaseEvent>
+  log?: Record<string, BaseEvent>
+  // order of occurrence of condition in array of conditions
+  chainOrder: number
+  // logical operation on condition when combining multiple conditions together
+  chainOperation: ChainOp
 }
 
 // export type TriggerConditionImmutable = Pick<TriggerCondition, "id" | "triggerId" | "event" | "compare" | "type" | "target">

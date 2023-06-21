@@ -9,6 +9,8 @@ import '@microfleet/plugin-router-amqp'
 import '@microfleet/plugin-router-hapi'
 import '@microfleet/plugin-redis-sentinel'
 
+import "./repositories/module"
+
 import { resolve } from 'node:path'
 import { strict as assert } from "node:assert"
 

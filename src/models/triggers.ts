@@ -18,6 +18,7 @@ module.exports = {
     "football.game.level": {
       "title": "Game level event",
       "description": "",
+      "type": "set_and_compare_as_string",
       "targets": [
         "start",
         "quarter.start",

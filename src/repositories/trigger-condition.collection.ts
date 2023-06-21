@@ -1,16 +1,14 @@
 import { randomUUID } from "crypto"
 
 import { Redis } from "ioredis"
+import { inPlaceSort } from "fast-sort"
 
-import { TriggerCondition } from "../models/entities/trigger-condition"
+import { ChainOp, ConditionTypes, TriggerCondition } from "../models/entities/trigger-condition"
 import { assertNoError, createArrayFromHGetAll } from "../utils/pipeline-utils"
+import { BaseEvent } from "../models/events/base.event"
 
 export function conditionsByTriggerKey(triggerId: string) {
   return `triggers/${triggerId}/conditions`
-}
-
-export function triggersByEvent(eventName: string) {
-  return `event/${eventName}/triggers`
 }
 
 export function conditionKey(conditionId: string) {
@@ -19,6 +17,10 @@ export function conditionKey(conditionId: string) {
 
 export function triggersByScopeAndEvent(scope: string, scopeId: string, eventName: string) {
   return `events/${scope}/${scopeId}/${eventName}/triggers`
+}
+
+export function conditionLogKey(conditionId: string) {
+  return `conditions/${conditionId}/logs`
 }
 
 export class TriggerConditionCollection {
@@ -31,9 +33,10 @@ export class TriggerConditionCollection {
       return
     }
 
-    await this.delete(triggerId)
+    await this.deleteByTriggerId(triggerId)
 
-    for (const condition of conditions ) {
+    for (let i=0; i< conditions.length; i++) {
+      const condition = conditions[i]
       if ( !condition.id ) {
         condition.id = randomUUID()
       }
@@ -44,6 +47,10 @@ export class TriggerConditionCollection {
       }
       condition.scope = scope
       condition.scopeId = scopeId
+      condition.chainOrder = i
+      if ( !condition.chainOperation ) {
+        condition.chainOperation = ChainOp.AND
+      }
     }
 
     const pipe = this.redis.pipeline()
@@ -60,23 +67,33 @@ export class TriggerConditionCollection {
     assertNoError(results)
   }
 
-  async getByTrigger(triggerId: string): Promise<TriggerCondition[]> {
-    const conditions = await this.redis.smembers(conditionsByTriggerKey(triggerId))
+  async getByTriggerId(triggerId: string): Promise<TriggerCondition[]> {
+    const ids = await this.redis.smembers(conditionsByTriggerKey(triggerId))
     const pipe = this.redis.pipeline()
 
-    for (const id of conditions) {
+    for (const id of ids) {
       pipe.hgetall(conditionKey(id))
     }
     const results = await pipe.exec()
+    const conditions = createArrayFromHGetAll(results) as TriggerCondition[]
+    for(const condition of conditions){
+      condition.activated = (condition.activated as unknown as string) == "1"
+      if ( condition.type == ConditionTypes.SetAndCompare ) {
+        condition.current = parseFloat(condition.current as string)
+      }
+    }
 
-    return createArrayFromHGetAll(results)
+    inPlaceSort(conditions).asc('chainOrder')
+
+    return conditions
   }
 
-  async delete(triggerId: string) {
-    const conditions = await this.getByTrigger(triggerId)
+  async deleteByTriggerId(triggerId: string) {
+    const conditions = await this.getByTriggerId(triggerId)
 
     for (const item of conditions) {
       await this.redis.del(conditionKey(item.id))
+      await this.redis.del(conditionLogKey(item.id))
       await this.redis.srem(conditionsByTriggerKey(triggerId), item.id)
       await this.redis.srem(triggersByScopeAndEvent(item.scope, item.scopeId, item.event), triggerId)
     }
@@ -84,6 +101,21 @@ export class TriggerConditionCollection {
 
   async findTriggersByScopeAndEvent(scope: string, scopeId: string, eventName: string) : Promise<string[]> {
     return this.redis.smembers(triggersByScopeAndEvent(scope, scopeId, eventName))
+  }
+
+  async appendToEventLog(conditionId: string, event: BaseEvent) : Promise<boolean> {
+    const result = await this.redis.hset(conditionLogKey(conditionId), event.id, JSON.stringify(event))
+    return result > 0
+  }
+
+  async getEventLog(conditionId: string) : Promise<BaseEvent[]> {
+    const log = await this.redis.hgetall(conditionLogKey(conditionId))
+    const result = []
+    for(const doc of Object.values(log)) {
+      result.push(JSON.parse(doc))
+    }
+    inPlaceSort(result).asc('timestamp')
+    return result
   }
 
 }

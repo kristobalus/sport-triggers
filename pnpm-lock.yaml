@@ -38,6 +38,7 @@ specifiers:
   eslint-config-streamlayer: ^1.0.1
   eslint-import-resolver-typescript: ^3.5.3
   eslint-plugin-import: ^2.27.5
+  fast-sort: ^3.4.0
   got: ^11.8.6
   ioredis: ^4.28.5
   ioredis-mock: ^7.4.0
@@ -73,6 +74,7 @@ dependencies:
   '@types/got': 9.6.12
   '@types/ioredis-mock': 8.2.2
   common-errors: 1.2.0
+  fast-sort: 3.4.0
   got: 11.8.6
   ioredis: 4.28.5
   ioredis-mock: 7.4.0_ioredis@4.28.5
@@ -4482,6 +4484,10 @@ packages:
 
   /fast-safe-stringify/2.1.1:
     resolution: {integrity: sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==}
+
+  /fast-sort/3.4.0:
+    resolution: {integrity: sha512-c/cMBGA5mH3OYjaXedtLIM3hQjv+KuZuiD2QEH5GofNOZeQVDIYIN7Okc2AW1KPhk44g5PTZnXp8t2lOMl8qhQ==}
+    dev: false
 
   /fast-uri/2.2.0:
     resolution: {integrity: sha512-cIusKBIt/R/oI6z/1nyfe2FvGKVTohVRfvkOhvx0nCEW+xf5NoCXjAHcWp93uOUBchzYcsvPlrapAdX1uW+YGg==}
