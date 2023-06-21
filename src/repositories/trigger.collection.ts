@@ -34,7 +34,7 @@ export class TriggerCollection {
     const data = await this.redis.hgetall(triggerKey(id)) as unknown as Trigger
 
     data.activated = (data.activated as unknown as string) == "true"
-    
+
     return data.id ? data : null
   }
 
@@ -43,8 +43,9 @@ export class TriggerCollection {
   }
 
   async deleteOne(id: string): Promise<boolean> {
+    const item = await this.getOneById(id)
     const result = await this.redis.del(triggerKey(id))
-
+    await this.redis.srem(triggerSetKey(item.scope, item.scopeId), id)
     return result == 1
   }
 

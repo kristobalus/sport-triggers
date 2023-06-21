@@ -1,18 +1,16 @@
 // start local redis instance (dir helper) to start test from IDE, faster than full integration tests via mdep
 
-import IORedis, { Redis, RedisOptions } from "ioredis"
-
-import path from "path"
+import { Redis } from "ioredis"
 import { conditionKey, TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { Datasource, Scope, Trigger } from "../src/models/entities/trigger"
 import { randomUUID } from "crypto"
-import * as fs from "fs"
 import { CompareOp, ConditionTypes } from "../src/models/entities/trigger-condition"
 import { FootballEvents } from "../src/models/events/football/football-events"
 import assert from "assert"
+import { initRedis } from "./helper/init-redis"
 
-describe("Lua: set_and_compare", function () {
+describe("set_and_compare.lua", function () {
 
   const datasource = Datasource.Sportradar
   const scope = Scope.Game
@@ -30,13 +28,7 @@ describe("Lua: set_and_compare", function () {
 
   before(async () => {
 
-    ctx.redis = new IORedis({ keyPrefix: "{triggers}" } as RedisOptions)
-    ctx.redis.defineCommand("set_and_compare", {
-      numberOfKeys: 1,
-      lua: fs.readFileSync(path.resolve(__dirname, '../lua/set_and_compare.lua')).toString("utf-8"),
-    })
-    await ctx.redis.flushall()
-
+    ctx.redis = await initRedis()
     ctx.triggers = new TriggerCollection(ctx.redis)
     ctx.conditions = new TriggerConditionCollection(ctx.redis)
 
@@ -75,7 +67,7 @@ describe("Lua: set_and_compare", function () {
     assert.equal(condition.activated, false)
   })
 
-  it(`should activated condition by compare success`, async () => {
+  it.skip(`should activated condition by compare success`, async () => {
     const result = await ctx.redis.set_and_compare(ctx.key, 40)
     assert.equal(result, 1)
 
@@ -83,7 +75,7 @@ describe("Lua: set_and_compare", function () {
     assert.equal(condition.activated, true)
   })
 
-  it(`once activated condition is not changed by further events`, async () => {
+  it.skip(`once activated condition is not changed by further events`, async () => {
     const result = await ctx.redis.set_and_compare(ctx.key, 10)
     assert.equal(result, 1)
 

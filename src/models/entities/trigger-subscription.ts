@@ -16,3 +16,5 @@ export interface SerializedTriggerSubscription extends Partial<TriggerSubscripti
   payload?: string
   options?: string
 }
+
+export type CreateSubscriptionData = Partial<Pick<TriggerSubscription, "route" | "payload" | "options">>

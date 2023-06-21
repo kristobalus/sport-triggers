@@ -10,37 +10,39 @@ import { TriggerSubscriptionCollection } from "../repositories/trigger-subscript
 import { TriggerCollection } from "../repositories/trigger.collection"
 
 export class AdapterService {
-  private conditions: TriggerConditionCollection
-  private subscriptions: TriggerSubscriptionCollection
-  private triggers: TriggerCollection
+  private conditionCollection: TriggerConditionCollection
+  private subscriptionCollection: TriggerSubscriptionCollection
+  private triggerCollection: TriggerCollection
 
   constructor(
     private readonly log: Microfleet['log'],
     private readonly redis: Redis,
     private readonly amqp: AMQPTransport,
   ) {
-    this.triggers = new TriggerCollection(this.redis)
-    this.conditions = new TriggerConditionCollection(this.redis)
-    this.subscriptions = new TriggerSubscriptionCollection(this.redis)
+    this.triggerCollection = new TriggerCollection(this.redis)
+    this.conditionCollection = new TriggerConditionCollection(this.redis)
+    this.subscriptionCollection = new TriggerSubscriptionCollection(this.redis)
   }
 
   async pushEvent(event: BaseEvent) {
     this.log.debug({ event }, `incoming event`)
 
     const { scope, scopeId, name } = event
-    const triggers = await this.conditions.findTriggersByScopeAndEvent(scope, scopeId, name)
+    const triggers = await this.conditionCollection.findTriggersByScopeAndEvent(scope, scopeId, name)
 
     for (const triggerId of triggers) {
-      const conditions = await this.conditions.getByTriggerId(triggerId)
+
+      const conditions = await this.conditionCollection.getByTriggerId(triggerId)
 
       for (const condition of conditions) {
+        if (condition.activated) continue
         if (condition.event === event.name) {
           await this.evaluateCondition(event, condition)
         }
       }
 
-      let triggerResult = true
-
+      let triggerResult = conditions.length > 0
+      
       for (const condition of conditions) {
         if (condition.chainOperation == ChainOp.AND) {
           triggerResult = (triggerResult && condition.activated)
@@ -50,55 +52,64 @@ export class AdapterService {
       }
 
       if (triggerResult) {
-        const trigger = await this.triggers.getOneById(triggerId)
+        // TODO is it redundant?
+        await this.triggerCollection.updateOne(triggerId, { activated: true })
 
-        trigger.activated = true
-        await this.triggers.updateOne(triggerId, { activated: true })
         await this.notify(triggerId)
 
-        await this.triggers.deleteOne(triggerId)
-        await this.conditions.deleteByTriggerId(triggerId)
-        await this.subscriptions.deleteByTriggerId(triggerId)
+        await this.triggerCollection.deleteOne(triggerId)
+        await this.conditionCollection.deleteByTriggerId(triggerId)
+        await this.subscriptionCollection.deleteByTriggerId(triggerId)
       }
     }
   }
 
   private async evaluateCondition(event: BaseEvent, condition: TriggerCondition) {
     if (condition.type === ConditionTypes.SetAndCompare) {
+
       await this.setAndCompare(event, condition)
+
     } else if (condition.type === ConditionTypes.SetAndCompareAsString) {
+
       await this.setAndCompareAsString(event, condition)
+
     } else if (condition.type === ConditionTypes.IncrAndCompare) {
+
       await this.incrAndCompare(event, condition)
     } else {
+
       this.log.fatal({ event }, `processing flow is not implemented`)
     }
   }
 
   private async setAndCompare(event: BaseEvent, condition: TriggerCondition) {
     const key = conditionKey(condition.id)
-    const value = event.value as number
+    const current = event.value as number
 
-    const result = await this.redis.set_and_compare(key, value)
+    const [ activated, append ] = await this.redis.set_and_compare(key, current)
+    condition.activated = !!activated
 
-    condition.activated = !!result
+    if ( append ) {
+      condition.current = current
+      await this.conditionCollection.appendToEventLog(condition.id, event)
+    }
 
-    await this.conditions.appendToEventLog(condition.id, event)
-
-    return result
+    return condition.activated
   }
 
   private async setAndCompareAsString(event: BaseEvent, condition: TriggerCondition) {
     const key = conditionKey(condition.id)
     const value = event.value as string
 
-    const result = await this.redis.set_and_compare_as_string(key, value)
+    const [ result, append ] = await this.redis.set_and_compare_as_string(key, value)
 
     condition.activated = !!result
 
-    await this.conditions.appendToEventLog(condition.id, event)
+    if ( append ){
+      await this.conditionCollection.appendToEventLog(condition.id, event)
+    }
 
-    return result
+    return condition.activated
   }
 
   private async incrAndCompare(_event: BaseEvent, _condition: TriggerCondition) {
@@ -106,10 +117,10 @@ export class AdapterService {
   }
 
   private async notify(triggerId: string) {
-    const subscriptions = await this.subscriptions.getListByTrigger(triggerId)
+    const ids = await this.subscriptionCollection.getListByTrigger(triggerId)
 
-    for (const id of subscriptions) {
-      const subscription = await this.subscriptions.getOne(id)
+    for (const id of ids) {
+      const subscription = await this.subscriptionCollection.getOne(id)
       const { route, payload, options } = subscription
 
       await this.amqp.publishAndWait(route, { ...payload }, { ...options })

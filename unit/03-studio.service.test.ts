@@ -14,10 +14,11 @@ import { randomUUID } from "crypto"
 import { FootballEvents } from "../src/models/events/football/football-events"
 import { GameLevel } from "../src/models/events/football/football-game-level.event"
 import { Datasource } from "../src/models/entities/trigger"
+import { CreateSubscriptionData } from "../src/models/entities/trigger-subscription"
+import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subscription.collection"
 
 describe("StudioService", function () {
 
-  const event = FootballEvents.GameLevel
   const datasource = Datasource.Sportradar
   const scope = "game"
   const scopeId = randomUUID()
@@ -27,7 +28,8 @@ describe("StudioService", function () {
     triggerId?: string
     service?: StudioService
     triggers?: TriggerCollection
-    conditions?: TriggerConditionCollection
+    conditions?: TriggerConditionCollection,
+    subscriptions?: TriggerSubscriptionCollection
   } = {}
 
   before(async () => {
@@ -45,6 +47,7 @@ describe("StudioService", function () {
 
     ctx.triggers = new TriggerCollection(ctx.redis)
     ctx.conditions = new TriggerConditionCollection(ctx.redis)
+    ctx.subscriptions = new TriggerSubscriptionCollection(ctx.redis)
     ctx.service = new StudioService(log, ctx.redis)
   })
 
@@ -54,7 +57,7 @@ describe("StudioService", function () {
 
   it(`should create trigger`, async () => {
 
-    const trigger = {
+    const triggerData = {
       name: "...",
       description: "..",
       datasource,
@@ -64,28 +67,50 @@ describe("StudioService", function () {
 
     const conditions = [
       {
-        event,
+        event: FootballEvents.GameLevel,
         type: ConditionTypes.SetAndCompareAsString,
         compare: CompareOp.Equal,
         target: GameLevel.Start
       }
     ] as Partial<TriggerCondition>[]
 
-    ctx.triggerId = await ctx.service.createTrigger(trigger, conditions)
-
+    ctx.triggerId = await ctx.service.createTrigger(triggerData, conditions)
     assert.ok(ctx.triggerId)
+
+    const [ condition ] = await ctx.conditions.getByTriggerId(ctx.triggerId)
+    assert.equal(condition.event, FootballEvents.GameLevel)
+    assert.equal(condition.type, ConditionTypes.SetAndCompareAsString)
+    assert.equal(condition.compare, CompareOp.Equal)
+    assert.equal(condition.target, GameLevel.Start)
   })
 
-  it(`should be able to find list of triggers by scope`, async () => {
+  it(`should find list of triggers by scope`, async () => {
     const triggers = await ctx.triggers.findByScope(scope, scopeId)
     assert.equal(triggers.length, 1)
     assert.equal(triggers.indexOf(ctx.triggerId), 0)
   })
 
   it(`should be able to find trigger by event and scope`, async () => {
-    const triggers = await ctx.conditions.findTriggersByScopeAndEvent(scope, scopeId, event)
+    const triggers = await ctx.conditions.findTriggersByScopeAndEvent(scope, scopeId, FootballEvents.GameLevel)
     assert.equal(triggers.length, 1)
     assert.equal(triggers.indexOf(ctx.triggerId), 0)
+  })
+
+  it(`studio should create subscription for trigger`, async () => {
+
+    const params = {
+      route: "some.route",
+      payload: { foo: "bar" }
+    } as CreateSubscriptionData
+
+    const id = await ctx.service.subscribeTrigger(ctx.triggerId, params)
+
+    const subscription = await ctx.subscriptions.getOne(id)
+
+    assert.ok(subscription)
+    assert.ok(subscription.route)
+    assert.ok(subscription.payload)
+    assert.equal(subscription.route, params.route)
   })
 
 

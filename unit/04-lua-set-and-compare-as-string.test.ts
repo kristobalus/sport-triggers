@@ -1,10 +1,8 @@
 // start local redis instance (dir helper) to start test from IDE, faster than full integration tests via mdep
 
-import path from "path"
 import { randomUUID } from "crypto"
-import * as fs from "fs"
 import assert from "assert"
-import IORedis, { Redis, RedisOptions } from "ioredis"
+import { Redis } from "ioredis"
 
 import { conditionKey, TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
@@ -12,6 +10,7 @@ import { Datasource, Scope, Trigger } from "../src/models/entities/trigger"
 import { CompareOp, ConditionTypes } from "../src/models/entities/trigger-condition"
 import { FootballEvents } from "../src/models/events/football/football-events"
 import { GameLevel } from "../src/models/events/football/football-game-level.event"
+import { initRedis } from "./helper/init-redis"
 
 describe("Lua scripts", function () {
 
@@ -30,13 +29,7 @@ describe("Lua scripts", function () {
 
   before(async () => {
 
-    ctx.redis = new IORedis({ keyPrefix: "{triggers}" } as RedisOptions)
-    ctx.redis.defineCommand("set_and_compare_as_string", {
-      numberOfKeys: 1,
-      lua: fs.readFileSync(path.resolve(__dirname, '../lua/set_and_compare_as_string.lua')).toString("utf-8"),
-    })
-    await ctx.redis.flushall()
-
+    ctx.redis = await initRedis()
     ctx.triggers = new TriggerCollection(ctx.redis)
     ctx.conditions = new TriggerConditionCollection(ctx.redis)
 

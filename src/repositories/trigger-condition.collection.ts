@@ -46,6 +46,12 @@ export class TriggerConditionCollection {
       } else if ( condition.triggerId !== triggerId ) {
         throw new Error("Condition owner conflict")
       }
+      if ( condition.type == ConditionTypes.SetAndCompare ) {
+        condition.current = 0
+      }
+      if ( condition.type == ConditionTypes.SetAndCompareAsString ) {
+        condition.current = ""
+      }
       condition.scope = scope
       condition.scopeId = scopeId
       condition.chainOrder = i
@@ -80,9 +86,11 @@ export class TriggerConditionCollection {
     const conditions = createArrayFromHGetAll(results) as TriggerCondition[]
 
     for (const condition of conditions) {
+      condition.chainOrder = parseInt(condition.chainOrder as unknown as string)
       condition.activated = (condition.activated as unknown as string) == "1"
       if ( condition.type == ConditionTypes.SetAndCompare ) {
         condition.current = parseFloat(condition.current as string)
+        condition.target = parseFloat(condition.target as string)
       }
     }
 
@@ -107,8 +115,8 @@ export class TriggerConditionCollection {
   }
 
   async appendToEventLog(conditionId: string, event: BaseEvent): Promise<boolean> {
-    const result = await this.redis.hset(conditionLogKey(conditionId), event.id, JSON.stringify(event))
-    
+    const logKey = conditionLogKey(conditionId)
+    const result = await this.redis.hset(logKey, event.id, JSON.stringify(event))
     return result > 0
   }
 
@@ -120,7 +128,7 @@ export class TriggerConditionCollection {
       result.push(JSON.parse(doc))
     }
     inPlaceSort(result).asc('timestamp')
-    
+
     return result
   }
 }

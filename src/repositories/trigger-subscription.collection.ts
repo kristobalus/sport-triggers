@@ -27,11 +27,11 @@ export class TriggerSubscriptionCollection {
     data.triggerId = triggerId
     data.route = item.route
 
-    if (data.payload) {
+    if (item.payload) {
       data.payload = JSON.stringify(item.payload)
     }
 
-    if (data.options) {
+    if (item.options) {
       data.options = JSON.stringify(item.options)
     }
 
@@ -64,6 +64,9 @@ export class TriggerSubscriptionCollection {
 
   async getOne(subscriptionId: string): Promise<TriggerSubscription> {
     const item = await this.redis.hgetall(subscriptionKey(subscriptionId)) as unknown as TriggerSubscription
+    if (!item.triggerId) {
+      return null
+    }
 
     if ( item.payload ) {
       item.payload = JSON.parse(item.payload as unknown as string)

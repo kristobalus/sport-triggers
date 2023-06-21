@@ -12,7 +12,8 @@ else
 end
 
 if activated == 1 then
-    return activated
+    --  should not append event log
+    return { activated, 0 }
 end
 
 -- should
@@ -33,4 +34,5 @@ end
 
 redis.call("hset", conditionKey, "activated", result)
 
-return { result }
+-- should append event log
+return { result, 1 }
