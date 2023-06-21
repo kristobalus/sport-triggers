@@ -110,9 +110,9 @@ export class AdapterService {
 
     for (const id of subscriptions) {
       const subscription = await this.subscriptions.getOne(id)
-      const { route, payload } = subscription
+      const { route, payload, options } = subscription
 
-      await this.amqp.publishAndWait(route, { ...payload })
+      await this.amqp.publishAndWait(route, { ...payload }, { ...options })
     }
   }
 }
