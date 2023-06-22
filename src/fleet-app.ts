@@ -9,17 +9,21 @@ import '@microfleet/plugin-router-amqp'
 import '@microfleet/plugin-router-hapi'
 import '@microfleet/plugin-redis-sentinel'
 
-import "./repositories/module"
-
 import { resolve } from 'node:path'
 import { strict as assert } from "node:assert"
 
 import { Store } from 'ms-conf'
 
-import { AdapterService } from "./services/adapter.service"
-import { StudioService } from "./services/studio.service"
+import { AdapterService } from "./services/adapter/adapter.service"
+import { StudioService } from "./services/studio/studio.service"
 import { init as initAdapterService } from "./plugins/adapter-service.plugin"
 import { init as initStudioService } from "./plugins/studio-service.plugin"
+
+// declare module '@microfleet/core-types' {
+//   interface ConfigurationRequired {
+//
+//   }
+// }
 
 export class FleetApp extends Microfleet {
   public adapterService: AdapterService

@@ -7,12 +7,12 @@ import { Redis } from "ioredis"
 import { conditionKey, TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { Datasource, Scope, Trigger } from "../src/models/entities/trigger"
-import { CompareOp, ConditionTypes } from "../src/models/entities/trigger-condition"
+import { CompareOp, ConditionType } from "../src/models/entities/trigger-condition"
 import { FootballEvents } from "../src/models/events/football/football-events"
 import { GameLevel } from "../src/models/events/football/football-game-level.event"
-import { initRedis } from "./helper/init-redis"
+import { initStandaloneRedis } from "./helper/init-standalone-redis"
 
-describe("Lua scripts", function () {
+describe("set_and_compare_as_string.lua", function () {
 
   const datasource = Datasource.Sportradar
   const scope = Scope.Game
@@ -29,7 +29,7 @@ describe("Lua scripts", function () {
 
   before(async () => {
 
-    ctx.redis = await initRedis()
+    ctx.redis = await initStandaloneRedis()
     ctx.triggers = new TriggerCollection(ctx.redis)
     ctx.conditions = new TriggerConditionCollection(ctx.redis)
 
@@ -40,13 +40,13 @@ describe("Lua scripts", function () {
       scope,
       scopeId,
     } as Partial<Trigger>)
-    ctx.trigger = await ctx.triggers.getOneById(ctx.id)
+    ctx.trigger = await ctx.triggers.getOne(ctx.id)
 
     await ctx.conditions.add(ctx.id, scope, scopeId, [
       {
         id: randomUUID(),
         event: FootballEvents.GameLevel,
-        type: ConditionTypes.SetAndCompareAsString,
+        type: ConditionType.SetAndCompareAsString,
         compare: CompareOp.Equal,
         target: GameLevel.QuarterStart,
       },
@@ -60,25 +60,28 @@ describe("Lua scripts", function () {
     ctx.redis.disconnect()
   })
 
-  it(`should return false when condition is not activated and target != current`, async () => {
-    const result = await ctx.redis.set_and_compare_as_string(ctx.key, GameLevel.Start)
-    assert.equal(result, false)
+  it(`should not activate condition when compare failed`, async () => {
+    const [ result, append ] = await ctx.redis.set_and_compare_as_string(ctx.key, GameLevel.Start)
+    assert.equal(result, 0)
+    assert.equal(append, 1)
 
     const [condition] = await ctx.conditions.getByTriggerId(ctx.id)
     assert.equal(condition.activated, false)
   })
 
-  it(`should return true when condition activated by target == current`, async () => {
-    const result = await ctx.redis.set_and_compare_as_string(ctx.key, GameLevel.QuarterStart)
-    assert.equal(result, true)
+  it(`should activated condition when compare successful`, async () => {
+    const [ result, append ] = await ctx.redis.set_and_compare_as_string(ctx.key, GameLevel.QuarterStart)
+    assert.equal(result, 1)
+    assert.equal(append, 1)
 
     const [condition] = await ctx.conditions.getByTriggerId(ctx.id)
     assert.equal(condition.activated, true)
   })
 
   it(`once activated condition is not changed by further events`, async () => {
-    const result = await ctx.redis.set_and_compare_as_string(ctx.key, GameLevel.QuarterEnd)
-    assert.equal(result, true)
+    const [ result, append ] = await ctx.redis.set_and_compare_as_string(ctx.key, GameLevel.QuarterEnd)
+    assert.equal(result, 1)
+    assert.equal(append, 0)
 
     const [condition] = await ctx.conditions.getByTriggerId(ctx.id)
     assert.equal(condition.activated, true)

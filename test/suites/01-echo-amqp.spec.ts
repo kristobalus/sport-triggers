@@ -27,7 +27,7 @@ describe(`echo test via amqp plugin (rabbitmq)`, () => {
 
   it('should get 403 error', async () => {
     assert(ctx.service, `service was not started`)
-    assert(ctx.request, `context has no got instance`)
+    assert(ctx.request, `context has no "got" instance`)
     const prefix = ctx.service.config.routerAmqp.prefix
     const req = ctx.service.amqp.publishAndWait(`${prefix}.echo`, { ping: false })
 

@@ -5,9 +5,9 @@ import IORedis, { Redis } from "ioredis"
 import pino from "pino"
 import pretty from "pino-pretty"
 
-import { StudioService } from "../src/services/studio.service"
-import { CreateTriggerData } from "../src/models/dto/trigger-create-request"
-import { ConditionTypes, CompareOp, TriggerCondition } from "../src/models/entities/trigger-condition"
+import { StudioService } from "../src/services/studio/studio.service"
+import { EssentialTriggerData } from "../src/models/dto/trigger-create-request"
+import { ConditionType, CompareOp, TriggerCondition } from "../src/models/entities/trigger-condition"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { randomUUID } from "crypto"
@@ -63,12 +63,12 @@ describe("StudioService", function () {
       datasource,
       scope,
       scopeId
-    } as CreateTriggerData
+    } as EssentialTriggerData
 
     const conditions = [
       {
         event: FootballEvents.GameLevel,
-        type: ConditionTypes.SetAndCompareAsString,
+        type: ConditionType.SetAndCompareAsString,
         compare: CompareOp.Equal,
         target: GameLevel.Start
       }
@@ -79,7 +79,7 @@ describe("StudioService", function () {
 
     const [ condition ] = await ctx.conditions.getByTriggerId(ctx.triggerId)
     assert.equal(condition.event, FootballEvents.GameLevel)
-    assert.equal(condition.type, ConditionTypes.SetAndCompareAsString)
+    assert.equal(condition.type, ConditionType.SetAndCompareAsString)
     assert.equal(condition.compare, CompareOp.Equal)
     assert.equal(condition.target, GameLevel.Start)
   })

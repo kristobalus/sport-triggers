@@ -3,11 +3,12 @@ import { randomUUID } from "crypto"
 import { Redis } from "ioredis"
 import { inPlaceSort } from "fast-sort"
 
-import { ChainOp, ConditionTypes, TriggerCondition } from "../models/entities/trigger-condition"
+import { ChainOp, ConditionType, TriggerCondition } from "../models/entities/trigger-condition"
 import { assertNoError, createArrayFromHGetAll } from "../utils/pipeline-utils"
 import { BaseEvent } from "../models/events/base.event"
+import { metadata } from "../models/event-metadata"
 
-export function conditionsByTriggerKey(triggerId: string) {
+export function conditionSetByTriggerKey(triggerId: string) {
   return `triggers/${triggerId}/conditions`
 }
 
@@ -33,8 +34,10 @@ export class TriggerConditionCollection {
       return
     }
 
+    // TODO consider if we should keep or clean old conditions?
     await this.deleteByTriggerId(triggerId)
 
+    // prefill data
     for (let i = 0; i < conditions.length; i++) {
       const condition = conditions[i]
 
@@ -46,15 +49,21 @@ export class TriggerConditionCollection {
       } else if ( condition.triggerId !== triggerId ) {
         throw new Error("Condition owner conflict")
       }
-      if ( condition.type == ConditionTypes.SetAndCompare ) {
+
+      condition.type = metadata[condition.event].type
+
+      if ( condition.type == ConditionType.SetAndCompare ) {
         condition.current = 0
       }
-      if ( condition.type == ConditionTypes.SetAndCompareAsString ) {
+
+      if ( condition.type == ConditionType.SetAndCompareAsString ) {
         condition.current = ""
       }
+
       condition.scope = scope
       condition.scopeId = scopeId
       condition.chainOrder = i
+
       if ( !condition.chainOperation ) {
         condition.chainOperation = ChainOp.AND
       }
@@ -65,7 +74,7 @@ export class TriggerConditionCollection {
     for (const condition of conditions) {
       pipe.hmset(conditionKey(condition.id), condition)
       // should add condition into list of trigger conditions
-      pipe.sadd(conditionsByTriggerKey(condition.triggerId), condition.id)
+      pipe.sadd(conditionSetByTriggerKey(condition.triggerId), condition.id)
       // should add trigger into list of event subscribers
       pipe.sadd(triggersByScopeAndEvent(scope, scopeId, condition.event), triggerId)
     }
@@ -76,19 +85,20 @@ export class TriggerConditionCollection {
   }
 
   async getByTriggerId(triggerId: string): Promise<TriggerCondition[]> {
-    const ids = await this.redis.smembers(conditionsByTriggerKey(triggerId))
+    const ids = await this.redis.smembers(conditionSetByTriggerKey(triggerId))
     const pipe = this.redis.pipeline()
 
     for (const id of ids) {
       pipe.hgetall(conditionKey(id))
     }
+
     const results = await pipe.exec()
     const conditions = createArrayFromHGetAll(results) as TriggerCondition[]
 
     for (const condition of conditions) {
       condition.chainOrder = parseInt(condition.chainOrder as unknown as string)
       condition.activated = (condition.activated as unknown as string) == "1"
-      if ( condition.type == ConditionTypes.SetAndCompare ) {
+      if ( condition.type == ConditionType.SetAndCompare ) {
         condition.current = parseFloat(condition.current as string)
         condition.target = parseFloat(condition.target as string)
       }
@@ -105,7 +115,7 @@ export class TriggerConditionCollection {
     for (const item of conditions) {
       await this.redis.del(conditionKey(item.id))
       await this.redis.del(conditionLogKey(item.id))
-      await this.redis.srem(conditionsByTriggerKey(triggerId), item.id)
+      await this.redis.srem(conditionSetByTriggerKey(triggerId), item.id)
       await this.redis.srem(triggersByScopeAndEvent(item.scope, item.scopeId, item.event), triggerId)
     }
   }

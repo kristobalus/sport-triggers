@@ -4,7 +4,7 @@ import { BaseEvent } from "../base.event"
 
 import { FootballEvents } from "./football-events"
 
-export interface FootballPlayerState extends BaseEvent {
+export interface FootballPlayerStateEvent extends BaseEvent {
   name: FootballEvents.PlayerState
   playerId: string
 }

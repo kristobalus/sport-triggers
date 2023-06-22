@@ -13,7 +13,7 @@ async function EventPushHandler(this: FleetApp, request: ServiceRequest): Promis
   return { ok: true }
 }
 
-EventPushHandler.schema = 'event.push'
+EventPushHandler.schema = 'adapter.event.push'
 EventPushHandler.transports = [ActionTransport.http]
 
 export = EventPushHandler

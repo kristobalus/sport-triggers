@@ -1,6 +1,6 @@
 import { ConnectorsTypes } from "@microfleet/core"
 
-import { AdapterService } from "../services/adapter.service"
+import { AdapterService } from "../services/adapter/adapter.service"
 import { FleetApp } from "../fleet-app"
 
 let instance: AdapterService

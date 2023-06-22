@@ -3,11 +3,11 @@ import { AMQPTransport } from "@microfleet/transport-amqp"
 
 import { Redis } from "ioredis"
 
-import { conditionKey, TriggerConditionCollection } from "../repositories/trigger-condition.collection"
-import { BaseEvent } from "../models/events/base.event"
-import { ChainOp, ConditionTypes, TriggerCondition } from "../models/entities/trigger-condition"
-import { TriggerSubscriptionCollection } from "../repositories/trigger-subscription.collection"
-import { TriggerCollection } from "../repositories/trigger.collection"
+import { conditionKey, TriggerConditionCollection } from "../../repositories/trigger-condition.collection"
+import { BaseEvent } from "../../models/events/base.event"
+import { ChainOp, ConditionType, TriggerCondition } from "../../models/entities/trigger-condition"
+import { TriggerSubscriptionCollection } from "../../repositories/trigger-subscription.collection"
+import { TriggerCollection } from "../../repositories/trigger.collection"
 
 export class AdapterService {
   private conditionCollection: TriggerConditionCollection
@@ -17,7 +17,7 @@ export class AdapterService {
   constructor(
     private readonly log: Microfleet['log'],
     private readonly redis: Redis,
-    private readonly amqp: AMQPTransport,
+    private readonly amqp: AMQPTransport
   ) {
     this.triggerCollection = new TriggerCollection(this.redis)
     this.conditionCollection = new TriggerConditionCollection(this.redis)
@@ -42,7 +42,7 @@ export class AdapterService {
       }
 
       let triggerResult = conditions.length > 0
-      
+
       for (const condition of conditions) {
         if (condition.chainOperation == ChainOp.AND) {
           triggerResult = (triggerResult && condition.activated)
@@ -65,15 +65,15 @@ export class AdapterService {
   }
 
   private async evaluateCondition(event: BaseEvent, condition: TriggerCondition) {
-    if (condition.type === ConditionTypes.SetAndCompare) {
+    if (condition.type === ConditionType.SetAndCompare) {
 
       await this.setAndCompare(event, condition)
 
-    } else if (condition.type === ConditionTypes.SetAndCompareAsString) {
+    } else if (condition.type === ConditionType.SetAndCompareAsString) {
 
       await this.setAndCompareAsString(event, condition)
 
-    } else if (condition.type === ConditionTypes.IncrAndCompare) {
+    } else if (condition.type === ConditionType.IncrAndCompare) {
 
       await this.incrAndCompare(event, condition)
     } else {

@@ -4,7 +4,7 @@ import { pino } from "pino"
 
 export const logger: Partial<CoreOptions['logger']> = {
   defaultLogger: true,
-  debug: true,
+  debug: false,
   options: {
     level: "info"
   } as pino.LoggerOptions

@@ -72,6 +72,7 @@
     "got": "^11.8.6",
     "ioredis": "^4.28.5",
     "ioredis-mock": "^7.4.0",
+    "lodash": "^4.17.21",
     "ms-conf": "^8.1.2",
     "pino": "^8.8.0",
     "protobufjs": "^7.2.3"

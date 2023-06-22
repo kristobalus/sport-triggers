@@ -43,6 +43,7 @@ specifiers:
   ioredis: ^4.28.5
   ioredis-mock: ^7.4.0
   lint-staged: ^13.1.0
+  lodash: ^4.17.21
   mocha: ^10.2.0
   ms-conf: ^8.1.2
   pino: ^8.8.0
@@ -78,6 +79,7 @@ dependencies:
   got: 11.8.6
   ioredis: 4.28.5
   ioredis-mock: 7.4.0_ioredis@4.28.5
+  lodash: 4.17.21
   ms-conf: 8.1.2
   pino: 8.14.1
   protobufjs: 7.2.3

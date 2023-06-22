@@ -2,7 +2,7 @@ import IORedis, { Redis, RedisOptions } from "ioredis"
 import fs from "fs"
 import path from "path"
 
-export async function initRedis() : Promise<Redis> {
+export async function initStandaloneRedis() : Promise<Redis> {
   const redis = new IORedis({ keyPrefix: "{triggers}" } as RedisOptions)
 
   redis.defineCommand("set_and_compare", {

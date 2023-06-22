@@ -14,6 +14,10 @@ export function subscriptionKey(subscriptionId: string) {
   return `subscriptions/${subscriptionId}`
 }
 
+export function entitySubscriptionSetKey(entity: string, entityId: string) {
+  return `entities/${entity}/${entityId}/subscriptions`
+}
+
 export class TriggerSubscriptionCollection {
   constructor(
     private redis: Redis,
@@ -35,8 +39,11 @@ export class TriggerSubscriptionCollection {
       data.options = JSON.stringify(item.options)
     }
 
-    await this.redis.hset(subscriptionKey(data.id), data as unknown as Record<string, any>)
-    await this.redis.sadd(subscriptionByTriggerKey(triggerId), data.id)
+    const pipe = this.redis.pipeline()
+    pipe.hset(subscriptionKey(data.id), data as unknown as Record<string, any>)
+    pipe.sadd(subscriptionByTriggerKey(triggerId), data.id)
+    pipe.sadd(entitySubscriptionSetKey(item.entity, item.entityId), data.id)
+    await pipe.exec()
 
     return data.id
   }
@@ -46,7 +53,8 @@ export class TriggerSubscriptionCollection {
     const pipe = this.redis.pipeline()
 
     pipe.del(subscriptionKey(item.id))
-    pipe.del(subscriptionByTriggerKey(item.triggerId))
+    pipe.srem(subscriptionByTriggerKey(item.triggerId), id)
+    pipe.srem(entitySubscriptionSetKey(item.entity, item.entityId), id)
     const result = await pipe.exec()
 
     assertNoError(result)
@@ -82,4 +90,9 @@ export class TriggerSubscriptionCollection {
   async getListByTrigger(triggerId: string): Promise<string[]> {
     return this.redis.smembers(subscriptionByTriggerKey(triggerId))
   }
+
+  async getListByEntity(entity: string, entityId: string): Promise<string[]> {
+    return this.redis.smembers(entitySubscriptionSetKey(entity, entityId))
+  }
+
 }

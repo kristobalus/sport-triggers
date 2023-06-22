@@ -3,6 +3,8 @@ export interface TriggerSubscription {
   id: string
   triggerId: string
   route: string
+  entity: string
+  entityId: string
   // JSON document
   payload: Record<string, any>
   options: Record<string, any>
@@ -16,5 +18,3 @@ export interface SerializedTriggerSubscription extends Partial<TriggerSubscripti
   payload?: string
   options?: string
 }
-
-export type CreateSubscriptionData = Partial<Pick<TriggerSubscription, "route" | "payload" | "options">>

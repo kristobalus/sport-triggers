@@ -1,0 +1,7 @@
+{
+    "$id": "studio.subscription.cancel",
+    "type": "object",
+    "additionalProperties": true,
+    "required": [],
+    "properties": {}
+}
