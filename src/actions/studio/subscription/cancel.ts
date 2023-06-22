@@ -15,7 +15,7 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<ItemRes
   return {
     data: {
       id,
-      type: "subscription.cancelled"
+      type: "subscription"
     }
   } as ItemResponse
 }

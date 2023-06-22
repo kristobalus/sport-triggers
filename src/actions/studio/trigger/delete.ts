@@ -15,7 +15,7 @@ async function DeleteHandler(this: FleetApp, request: ServiceRequest): Promise<I
   return {
     data: {
       id,
-      type: "trigger.deleted"
+      type: "trigger"
     }
   } as ItemResponse<Partial<Trigger>>
 }

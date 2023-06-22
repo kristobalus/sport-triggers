@@ -17,9 +17,12 @@ import { CoreOptions } from "@microfleet/core-types"
 import { TriggerListRequest } from "../../src/models/dto/trigger-list-request"
 import { TriggerCreateResponse } from "../../src/models/dto/trigger-create-response"
 import { TriggerSubRequest } from "../../src/models/dto/trigger-sub-request"
+import { TriggerSubscription } from "../../src/models/entities/trigger-subscription"
+import { SubListRequest } from "../../src/models/dto/sub-list-request"
 
 interface SuitContext extends TestContext {
   triggerId?: string
+  subscriptionId?: string
 }
 
 describe(`StudioService`, function () {
@@ -29,6 +32,8 @@ describe(`StudioService`, function () {
   const scopeId = randomUUID()
   const entity = "moderation"
   const entityId = randomUUID()
+  const subEntity = "question"
+  const subEntityId = "1"
 
   const ctx: SuitContext = {}
 
@@ -100,32 +105,54 @@ describe(`StudioService`, function () {
           triggerId: ctx.triggerId, subscription: {
             route: "interactive.question.activate",
             payload: { foo: "bar", id: "1" },
-            entity: "question",
-            entityId: "1",
+            entity: subEntity,
+            entityId: subEntityId,
           },
         } as TriggerSubRequest)
 
-    console.log(response)
     assert.ok(response)
+    assert.ok(response.data)
+    assert.ok(response.data.id)
+
+    ctx.subscriptionId = response.data.id
   })
 
-  it(`should get subscription list`, async () => {
+  it(`should get subscription list by trigger`, async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
-    const response: ItemResponse = await ctx.service.amqp
+    const response: ListResponse<TriggerSubscription> = await ctx.service.amqp
       .publishAndWait(`${prefix}.studio.subscription.list`, { triggerId: ctx.triggerId })
-    console.log(response)
-    assert.ok(response)
-  })
-
-  it(`should unsubscribe from trigger`, async () => {
-    const prefix = ctx.service.config.routerAmqp.prefix
-    const response: ItemResponse = await ctx.service.amqp
-      .publishAndWait(`${prefix}.studio.trigger.unsubscribe`, { id: ctx.triggerId })
 
     assert.ok(response)
     assert.ok(response.data)
-    assert.equal(response.data.type, "trigger.deleted")
-    assert.equal(response.data.id, ctx.triggerId)
+    assert.ok(response.data.length)
+
+    const [ item ] = response.data
+    assert.equal(item.attributes.id, ctx.subscriptionId)
+  })
+
+  it(`should get subscription list by entity`, async () => {
+    const prefix = ctx.service.config.routerAmqp.prefix
+    const response: ListResponse<TriggerSubscription> = await ctx.service.amqp
+      .publishAndWait(`${prefix}.studio.subscription.list`,
+        { entity: subEntity, entityId: subEntityId  } as SubListRequest)
+
+    assert.ok(response)
+    assert.ok(response.data)
+    assert.ok(response.data.length)
+
+    const [ item ] = response.data
+    assert.equal(item.attributes.id, ctx.subscriptionId)
+  })
+
+  it(`should cancel subscription`, async () => {
+    const prefix = ctx.service.config.routerAmqp.prefix
+    const response: ItemResponse = await ctx.service.amqp
+      .publishAndWait(`${prefix}.studio.subscription.cancel`, { id: ctx.subscriptionId })
+
+    assert.ok(response)
+    assert.ok(response.data)
+    assert.ok(response.data.id)
+    assert.equal(response.data.id, ctx.subscriptionId)
   })
 
   it(`should delete trigger`, async () => {
