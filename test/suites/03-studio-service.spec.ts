@@ -8,7 +8,7 @@ import { Datasource, Scope } from "../../src/models/entities/trigger"
 import { ListResponse, ItemResponse } from "../../src/models/dto/response"
 import { startContext, stopContext } from "../helpers/common"
 import { FootballEvents } from "../../src/models/events/football/football-events"
-import { ChainOp, CompareOp } from "../../src/models/entities/trigger-condition"
+import { CompareOp } from "../../src/models/entities/trigger-condition"
 import {
   EssentialConditionData,
   EssentialTriggerData,
@@ -67,8 +67,7 @@ describe(`StudioService`, function () {
       {
         event: FootballEvents.GameLevel,
         compare: CompareOp.Equal,
-        target: GameLevel.Start,
-        chainOperation: ChainOp.AND,
+        target: GameLevel.Start
       },
     ] as EssentialConditionData[]
 

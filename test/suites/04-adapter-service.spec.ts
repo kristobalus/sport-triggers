@@ -68,7 +68,6 @@ describe(`AdapterService`, function () {
             event: FootballEvents.GameLevel,
             compare: CompareOp.Equal,
             target: GameLevel.Start,
-            chainOperation: ChainOp.AND,
           },
           {
             event: FootballEvents.GamePointsHome,
@@ -177,7 +176,7 @@ describe(`AdapterService`, function () {
 
   it(`check trigger activated`, async () => {
     const message = await ctx.pending
-
-    console.log(message)
+    assert.ok(message)
+    assert.equal(message.id, 1)
   })
 })

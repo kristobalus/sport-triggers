@@ -49,7 +49,7 @@
                     }
                 },
                 "additionalProperties": false,
-                "required": ["event", "compare", "chainOperation"]
+                "required": ["event", "compare","target"]
             }
         }
     },

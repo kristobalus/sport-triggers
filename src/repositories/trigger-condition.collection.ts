@@ -130,7 +130,7 @@ export class TriggerConditionCollection {
   async appendToEventLog(conditionId: string, event: BaseEvent): Promise<boolean> {
     const logKey = conditionLogKey(conditionId)
     const result = await this.redis.hset(logKey, event.id, JSON.stringify(event))
-    
+
     return result > 0
   }
 
