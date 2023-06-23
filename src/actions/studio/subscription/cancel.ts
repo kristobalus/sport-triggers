@@ -3,9 +3,10 @@ import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
 
 import { FleetApp } from "../../../fleet-app"
 import { ItemResponse } from "../../../models/dto/response"
+import { SubscriptionCancelRequest } from "../../../models/dto/subscription-cancel-request"
 
 async function Handler(this: FleetApp, request: ServiceRequest): Promise<ItemResponse> {
-  const { id } = request.params as any
+  const { id } = request.params as SubscriptionCancelRequest
 
   const { studioService } = this
 

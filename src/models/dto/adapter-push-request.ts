@@ -1,5 +1,5 @@
 import { BaseEvent } from "../events/base.event"
 
-export interface AdapterPushDto {
+export interface AdapterPushRequest {
   event: BaseEvent
 }

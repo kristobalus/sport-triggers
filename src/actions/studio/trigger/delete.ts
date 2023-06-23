@@ -3,10 +3,10 @@ import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
 
 import { FleetApp } from "../../../fleet-app"
 import { ItemResponse } from "../../../models/dto/response"
-import { Trigger } from "../../../models/entities/trigger"
+import { TriggerDeleteRequest } from "../../../models/dto/trigger-delete-request"
 
-async function DeleteHandler(this: FleetApp, request: ServiceRequest): Promise<ItemResponse<Partial<Trigger>>> {
-  const { id } = request.params as any
+async function DeleteHandler(this: FleetApp, request: ServiceRequest): Promise<ItemResponse> {
+  const { id } = request.params as TriggerDeleteRequest
 
   const { studioService } = this
 
@@ -17,7 +17,7 @@ async function DeleteHandler(this: FleetApp, request: ServiceRequest): Promise<I
       id,
       type: "trigger"
     }
-  } as ItemResponse<Partial<Trigger>>
+  } as ItemResponse
 }
 
 DeleteHandler.schema = 'studio.trigger.delete'

@@ -3,7 +3,7 @@ import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
 
 import { FleetApp } from "../../../fleet-app"
 import { TriggerCreateRequest } from "../../../models/dto/trigger-create-request"
-import { Response, ResponseItem } from "../../../models/dto/response"
+import { ItemResponse, Response } from "../../../models/dto/response"
 import { TriggerCreateResponse } from "../../../models/dto/trigger-create-response"
 
 async function CreateHandler(this: FleetApp, request: ServiceRequest): Promise<Response<TriggerCreateResponse>> {
@@ -16,12 +16,9 @@ async function CreateHandler(this: FleetApp, request: ServiceRequest): Promise<R
   return {
     data: {
       id: id,
-      type: "trigger",
-      attributes: {
-        id: id
-      }
-    } as ResponseItem<TriggerCreateResponse>
-  } as Response<TriggerCreateResponse>
+      type: "trigger"
+    }
+  } as ItemResponse
 }
 
 CreateHandler.schema = 'studio.trigger.create'

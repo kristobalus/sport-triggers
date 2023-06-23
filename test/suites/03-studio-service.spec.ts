@@ -17,7 +17,7 @@ import {
 import { GameLevel } from "../../src/models/events/football/football-game-level.event"
 import { TriggerListRequest } from "../../src/models/dto/trigger-list-request"
 import { TriggerCreateResponse } from "../../src/models/dto/trigger-create-response"
-import { TriggerSubRequest } from "../../src/models/dto/trigger-sub-request"
+import { TriggerSubscribeRequest } from "../../src/models/dto/trigger-subscribe-request"
 import { TriggerSubscription } from "../../src/models/entities/trigger-subscription"
 import { SubscriptionListRequest } from "../../src/models/dto/subscription-list-request"
 
@@ -114,7 +114,7 @@ describe(`StudioService`, function () {
             entity: subEntity,
             entityId: subEntityId,
           },
-        } as TriggerSubRequest)
+        } as TriggerSubscribeRequest)
 
     assert.ok(response)
     assert.ok(response.data)

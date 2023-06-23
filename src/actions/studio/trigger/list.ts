@@ -3,9 +3,10 @@ import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
 import { FleetApp } from "../../../fleet-app"
 import { ListResponse, toResponseItem } from "../../../models/dto/response"
 import { TriggerWithConditions } from "../../../models/dto/trigger-with-conditions"
+import { TriggerListRequest } from "../../../models/dto/trigger-list-request"
 
 async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ListResponse<TriggerWithConditions>> {
-  const { entity, entityId } = request.params as any
+  const { entity, entityId } = request.params as TriggerListRequest
 
   const { studioService } = this
 
@@ -20,7 +21,7 @@ async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ListRe
 }
 
 Handler.schema = 'studio.trigger.list'
-Handler.transports = [ActionTransport.amqp, ActionTransport.http]
+Handler.transports = [ActionTransport.amqp]
 
 export = Handler
 

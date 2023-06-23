@@ -7,7 +7,7 @@ import { TriggerConditionCollection } from "../../repositories/trigger-condition
 import { TriggerSubscriptionCollection } from "../../repositories/trigger-subscription.collection"
 import { EssentialConditionData, EssentialTriggerData } from "../../models/dto/trigger-create-request"
 import { TriggerWithConditions } from "../../models/dto/trigger-with-conditions"
-import { EssentialSubscriptionData } from "../../models/dto/trigger-sub-request"
+import { EssentialSubscriptionData } from "../../models/dto/trigger-subscribe-request"
 import { TriggerSubscription } from "../../models/entities/trigger-subscription"
 
 export class StudioService {
@@ -103,7 +103,7 @@ export class StudioService {
   async getTrigger(id: string): Promise<TriggerWithConditions> {
     const trigger = await this.triggers.getOne(id)
     const conditions = await this.conditions.getByTriggerId(id, { showLog: true })
-    
+
     return { trigger, conditions } as TriggerWithConditions
   }
 }

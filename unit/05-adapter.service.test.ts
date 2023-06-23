@@ -19,7 +19,7 @@ import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subsc
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
 import { FootballEvents } from "../src/models/events/football/football-events"
 import { FootballGameLevelEvent, GameLevel } from "../src/models/events/football/football-game-level.event"
-import { EssentialSubscriptionData } from "../src/models/dto/trigger-sub-request"
+import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
 
 describe("AdapterService", function () {
 

@@ -14,10 +14,10 @@ import {
   TriggerCreateRequest,
 } from "../../src/models/dto/trigger-create-request"
 import { GameLevel } from "../../src/models/events/football/football-game-level.event"
-import { TriggerSubRequest } from "../../src/models/dto/trigger-sub-request"
+import { TriggerSubscribeRequest } from "../../src/models/dto/trigger-subscribe-request"
 import { ItemResponse } from "../../src/models/dto/response"
 import { TriggerCreateResponse } from "../../src/models/dto/trigger-create-response"
-import { AdapterPushDto } from "../../src/models/dto/adapter.push.dto"
+import { AdapterPushRequest } from "../../src/models/dto/adapter-push-request"
 import { BaseEvent } from "../../src/models/events/base.event"
 
 // import { BaseEvent } from "../../src/models/events/base.event"
@@ -93,7 +93,7 @@ describe(`AdapterService`, function () {
           entity: "question",
           entityId: "1",
         },
-      } as TriggerSubRequest)
+      } as TriggerSubscribeRequest)
 
     ctx.subscriptionId = response.data.id
   }
@@ -154,7 +154,7 @@ describe(`AdapterService`, function () {
           datasource: Datasource.Sportradar,
           timestamp: Date.now()
         } as Required<BaseEvent>,
-      } as AdapterPushDto,
+      } as AdapterPushRequest,
     })
   })
 
@@ -170,7 +170,7 @@ describe(`AdapterService`, function () {
           datasource: Datasource.Sportradar,
           timestamp: Date.now()
         },
-      } as AdapterPushDto,
+      } as AdapterPushRequest,
     })
   })
 
