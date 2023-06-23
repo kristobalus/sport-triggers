@@ -17,7 +17,7 @@ export class StudioService {
 
   constructor(
     private log: Microfleet['log'],
-    private redis: Redis,
+    private redis: Redis
   ) {
     this.triggers = new TriggerCollection(this.redis)
     this.conditions = new TriggerConditionCollection(this.redis)

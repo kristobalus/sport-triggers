@@ -18,12 +18,13 @@ import { AdapterService } from "./services/adapter/adapter.service"
 import { StudioService } from "./services/studio/studio.service"
 import { init as initAdapterService } from "./plugins/adapter-service.plugin"
 import { init as initStudioService } from "./plugins/studio-service.plugin"
+// import { EventMetadata } from "./models/event-metadata"
 
-// declare module '@microfleet/core-types' {
-//   interface ConfigurationRequired {
-//
-//   }
-// }
+declare module '@microfleet/core-types' {
+  interface ConfigurationRequired {
+    // metadata: Record<string, EventMetadata>
+  }
+}
 
 export class FleetApp extends Microfleet {
   public adapterService: AdapterService

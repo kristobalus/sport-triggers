@@ -61,7 +61,7 @@ describe("set_and_compare_as_string.lua", function () {
   })
 
   it(`should not activate condition when compare failed`, async () => {
-    const [ result, append ] = await ctx.redis.set_and_compare_as_string(ctx.key, GameLevel.Start)
+    const [ result, append ] = await ctx.redis.set_and_compare_as_string(1, ctx.key, GameLevel.Start)
     assert.equal(result, 0)
     assert.equal(append, 1)
 
@@ -70,7 +70,7 @@ describe("set_and_compare_as_string.lua", function () {
   })
 
   it(`should activated condition when compare successful`, async () => {
-    const [ result, append ] = await ctx.redis.set_and_compare_as_string(ctx.key, GameLevel.QuarterStart)
+    const [ result, append ] = await ctx.redis.set_and_compare_as_string(1, ctx.key, GameLevel.QuarterStart)
     assert.equal(result, 1)
     assert.equal(append, 1)
 
@@ -79,7 +79,7 @@ describe("set_and_compare_as_string.lua", function () {
   })
 
   it(`once activated condition is not changed by further events`, async () => {
-    const [ result, append ] = await ctx.redis.set_and_compare_as_string(ctx.key, GameLevel.QuarterEnd)
+    const [ result, append ] = await ctx.redis.set_and_compare_as_string(1, ctx.key, GameLevel.QuarterEnd)
     assert.equal(result, 1)
     assert.equal(append, 0)
 
