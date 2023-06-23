@@ -41,20 +41,5 @@ export function flushRedis(ctx: TestContext, _dropIndex?: boolean) {
     for (const key of keys) {
       await redis.del(key)
     }
-
-    // if (dropIndex) {
-    //   // drop indexes
-    //   for (const item of redisIndexDefinitions) {
-    //     const indexName = buildIndexName(options.keyPrefix, item.key, item.version)
-    //     try {
-    //       // @ts-ignore
-    //       await redis.call('FT.DROPINDEX', indexName)
-    //     } catch (err) {
-    //       console.log('Error on dropping %s index', indexName)
-    //     }
-    //   }
-    //   // await redis.flushall()
-    //   await redis.quit()
-    // }
   }
 }
