@@ -69,7 +69,7 @@ describe("ConditionCollection", function () {
     await ctx.conditions.add(ctx.id, scope, scopeId, [
       {
         event: FootballEvents.PlayerState,
-        compare: CompareOp.GreaterOrEqual,
+        compare: CompareOp.Equal,
         target: FootballPlayerStates.Touchdown,
         params: {
           player: randomUUID()
