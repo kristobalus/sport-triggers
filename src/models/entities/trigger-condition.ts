@@ -1,4 +1,4 @@
-import { BaseEvent } from "../events/base.event"
+import { Event } from "../events/event"
 
 export enum ConditionType {
   SetAndCompare = "set_and_compare",
@@ -19,6 +19,10 @@ export enum ChainOp {
   OR="or"
 }
 
+export interface ConditionParams {
+  player: string
+}
+
 export interface TriggerCondition {
   // uuid generated for each condition
   id: string
@@ -34,16 +38,19 @@ export interface TriggerCondition {
   compare: CompareOp
   // type of condition
   type: ConditionType
+  uri: string
   // target value of the event, threshold value to compare with
-  target: string | number
+  target: string
   // current value read from event
-  current?: string | number
+  current?: string
   // true when compare(target, current) == true
   activated?: boolean
   // log of events consumed by condition
-  log?: BaseEvent[]
+  log?: Event[]
   // order of occurrence of condition in array of conditions
-  chainOrder: number
+  chainOrder?: number
   // logical operation on condition when combining multiple conditions together
-  chainOperation: ChainOp
+  chainOperation?: ChainOp
+  // condition parameters
+  params?: ConditionParams
 }

@@ -6,7 +6,7 @@ import { randomUUID } from "crypto"
 import { Redis } from "ioredis"
 
 import { TriggerCollection } from "../src/repositories/trigger.collection"
-import { Trigger } from "../src/models/entities/trigger"
+import { Scope, Trigger } from "../src/models/entities/trigger"
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
 
 describe("TriggerCollection", function () {
@@ -18,8 +18,8 @@ describe("TriggerCollection", function () {
     triggers?: TriggerCollection
     triggerId?: string
   } = {
-    scope: "game",
-    scopeId: "d8539eb6-3e27-40c8-906f-9cd1736321d8",
+    scope: Scope.SportradarGames,
+    scopeId: randomUUID()
   }
 
   before(async () => {
@@ -35,7 +35,6 @@ describe("TriggerCollection", function () {
     ctx.triggerId = await ctx.triggers.add({
       name: "home points 30+",
       description: "should trigger when home points reach 30 or more",
-      datasource: "sportradar",
       scope: ctx.scope,
       scopeId: ctx.scopeId,
     } as Partial<Trigger>)

@@ -1,5 +1,5 @@
-import { BaseEvent } from "../events/base.event"
+import { Event } from "../events/event"
 
 export interface AdapterPushRequest {
-  event: BaseEvent
+  event: Event
 }

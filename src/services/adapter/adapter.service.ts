@@ -4,10 +4,11 @@ import { AMQPTransport } from "@microfleet/transport-amqp"
 import { Redis } from "ioredis"
 
 import { conditionKey, TriggerConditionCollection } from "../../repositories/trigger-condition.collection"
-import { BaseEvent } from "../../models/events/base.event"
+import { Event } from "../../models/events/event"
 import { ChainOp, ConditionType, TriggerCondition } from "../../models/entities/trigger-condition"
 import { TriggerSubscriptionCollection } from "../../repositories/trigger-subscription.collection"
 import { TriggerCollection } from "../../repositories/trigger.collection"
+import { toUriByEvent } from "../../models/events/uri"
 
 export class AdapterService {
   private conditionCollection: TriggerConditionCollection
@@ -24,18 +25,24 @@ export class AdapterService {
     this.subscriptionCollection = new TriggerSubscriptionCollection(this.redis)
   }
 
-  async pushEvent(event: BaseEvent) {
-    this.log.debug({ event }, `incoming event`)
+  async pushEvent(event: Event) {
+    const uri = toUriByEvent(event)
+
+    this.log.debug({ event, uri }, `incoming event`)
 
     const { scope, scopeId, name } = event
     const triggers = await this.conditionCollection.findTriggersByScopeAndEvent(scope, scopeId, name)
 
+    this.log.debug({ triggers }, `triggers found`)
+
     for (const triggerId of triggers) {
       const conditions = await this.conditionCollection.getByTriggerId(triggerId)
 
+      this.log.debug({ triggerId, conditions }, `conditions found`)
+
       for (const condition of conditions) {
         if (condition.activated) continue
-        if (condition.event === event.name) {
+        if (condition.uri === uri) {
           await this.evaluateCondition(event, condition)
         }
       }
@@ -63,7 +70,7 @@ export class AdapterService {
     }
   }
 
-  private async evaluateCondition(event: BaseEvent, condition: TriggerCondition) {
+  private async evaluateCondition(event: Event, condition: TriggerCondition) {
     this.log.debug({ event, condition }, `evaluating trigger condition`)
     if (condition.type === ConditionType.SetAndCompare) {
       await this.setAndCompare(event, condition)
@@ -76,9 +83,9 @@ export class AdapterService {
     }
   }
 
-  private async setAndCompare(event: BaseEvent, condition: TriggerCondition) {
+  private async setAndCompare(event: Event, condition: TriggerCondition) {
     const key = conditionKey(condition.id)
-    const current = event.value as number
+    const current = event.value
 
     try {
       const [activated, append] = await this.redis.set_and_compare(1, key, current)
@@ -89,7 +96,9 @@ export class AdapterService {
         condition.current = current
         await this.conditionCollection.appendToEventLog(condition.id, event)
       }
+
       this.log.debug({ condition }, `evaluation result`)
+
     } catch (err) {
       this.log.fatal({ err, key, current }, 'failed to compare')
     }
@@ -97,9 +106,9 @@ export class AdapterService {
     return condition.activated
   }
 
-  private async setAndCompareAsString(event: BaseEvent, condition: TriggerCondition) {
+  private async setAndCompareAsString(event: Event, condition: TriggerCondition) {
     const key = conditionKey(condition.id)
-    const current = event.value as string
+    const current = event.value
 
     try {
       const [result, append] = await this.redis.set_and_compare_as_string(1, key, current)
@@ -118,7 +127,7 @@ export class AdapterService {
     return condition.activated
   }
 
-  private async incrAndCompare(_event: BaseEvent, _condition: TriggerCondition) {
+  private async incrAndCompare(_event: Event, _condition: TriggerCondition) {
     // run lua script
   }
 

@@ -4,7 +4,7 @@ import { randomUUID } from "crypto"
 import { strict as assert } from "assert"
 
 import { TestContext } from "../module"
-import { Datasource, Scope } from "../../src/models/entities/trigger"
+import { Scope } from "../../src/models/entities/trigger"
 import { startContext, stopContext } from "../helpers/common"
 import { FootballEvents } from "../../src/models/events/football/football-events"
 import { ChainOp, CompareOp } from "../../src/models/entities/trigger-condition"
@@ -18,9 +18,7 @@ import { TriggerSubscribeRequest } from "../../src/models/dto/trigger-subscribe-
 import { ItemResponse } from "../../src/models/dto/response"
 import { TriggerCreateResponse } from "../../src/models/dto/trigger-create-response"
 import { AdapterPushRequest } from "../../src/models/dto/adapter-push-request"
-import { BaseEvent } from "../../src/models/events/base.event"
-
-// import { BaseEvent } from "../../src/models/events/base.event"
+import { Event } from "../../src/models/events/event"
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string
@@ -32,8 +30,8 @@ interface SuitContext extends TestContext {
 }
 
 describe(`AdapterService`, function () {
-  const datasource = Datasource.Sportradar
-  const scope = Scope.Game
+
+  const scope = Scope.SportradarGames
   const scopeId = randomUUID()
   const entity = "moderation"
   const entityId = randomUUID()
@@ -57,7 +55,6 @@ describe(`AdapterService`, function () {
         trigger: {
           name: "...",
           description: "..",
-          datasource,
           scope,
           scopeId,
           entity,
@@ -151,9 +148,8 @@ describe(`AdapterService`, function () {
           value: GameLevel.Start,
           scope,
           scopeId,
-          datasource: Datasource.Sportradar,
           timestamp: Date.now()
-        } as Required<BaseEvent>,
+        } as Required<Event>,
       } as AdapterPushRequest,
     })
   })
@@ -164,10 +160,9 @@ describe(`AdapterService`, function () {
         event: {
           id: randomUUID(),
           name: FootballEvents.GamePointsHome,
-          value: 30,
+          value: "30",
           scope,
           scopeId,
-          datasource: Datasource.Sportradar,
           timestamp: Date.now()
         },
       } as AdapterPushRequest,

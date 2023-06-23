@@ -1,10 +1,10 @@
 // noinspection JSUnusedGlobalSymbols
 
-import { BaseEvent } from "../base.event"
+import { Event } from "../event"
 
 import { FootballEvents } from "./football-events"
 
-export interface FootballGamePointsHomeEvent extends BaseEvent {
+export interface FootballGamePointsHomeEvent extends Event {
   name: FootballEvents.GamePointsHome
-  value: number
+  value: string
 }

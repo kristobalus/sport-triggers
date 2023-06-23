@@ -11,9 +11,6 @@
                 "description": {
                     "type": "string"
                 },
-                "datasource": {
-                    "type": "string"
-                },
                 "scope": {
                     "type": "string"
                 },
@@ -28,7 +25,7 @@
                 }
             },
             "additionalProperties": false,
-            "required": ["name", "description", "datasource", "scope", "scopeId", "entity", "entityId"]
+            "required": ["name", "description","scope", "scopeId", "entity", "entityId"]
         },
         "conditions": {
             "type": "array",
@@ -42,10 +39,17 @@
                         "type": "string"
                     },
                     "target": {
-                        "type": ["string", "number"]
+                        "type": "string"
                     },
                     "chainOperation": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": ["and", "or"]
+                    },
+                    "params": {
+                        "type": "object",
+                        "properties": {
+                            "player": { "type": "string" }
+                        }
                     }
                 },
                 "additionalProperties": false,

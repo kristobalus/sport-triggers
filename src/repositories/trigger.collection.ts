@@ -10,7 +10,7 @@ export function triggerKey(triggerId: string) {
   return `triggers/${triggerId}`
 }
 
-export function triggerSetKey(scope: string, scopeId: string) {
+export function triggerSetByScopeKey(scope: string, scopeId: string) {
   return `scopes/${scope}/${scopeId}/triggers`
 }
 
@@ -34,8 +34,11 @@ export class TriggerCollection {
       try {
         const pipe = this.redis.pipeline()
 
-        pipe.sadd(triggerSetKey(item.scope, item.scopeId), item.id)
-        pipe.sadd(triggerSetByEntityKey(item.entity, item.entityId), item.id)
+        pipe.sadd(triggerSetByScopeKey(item.scope, item.scopeId), item.id)
+        if ( item.entity && item.entityId ) {
+          pipe.sadd(triggerSetByEntityKey(item.entity, item.entityId), item.id)
+        }
+
         const result = await pipe.exec()
 
         assertNoError(result)
@@ -58,7 +61,7 @@ export class TriggerCollection {
   }
 
   async findByScope(scope: string, scopeId: string): Promise<string[]> {
-    return this.redis.smembers(triggerSetKey(scope, scopeId))
+    return this.redis.smembers(triggerSetByScopeKey(scope, scopeId))
   }
 
   async deleteOne(id: string): Promise<boolean> {
@@ -67,7 +70,7 @@ export class TriggerCollection {
 
     const pipe = this.redis.pipeline()
 
-    pipe.srem(triggerSetKey(item.scope, item.scopeId), id)
+    pipe.srem(triggerSetByScopeKey(item.scope, item.scopeId), id)
     pipe.srem(triggerSetByEntityKey(item.entity, item.entityId), id)
     await pipe.exec()
 

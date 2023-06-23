@@ -7,16 +7,18 @@ import IORedis, { Redis } from "ioredis"
 
 import { TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
-import { Datasource, Scope, Trigger } from "../src/models/entities/trigger"
-import { ConditionType, CompareOp } from "../src/models/entities/trigger-condition"
+import { Scope, Trigger } from "../src/models/entities/trigger"
+import { CompareOp } from "../src/models/entities/trigger-condition"
 import { FootballEvents } from "../src/models/events/football/football-events"
+import { EssentialConditionData } from "../src/models/dto/trigger-create-request"
+import { FootballPlayerStates } from "../src/models/events/football/football-player-state.event"
 
 describe("ConditionCollection", function () {
 
-  const scope = Scope.Game
+  const scope = Scope.SportradarGames
   const scopeId = randomUUID()
-  const datasource = Datasource.Sportradar
-  const event = FootballEvents.GamePointsHome
+  const entity = "moderation"
+  const entityId = randomUUID()
 
   const ctx: {
     id?: string
@@ -41,33 +43,63 @@ describe("ConditionCollection", function () {
     ctx.id = await ctx.triggers.add({
       name: "...",
       description: "...",
-      datasource,
       scope,
-      scopeId
+      scopeId,
+      entity,
+      entityId
     } as Partial<Trigger>)
+
     ctx.trigger = await ctx.triggers.getOne(ctx.id)
+
     assert.ok(ctx.id)
     assert.ok(ctx.trigger)
   })
 
-  it('should add conditions', async () => {
+  it(`should add condition for ${FootballEvents.GamePointsHome}`, async () => {
     await ctx.conditions.add(ctx.id, scope, scopeId, [
       {
-        id: randomUUID(),
-        event,
-        type: ConditionType.SetAndCompare,
+        event: FootballEvents.GamePointsHome,
         compare: CompareOp.GreaterOrEqual,
-        target: 30
+        target: "30"
       }
-    ])
+    ] as EssentialConditionData[])
   })
 
-  it('should get triggers by event and scope', async () => {
-    const items = await ctx.conditions.findTriggersByScopeAndEvent(scope, scopeId, event)
+  it(`should add condition for ${FootballEvents.PlayerState}`, async () => {
+    await ctx.conditions.add(ctx.id, scope, scopeId, [
+      {
+        event: FootballEvents.PlayerState,
+        compare: CompareOp.GreaterOrEqual,
+        target: FootballPlayerStates.Touchdown,
+        params: {
+          player: randomUUID()
+        }
+      }
+    ] as EssentialConditionData[])
+  })
+
+  it(`should fail to add condition for ${FootballEvents.PlayerState} with wrong target`, async () => {
+    await assert.rejects(ctx.conditions.add(ctx.id, scope, scopeId, [
+      {
+        event: FootballEvents.PlayerState,
+        compare: CompareOp.Equal,
+        target: "wrong",
+        params: {
+          player: randomUUID()
+        }
+      }
+    ] as EssentialConditionData[]), (_err) => {
+      console.log(_err)
+      return true
+    })
+  })
+
+  it(`should get triggers by event ${FootballEvents.GamePointsHome} and scope`, async () => {
+    const items = await ctx.conditions.findTriggersByScopeAndEvent(scope, scopeId, FootballEvents.GamePointsHome)
     assert.ok(items.length)
   })
 
-  it('should get conditions by trigger', async () => {
+  it('should get conditions by trigger id', async () => {
     const items = await ctx.conditions.getByTriggerId(ctx.id)
     assert.ok(items.length)
   })

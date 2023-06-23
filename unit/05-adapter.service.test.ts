@@ -4,7 +4,7 @@ import { Redis } from "ioredis"
 import pino from "pino"
 import pretty from "pino-pretty"
 
-import { Datasource, Scope } from "../src/models/entities/trigger"
+import { Scope } from "../src/models/entities/trigger"
 import { AdapterService } from "../src/services/adapter/adapter.service"
 import { AMQPTransport, Publish } from "@microfleet/transport-amqp"
 import { randomUUID } from "crypto"
@@ -23,8 +23,7 @@ import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-r
 
 describe("AdapterService", function () {
 
-  const scope = Scope.Game
-  const datasource = Datasource.Sportradar
+  const scope = Scope.SportradarGames
   const scopeId = randomUUID()
 
   const ctx: {
@@ -45,7 +44,7 @@ describe("AdapterService", function () {
 
     const log = pino({
       name: "AdapterService",
-      level: "info",
+      level: "debug",
     }, pretty({
       levelFirst: true,
       colorize: true,
@@ -78,7 +77,6 @@ describe("AdapterService", function () {
       const triggerData = {
         name: "...",
         description: "...",
-        datasource,
         scope,
         scopeId,
       } as EssentialTriggerData
@@ -87,7 +85,7 @@ describe("AdapterService", function () {
         {
           event: FootballEvents.GamePointsHome,
           compare: CompareOp.GreaterOrEqual,
-          target: 30,
+          target: "30",
         },
       ] as EssentialConditionData[]
 
@@ -106,8 +104,7 @@ describe("AdapterService", function () {
       const event = {
         name: FootballEvents.GamePointsHome,
         id: randomUUID(),
-        value: 20,
-        datasource,
+        value: "20",
         scope,
         scopeId,
         timestamp: Date.now(),
@@ -121,9 +118,8 @@ describe("AdapterService", function () {
 
       const event = {
         name: FootballEvents.GamePointsHome,
-        value: 40,
+        value: "40",
         id: randomUUID(),
-        datasource,
         scope,
         scopeId,
         timestamp: Date.now(),
@@ -147,7 +143,6 @@ describe("AdapterService", function () {
       const triggerData = {
         name: "...",
         description: "...",
-        datasource,
         scope,
         scopeId,
       } as EssentialTriggerData
@@ -180,8 +175,7 @@ describe("AdapterService", function () {
       const event = {
         name: FootballEvents.GamePointsHome,
         id: randomUUID(),
-        value: 20,
-        datasource,
+        value: "20",
         scope,
         scopeId,
         timestamp: Date.now(),
@@ -197,9 +191,8 @@ describe("AdapterService", function () {
 
       const event = {
         name: FootballEvents.GamePointsHome,
-        value: 40,
+        value: "40",
         id: randomUUID(),
-        datasource,
         scope,
         scopeId,
         timestamp: Date.now(),
@@ -217,7 +210,6 @@ describe("AdapterService", function () {
         name: FootballEvents.GameLevel,
         value: GameLevel.Start,
         id: randomUUID(),
-        datasource,
         scope,
         scopeId,
         timestamp: Date.now(),
@@ -235,7 +227,6 @@ describe("AdapterService", function () {
         name: FootballEvents.GameLevel,
         value: GameLevel.End,
         id: randomUUID(),
-        datasource,
         scope,
         scopeId,
         timestamp: Date.now(),

@@ -26,14 +26,20 @@ interface SuitContext extends TestContext {
   subscriptionId?: string
 }
 
-describe(`StudioService`, function () {
+describe(`Condition params test`, function () {
 
   const scope = Scope.SportradarGames
   const scopeId = randomUUID()
+
+  // trigger-related entity
   const entity = "moderation"
+  // trigger-related entity id
   const entityId = randomUUID()
-  const subEntity = "question"
-  const subEntityId = "1"
+
+  // subscription-related entity
+  const subscribedEntity = "question"
+  // subscription-related entity id
+  const subscribedEntityId = "1"
 
   const ctx: SuitContext = {}
 
@@ -52,7 +58,7 @@ describe(`StudioService`, function () {
     await stopContext(ctx)
   })
 
-  it(`should create trigger`, async () => {
+  it(`should create trigger for player events`, async () => {
     const triggerData = {
       name: "...",
       description: "..",
@@ -110,8 +116,8 @@ describe(`StudioService`, function () {
           triggerId: ctx.triggerId, subscription: {
             route: "interactive.question.activate",
             payload: { foo: "bar", id: "1" },
-            entity: subEntity,
-            entityId: subEntityId,
+            entity: subscribedEntity,
+            entityId: subscribedEntityId,
           },
         } as TriggerSubscribeRequest)
 
@@ -142,7 +148,7 @@ describe(`StudioService`, function () {
     const prefix = ctx.service.config.routerAmqp.prefix
     const response: ListResponse<TriggerSubscription> = await ctx.service.amqp
       .publishAndWait(`${prefix}.studio.subscription.list`,
-        { entity: subEntity, entityId: subEntityId  } as SubscriptionListRequest)
+        { entity: subscribedEntity, entityId: subscribedEntityId  } as SubscriptionListRequest)
 
     assert.ok(response)
     assert.ok(response.data)

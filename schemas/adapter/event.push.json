@@ -8,9 +8,6 @@
         "id": {
           "type": "string"
         },
-        "datasource": {
-          "type": "string"
-        },
         "scope": {
           "type": "string"
         },
@@ -30,7 +27,7 @@
           "type": "number"
         }
       },
-      "required": ["id","datasource","scope","scopeId","name","value","timestamp"]
+      "required": ["id","scope","scopeId","name","value","timestamp"]
     }
   },
   "additionalProperties": true,

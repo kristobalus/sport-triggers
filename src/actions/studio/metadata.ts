@@ -1,7 +1,7 @@
 import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
 
 import { FleetApp } from "../../fleet-app"
-import { EventMetadata, metadata } from "../../models/event-metadata"
+import { EventMetadata, metadata } from "../../models/events/event-metadata"
 import { Response } from "../../models/dto/response"
 
 async function Handler(this: FleetApp, _request: ServiceRequest,): Promise<Response<Record<string, EventMetadata>>> {

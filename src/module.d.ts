@@ -8,7 +8,7 @@ declare module 'ioredis' {
     set_and_compare(
       numberOfKeys: 1,
       conditionKey: string,
-      currentValue: number,
+      currentValue: string,
     ): Promise<[ number, number ]>
     set_and_compare_as_string(
       numberOfKeys: 1,

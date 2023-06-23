@@ -6,21 +6,20 @@ import pino from "pino"
 import pretty from "pino-pretty"
 
 import { StudioService } from "../src/services/studio/studio.service"
-import { EssentialTriggerData } from "../src/models/dto/trigger-create-request"
-import { ConditionType, CompareOp, TriggerCondition } from "../src/models/entities/trigger-condition"
+import { EssentialConditionData, EssentialTriggerData } from "../src/models/dto/trigger-create-request"
+import { ConditionType, CompareOp } from "../src/models/entities/trigger-condition"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { randomUUID } from "crypto"
 import { FootballEvents } from "../src/models/events/football/football-events"
 import { GameLevel } from "../src/models/events/football/football-game-level.event"
-import { Datasource } from "../src/models/entities/trigger"
-import { CreateSubscriptionData } from "../src/models/entities/trigger-subscription"
 import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subscription.collection"
+import { Scope } from "../src/models/entities/trigger"
+import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
 
 describe("StudioService", function () {
 
-  const datasource = Datasource.Sportradar
-  const scope = "game"
+  const scope = Scope.SportradarGames
   const scopeId = randomUUID()
 
   const ctx: {
@@ -60,7 +59,6 @@ describe("StudioService", function () {
     const triggerData = {
       name: "...",
       description: "..",
-      datasource,
       scope,
       scopeId
     } as EssentialTriggerData
@@ -68,11 +66,10 @@ describe("StudioService", function () {
     const conditions = [
       {
         event: FootballEvents.GameLevel,
-        type: ConditionType.SetAndCompareAsString,
         compare: CompareOp.Equal,
         target: GameLevel.Start
       }
-    ] as Partial<TriggerCondition>[]
+    ] as EssentialConditionData[]
 
     ctx.triggerId = await ctx.service.createTrigger(triggerData, conditions)
     assert.ok(ctx.triggerId)
@@ -101,7 +98,7 @@ describe("StudioService", function () {
     const params = {
       route: "some.route",
       payload: { foo: "bar" }
-    } as CreateSubscriptionData
+    } as EssentialSubscriptionData
 
     const id = await ctx.service.subscribeTrigger(ctx.triggerId, params)
 

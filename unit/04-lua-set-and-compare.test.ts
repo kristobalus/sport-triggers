@@ -3,7 +3,7 @@
 import { Redis } from "ioredis"
 import { conditionKey, TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
-import { Datasource, Scope, Trigger } from "../src/models/entities/trigger"
+import { Scope, Trigger } from "../src/models/entities/trigger"
 import { randomUUID } from "crypto"
 import { CompareOp, ConditionType } from "../src/models/entities/trigger-condition"
 import { FootballEvents } from "../src/models/events/football/football-events"
@@ -12,8 +12,7 @@ import { initStandaloneRedis } from "./helper/init-standalone-redis"
 
 describe("set_and_compare.lua", function () {
 
-  const datasource = Datasource.Sportradar
-  const scope = Scope.Game
+  const scope = Scope.SportradarGames
   const scopeId = randomUUID()
   const event = FootballEvents.GamePointsHome
 
@@ -35,7 +34,6 @@ describe("set_and_compare.lua", function () {
     ctx.id = await ctx.triggers.add({
       name: "...",
       description: "...",
-      datasource,
       scope,
       scopeId,
     } as Partial<Trigger>)
@@ -60,7 +58,7 @@ describe("set_and_compare.lua", function () {
   })
 
   it(`should not activate condition when compare failed`, async () => {
-    const [ result, append  ] = await ctx.redis.set_and_compare(1, ctx.key, 10)
+    const [ result, append  ] = await ctx.redis.set_and_compare(1, ctx.key, "10")
     assert.equal(result, 0)
     assert.equal(append, 1)
 
@@ -69,7 +67,7 @@ describe("set_and_compare.lua", function () {
   })
 
   it(`should activated condition when compare successful`, async () => {
-    const [ result, append ] = await ctx.redis.set_and_compare(1, ctx.key, 40)
+    const [ result, append ] = await ctx.redis.set_and_compare(1, ctx.key, "40")
     assert.equal(result, 1)
     assert.equal(append, 1)
 
@@ -78,7 +76,7 @@ describe("set_and_compare.lua", function () {
   })
 
   it(`once activated condition is not changed by further events`, async () => {
-    const [ result, append ] = await ctx.redis.set_and_compare(1, ctx.key, 10)
+    const [ result, append ] = await ctx.redis.set_and_compare(1, ctx.key, "10")
     assert.equal(result, 1)
     assert.equal(append, 0)
 

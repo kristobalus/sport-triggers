@@ -1,5 +1,5 @@
 
-import { BaseEvent } from "../base.event"
+import { Event } from "../event"
 
 import { FootballEvents } from "./football-events"
 
@@ -13,7 +13,7 @@ export enum GameLevel {
   UnderReview="under_review"
 }
 
-export interface FootballGameLevelEvent extends BaseEvent {
+export interface FootballGameLevelEvent extends Event {
   name: FootballEvents.GameLevel
   value: GameLevel
 }

@@ -6,7 +6,7 @@ import { Redis } from "ioredis"
 
 import { conditionKey, TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
-import { Datasource, Scope, Trigger } from "../src/models/entities/trigger"
+import { Scope, Trigger } from "../src/models/entities/trigger"
 import { CompareOp, ConditionType } from "../src/models/entities/trigger-condition"
 import { FootballEvents } from "../src/models/events/football/football-events"
 import { GameLevel } from "../src/models/events/football/football-game-level.event"
@@ -14,8 +14,7 @@ import { initStandaloneRedis } from "./helper/init-standalone-redis"
 
 describe("set_and_compare_as_string.lua", function () {
 
-  const datasource = Datasource.Sportradar
-  const scope = Scope.Game
+  const scope = Scope.SportradarGames
   const scopeId = randomUUID()
 
   const ctx: {
@@ -36,7 +35,6 @@ describe("set_and_compare_as_string.lua", function () {
     ctx.id = await ctx.triggers.add({
       name: "...",
       description: "...",
-      datasource,
       scope,
       scopeId,
     } as Partial<Trigger>)
