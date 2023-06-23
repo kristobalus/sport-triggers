@@ -1,0 +1,7 @@
+{
+    "$id": "studio.trigger.subscribe",
+    "type": "object",
+    "additionalProperties": true,
+    "required": [],
+    "properties": {}
+}

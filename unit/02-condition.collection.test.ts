@@ -8,7 +8,7 @@ import IORedis, { Redis } from "ioredis"
 import { TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { Datasource, Scope, Trigger } from "../src/models/entities/trigger"
-import { ConditionTypes, CompareOp } from "../src/models/entities/trigger-condition"
+import { ConditionType, CompareOp } from "../src/models/entities/trigger-condition"
 import { FootballEvents } from "../src/models/events/football/football-events"
 
 describe("ConditionCollection", function () {
@@ -45,7 +45,7 @@ describe("ConditionCollection", function () {
       scope,
       scopeId
     } as Partial<Trigger>)
-    ctx.trigger = await ctx.triggers.getOneById(ctx.id)
+    ctx.trigger = await ctx.triggers.getOne(ctx.id)
     assert.ok(ctx.id)
     assert.ok(ctx.trigger)
   })
@@ -55,7 +55,7 @@ describe("ConditionCollection", function () {
       {
         id: randomUUID(),
         event,
-        type: ConditionTypes.SetAndCompare,
+        type: ConditionType.SetAndCompare,
         compare: CompareOp.GreaterOrEqual,
         target: 30
       }

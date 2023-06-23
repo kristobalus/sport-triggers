@@ -1,0 +1,58 @@
+{
+    "$id": "studio.trigger.create",
+    "type": "object",
+    "properties": {
+        "trigger": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "datasource": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "scopeId": {
+                    "type": "string"
+                },
+                "entity": {
+                    "type": "string"
+                },
+                "entityId": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false,
+            "required": ["name", "description", "datasource", "scope", "scopeId", "entity", "entityId"]
+        },
+        "conditions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "event": {
+                        "type": "string"
+                    },
+                    "compare": {
+                        "type": "string"
+                    },
+                    "target": {
+                        "type": ["string", "number"]
+                    },
+                    "chainOperation": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false,
+                "required": ["event", "compare", "chainOperation"]
+            }
+        }
+    },
+    "additionalProperties": false,
+    "required": ["trigger", "conditions"]
+}

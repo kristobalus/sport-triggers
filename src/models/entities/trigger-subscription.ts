@@ -3,6 +3,8 @@ export interface TriggerSubscription {
   id: string
   triggerId: string
   route: string
+  entity: string
+  entityId: string
   // JSON document
   payload: Record<string, any>
   options: Record<string, any>

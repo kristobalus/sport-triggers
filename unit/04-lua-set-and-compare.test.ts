@@ -1,18 +1,16 @@
 // start local redis instance (dir helper) to start test from IDE, faster than full integration tests via mdep
 
-import IORedis, { Redis, RedisOptions } from "ioredis"
-
-import path from "path"
+import { Redis } from "ioredis"
 import { conditionKey, TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { Datasource, Scope, Trigger } from "../src/models/entities/trigger"
 import { randomUUID } from "crypto"
-import * as fs from "fs"
-import { CompareOp, ConditionTypes } from "../src/models/entities/trigger-condition"
+import { CompareOp, ConditionType } from "../src/models/entities/trigger-condition"
 import { FootballEvents } from "../src/models/events/football/football-events"
 import assert from "assert"
+import { initStandaloneRedis } from "./helper/init-standalone-redis"
 
-describe("Lua: set_and_compare", function () {
+describe("set_and_compare.lua", function () {
 
   const datasource = Datasource.Sportradar
   const scope = Scope.Game
@@ -30,13 +28,7 @@ describe("Lua: set_and_compare", function () {
 
   before(async () => {
 
-    ctx.redis = new IORedis({ keyPrefix: "{triggers}" } as RedisOptions)
-    ctx.redis.defineCommand("set_and_compare", {
-      numberOfKeys: 1,
-      lua: fs.readFileSync(path.resolve(__dirname, '../lua/set_and_compare.lua')).toString("utf-8"),
-    })
-    await ctx.redis.flushall()
-
+    ctx.redis = await initStandaloneRedis()
     ctx.triggers = new TriggerCollection(ctx.redis)
     ctx.conditions = new TriggerConditionCollection(ctx.redis)
 
@@ -47,13 +39,13 @@ describe("Lua: set_and_compare", function () {
       scope,
       scopeId,
     } as Partial<Trigger>)
-    ctx.trigger = await ctx.triggers.getOneById(ctx.id)
+    ctx.trigger = await ctx.triggers.getOne(ctx.id)
 
     await ctx.conditions.add(ctx.id, scope, scopeId, [
       {
         id: randomUUID(),
         event,
-        type: ConditionTypes.SetAndCompare,
+        type: ConditionType.SetAndCompare,
         compare: CompareOp.GreaterOrEqual,
         target: 30,
       },
@@ -67,25 +59,28 @@ describe("Lua: set_and_compare", function () {
     ctx.redis.disconnect()
   })
 
-  it(`should not activate condition when compare failure`, async () => {
-    const result = await ctx.redis.set_and_compare(ctx.key, 10)
+  it(`should not activate condition when compare failed`, async () => {
+    const [ result, append  ] = await ctx.redis.set_and_compare(1, ctx.key, 10)
     assert.equal(result, 0)
+    assert.equal(append, 1)
 
     const [condition] = await ctx.conditions.getByTriggerId(ctx.id)
     assert.equal(condition.activated, false)
   })
 
-  it(`should activated condition by compare success`, async () => {
-    const result = await ctx.redis.set_and_compare(ctx.key, 40)
+  it(`should activated condition when compare successful`, async () => {
+    const [ result, append ] = await ctx.redis.set_and_compare(1, ctx.key, 40)
     assert.equal(result, 1)
+    assert.equal(append, 1)
 
     const [condition] = await ctx.conditions.getByTriggerId(ctx.id)
     assert.equal(condition.activated, true)
   })
 
   it(`once activated condition is not changed by further events`, async () => {
-    const result = await ctx.redis.set_and_compare(ctx.key, 10)
+    const [ result, append ] = await ctx.redis.set_and_compare(1, ctx.key, 10)
     assert.equal(result, 1)
+    assert.equal(append, 0)
 
     const [condition] = await ctx.conditions.getByTriggerId(ctx.id)
     assert.equal(condition.activated, true)

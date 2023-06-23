@@ -1,0 +1,11 @@
+{
+    "$id": "studio.trigger.delete",
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string"
+        }
+    },
+    "additionalProperties": false,
+    "required": ["id"]
+}

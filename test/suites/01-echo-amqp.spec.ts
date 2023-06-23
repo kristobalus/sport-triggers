@@ -1,18 +1,18 @@
 
 import { strict as assert } from "assert"
 
-import { init, stop } from "../helpers/common"
+import { startContext, stopContext } from "../helpers/common"
 import { TestContext } from "../module"
 
 describe(`echo test via amqp plugin (rabbitmq)`, () => {
   const ctx: TestContext = {} as TestContext
 
   before(async () => {
-    await init(ctx)
+    await startContext(ctx)
   })
 
   after(async () => {
-    await stop(ctx)
+    await stopContext(ctx)
   })
 
   it('should get pong', async () => {
@@ -27,7 +27,7 @@ describe(`echo test via amqp plugin (rabbitmq)`, () => {
 
   it('should get 403 error', async () => {
     assert(ctx.service, `service was not started`)
-    assert(ctx.request, `context has no got instance`)
+    assert(ctx.request, `context has no "got" instance`)
     const prefix = ctx.service.config.routerAmqp.prefix
     const req = ctx.service.amqp.publishAndWait(`${prefix}.echo`, { ping: false })
 

@@ -1,7 +1,7 @@
 import { ConnectorsTypes } from "@microfleet/core"
 
 import { FleetApp } from "../fleet-app"
-import { StudioService } from "../services/studio.service"
+import { StudioService } from "../services/studio/studio.service"
 
 let instance: StudioService
 

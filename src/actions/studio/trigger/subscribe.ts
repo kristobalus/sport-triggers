@@ -2,19 +2,27 @@
 import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
 
 import { FleetApp } from "../../../fleet-app"
+import { TriggerSubRequest } from "../../../models/dto/trigger-sub-request"
+import { ItemResponse } from "../../../models/dto/response"
 
-async function SubscribeHandler(this: FleetApp, request: ServiceRequest): Promise<any> {
-  const { data } = request.params as any
+async function Handler(this: FleetApp, request: ServiceRequest): Promise<ItemResponse> {
+  const { triggerId, subscription } = request.params as TriggerSubRequest
 
   const { studioService } = this
+  const id = await studioService.subscribeTrigger(triggerId, subscription)
 
-  await studioService.subscribeTrigger(data)
+  this.log.debug({ request: {  triggerId, subscription }, id }, "subscribe for trigger")
 
-  return { ok: true }
+  return {
+    data: {
+      id,
+      type: "subscription"
+    }
+  } as ItemResponse
 }
 
-SubscribeHandler.schema = 'trigger.subscribe'
-SubscribeHandler.transports = [ActionTransport.amqp]
+Handler.schema = 'studio.trigger.subscribe'
+Handler.transports = [ActionTransport.amqp]
 
-export = SubscribeHandler
+export = Handler
 

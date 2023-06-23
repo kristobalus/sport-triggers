@@ -1,0 +1,24 @@
+{
+    "$id": "studio.subscription.list",
+    "type": "object",
+    "properties": {
+        "triggerId": {
+            "type": "string"
+        },
+        "entity": {
+            "type": "string"
+        },
+        "entityId": {
+            "type": "string"
+        }
+    },
+    "anyOf": [
+        {
+            "required": ["triggerId"]
+        },
+        {
+            "required": ["entity", "entityId"]
+        }
+    ],
+    "additionalProperties": false
+}
