@@ -1,7 +1,38 @@
 {
   "$id": "adapter.event.push",
   "type": "object",
-  "properties": {},
+  "properties": {
+    "event": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "datasource": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        },
+        "scopeId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "timestamp": {
+          "type": "number"
+        }
+      },
+      "required": ["id","datasource","scope","scopeId","name","value","timestamp"]
+    }
+  },
   "additionalProperties": true,
-  "required": []
+  "required": ["event"]
 }

@@ -10,16 +10,16 @@ import { AMQPTransport, Publish } from "@microfleet/transport-amqp"
 import { randomUUID } from "crypto"
 import { StudioService } from "../src/services/studio/studio.service"
 import assert from "assert"
-import { EssentialTriggerData } from "../src/models/dto/trigger-create-request"
-import { CompareOp, ConditionType, TriggerCondition } from "../src/models/entities/trigger-condition"
+import { EssentialConditionData, EssentialTriggerData } from "../src/models/dto/trigger-create-request"
+import { CompareOp } from "../src/models/entities/trigger-condition"
 import { TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { FootballGamePointsHomeEvent } from "../src/models/events/football/football-game-points-home.event"
 import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subscription.collection"
-import { CreateSubscriptionData } from "../src/models/entities/trigger-subscription"
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
 import { FootballEvents } from "../src/models/events/football/football-events"
 import { FootballGameLevelEvent, GameLevel } from "../src/models/events/football/football-game-level.event"
+import { EssentialSubscriptionData } from "../src/models/dto/trigger-sub-request"
 
 describe("AdapterService", function () {
 
@@ -86,18 +86,17 @@ describe("AdapterService", function () {
       const triggerConditions = [
         {
           event: FootballEvents.GamePointsHome,
-          type: ConditionType.SetAndCompare,
           compare: CompareOp.GreaterOrEqual,
           target: 30,
         },
-      ] as Partial<TriggerCondition>[]
+      ] as EssentialConditionData[]
 
       const triggerId = await ctx.studioService.createTrigger(triggerData, triggerConditions)
 
       const subscriptionData = {
         route: "some.route",
         payload: { foo: "bar" }
-      } as CreateSubscriptionData
+      } as EssentialSubscriptionData
 
       await ctx.studioService.subscribeTrigger(triggerId, subscriptionData)
     })
@@ -156,24 +155,22 @@ describe("AdapterService", function () {
       const triggerConditions = [
         {
           event: FootballEvents.GamePointsHome,
-          type: ConditionType.SetAndCompare,
           compare: CompareOp.GreaterOrEqual,
           target: 30,
         },
         {
           event: FootballEvents.GameLevel,
-          type: ConditionType.SetAndCompareAsString,
           compare: CompareOp.Equal,
           target: GameLevel.End,
         },
-      ] as Partial<TriggerCondition>[]
+      ] as EssentialConditionData[]
 
       triggerId = await ctx.studioService.createTrigger(triggerData, triggerConditions)
 
       const subscriptionData = {
         route: "some.route2",
         payload: { foo: "bar" }
-      } as CreateSubscriptionData
+      } as EssentialSubscriptionData
 
       await ctx.studioService.subscribeTrigger(triggerId, subscriptionData)
     })

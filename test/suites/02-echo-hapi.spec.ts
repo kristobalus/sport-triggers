@@ -5,14 +5,14 @@ import { strict as assert } from "assert"
 
 import { HTTPError } from "got"
 
-import { init, stop } from "../helpers/common"
+import { startContext, stopContext } from "../helpers/common"
 import { TestContext } from "../module"
 
 describe(`echo test via hapi (http)`, () => {
   const ctx: TestContext = {} as TestContext
 
   before(async () => {
-    await init(ctx, {
+    await startContext(ctx, {
       hapi: {
         server: {
           debug: {
@@ -25,7 +25,7 @@ describe(`echo test via hapi (http)`, () => {
   })
 
   after(async () => {
-    await stop(ctx)
+    await stopContext(ctx)
   })
 
   it('should get pong via http', async () => {
@@ -49,7 +49,7 @@ describe(`echo test via hapi (http)`, () => {
 
     await assert.rejects(req, (err: HTTPError) => {
       assert.equal(err.response.statusCode, 403)
-      
+
       return true
     })
   })

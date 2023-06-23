@@ -7,5 +7,6 @@ export const validator: Partial<CoreOptions['validator']> = {
   ajv: {
     validateSchema: true,
     useDefaults: true,
+    allowUnionTypes: true
   }
 }

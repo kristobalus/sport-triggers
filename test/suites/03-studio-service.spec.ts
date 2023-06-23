@@ -3,8 +3,8 @@ import { randomUUID } from "crypto"
 
 import { TestContext } from "../module"
 import { Datasource, Scope } from "../../src/models/entities/trigger"
-import { Response, ListResponse, ItemResponse } from "../../src/models/dto/response"
-import { init, stop } from "../helpers/common"
+import { ListResponse, ItemResponse } from "../../src/models/dto/response"
+import { startContext, stopContext } from "../helpers/common"
 import { FootballEvents } from "../../src/models/events/football/football-events"
 import { ChainOp, CompareOp } from "../../src/models/entities/trigger-condition"
 import {
@@ -38,7 +38,7 @@ describe(`StudioService`, function () {
   const ctx: SuitContext = {}
 
   before(async () => {
-    await init(ctx, {
+    await startContext(ctx, {
       logger: {
         debug: true,
         options: {
@@ -49,7 +49,7 @@ describe(`StudioService`, function () {
   })
 
   after(async () => {
-    await stop(ctx)
+    await stopContext(ctx)
   })
 
   it(`should create trigger`, async () => {
@@ -75,7 +75,7 @@ describe(`StudioService`, function () {
 
     const prefix = ctx.service.config.routerAmqp.prefix
 
-    const response: Response<TriggerCreateResponse> = await ctx.service.amqp.publishAndWait(`${prefix}.studio.trigger.create`, {
+    const response: ItemResponse<TriggerCreateResponse> = await ctx.service.amqp.publishAndWait(`${prefix}.studio.trigger.create`, {
       trigger: triggerData,
       conditions: conditionData,
     } as TriggerCreateRequest)
@@ -83,6 +83,8 @@ describe(`StudioService`, function () {
     assert.ok(response)
     assert.ok(response.data)
     assert.ok(response.data.id)
+    assert.ok(response.data.type)
+    assert.equal(response.data.type, "trigger")
 
     ctx.triggerId = response.data.id
   })
@@ -94,7 +96,12 @@ describe(`StudioService`, function () {
 
     assert.ok(response)
     assert.ok(response.data)
+    assert.ok(response.data.length)
     assert.equal(response.data.length, 1)
+
+    const [ item ] = response.data
+    assert.ok(item.type)
+    assert.equal(item.type, "trigger")
   })
 
   it(`should subscribe for trigger`, async () => {
@@ -113,6 +120,8 @@ describe(`StudioService`, function () {
     assert.ok(response)
     assert.ok(response.data)
     assert.ok(response.data.id)
+    assert.ok(response.data.type)
+    assert.equal(response.data.type, "subscription")
 
     ctx.subscriptionId = response.data.id
   })
@@ -141,6 +150,10 @@ describe(`StudioService`, function () {
     assert.ok(response.data.length)
 
     const [ item ] = response.data
+    assert.ok(item.type)
+    assert.ok(item.id)
+    assert.equal(item.type, "subscription")
+    assert.equal(item.id, ctx.subscriptionId)
     assert.equal(item.attributes.id, ctx.subscriptionId)
   })
 
@@ -162,7 +175,9 @@ describe(`StudioService`, function () {
 
     assert.ok(response)
     assert.ok(response.data)
-    assert.equal(response.data.type, "trigger.deleted")
+    assert.ok(response.data.id)
+    assert.ok(response.data.type)
+    assert.equal(response.data.type, "trigger")
     assert.equal(response.data.id, ctx.triggerId)
   })
 

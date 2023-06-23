@@ -65,6 +65,7 @@ export class AdapterService {
   }
 
   private async evaluateCondition(event: BaseEvent, condition: TriggerCondition) {
+    this.log.debug({ event, condition }, `evaluating trigger condition`)
     if (condition.type === ConditionType.SetAndCompare) {
 
       await this.setAndCompare(event, condition)
@@ -86,12 +87,17 @@ export class AdapterService {
     const key = conditionKey(condition.id)
     const current = event.value as number
 
-    const [ activated, append ] = await this.redis.set_and_compare(key, current)
-    condition.activated = !!activated
+    try {
+      const [ activated, append ] = await this.redis.set_and_compare(1, key, current)
+      condition.activated = !!activated
 
-    if ( append ) {
-      condition.current = current
-      await this.conditionCollection.appendToEventLog(condition.id, event)
+      if ( append ) {
+        condition.current = current
+        await this.conditionCollection.appendToEventLog(condition.id, event)
+      }
+      this.log.debug({ condition }, `evaluation result`)
+    } catch (err) {
+      this.log.fatal({ err , key, current }, 'failed to compare')
     }
 
     return condition.activated
@@ -99,14 +105,20 @@ export class AdapterService {
 
   private async setAndCompareAsString(event: BaseEvent, condition: TriggerCondition) {
     const key = conditionKey(condition.id)
-    const value = event.value as string
+    const current = event.value as string
 
-    const [ result, append ] = await this.redis.set_and_compare_as_string(key, value)
+    try {
+      const [ result, append ] = await this.redis.set_and_compare_as_string(1, key, current)
+      condition.activated = !!result
 
-    condition.activated = !!result
+      if ( append ){
+        await this.conditionCollection.appendToEventLog(condition.id, event)
+      }
 
-    if ( append ){
-      await this.conditionCollection.appendToEventLog(condition.id, event)
+      this.log.debug({ condition }, `evaluation result`)
+
+    } catch (err) {
+      this.log.fatal({ err, key, value: current }, "failed to compare")
     }
 
     return condition.activated
@@ -124,6 +136,7 @@ export class AdapterService {
       const { route, payload, options } = subscription
 
       await this.amqp.publishAndWait(route, { ...payload }, { ...options })
+      this.log.debug({ route, payload, options, triggerId, subscriptionId: id }, `message sent`)
     }
   }
 }

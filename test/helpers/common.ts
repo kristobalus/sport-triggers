@@ -6,7 +6,7 @@ import { TestContext } from '../module'
 import { createFleetApp } from "../../src/fleet-app"
 import { RouterHapiPluginConfig } from "@microfleet/plugin-router-hapi";
 
-export async function init(ctx: TestContext, opts: Partial<CoreOptions> = {}) {
+export async function startContext(ctx: TestContext, opts: Partial<CoreOptions> = {}) {
     ctx.service = await createFleetApp(opts)
 
     const { config } = ctx.service
@@ -19,7 +19,7 @@ export async function init(ctx: TestContext, opts: Partial<CoreOptions> = {}) {
     })
 }
 
-export async function stop(ctx: TestContext) {
+export async function stopContext(ctx: TestContext) {
     await ctx.service?.close()
     ctx.service = undefined
     ctx.request = undefined

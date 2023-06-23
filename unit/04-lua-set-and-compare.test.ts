@@ -60,7 +60,7 @@ describe("set_and_compare.lua", function () {
   })
 
   it(`should not activate condition when compare failed`, async () => {
-    const [ result, append  ] = await ctx.redis.set_and_compare(ctx.key, 10)
+    const [ result, append  ] = await ctx.redis.set_and_compare(1, ctx.key, 10)
     assert.equal(result, 0)
     assert.equal(append, 1)
 
@@ -69,7 +69,7 @@ describe("set_and_compare.lua", function () {
   })
 
   it(`should activated condition when compare successful`, async () => {
-    const [ result, append ] = await ctx.redis.set_and_compare(ctx.key, 40)
+    const [ result, append ] = await ctx.redis.set_and_compare(1, ctx.key, 40)
     assert.equal(result, 1)
     assert.equal(append, 1)
 
@@ -78,7 +78,7 @@ describe("set_and_compare.lua", function () {
   })
 
   it(`once activated condition is not changed by further events`, async () => {
-    const [ result, append ] = await ctx.redis.set_and_compare(ctx.key, 10)
+    const [ result, append ] = await ctx.redis.set_and_compare(1, ctx.key, 10)
     assert.equal(result, 1)
     assert.equal(append, 0)
 

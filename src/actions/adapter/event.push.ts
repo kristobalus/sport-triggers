@@ -2,9 +2,10 @@
 import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
 
 import { FleetApp } from "../../fleet-app"
+import { AdapterPushDto } from "../../models/dto/adapter.push.dto"
 
-async function EventPushHandler(this: FleetApp, request: ServiceRequest): Promise<any> {
-  const { event } = request.params as any
+async function Handler(this: FleetApp, request: ServiceRequest): Promise<any> {
+  const { event } = request.params as AdapterPushDto
 
   const { adapterService } = this
 
@@ -13,8 +14,8 @@ async function EventPushHandler(this: FleetApp, request: ServiceRequest): Promis
   return { ok: true }
 }
 
-EventPushHandler.schema = 'adapter.event.push'
-EventPushHandler.transports = [ActionTransport.http]
+Handler.schema = 'adapter.event.push'
+Handler.transports = [ActionTransport.http]
 
-export = EventPushHandler
+export = Handler
 

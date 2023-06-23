@@ -1,18 +1,18 @@
 
 import { strict as assert } from "assert"
 
-import { init, stop } from "../helpers/common"
+import { startContext, stopContext } from "../helpers/common"
 import { TestContext } from "../module"
 
 describe(`echo test via amqp plugin (rabbitmq)`, () => {
   const ctx: TestContext = {} as TestContext
 
   before(async () => {
-    await init(ctx)
+    await startContext(ctx)
   })
 
   after(async () => {
-    await stop(ctx)
+    await stopContext(ctx)
   })
 
   it('should get pong', async () => {

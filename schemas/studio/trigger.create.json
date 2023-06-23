@@ -42,7 +42,7 @@
                         "type": "string"
                     },
                     "target": {
-                        "type": "string"
+                        "type": ["string", "number"]
                     },
                     "chainOperation": {
                         "type": "string"
