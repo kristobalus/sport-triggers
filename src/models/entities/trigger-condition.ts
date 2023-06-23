@@ -41,7 +41,7 @@ export interface TriggerCondition {
   // true when compare(target, current) == true
   activated?: boolean
   // log of events consumed by condition
-  log?: Record<string, BaseEvent>
+  log?: BaseEvent[]
   // order of occurrence of condition in array of conditions
   chainOrder: number
   // logical operation on condition when combining multiple conditions together

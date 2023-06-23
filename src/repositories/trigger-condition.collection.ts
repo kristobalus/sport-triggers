@@ -84,7 +84,7 @@ export class TriggerConditionCollection {
     assertNoError(results)
   }
 
-  async getByTriggerId(triggerId: string): Promise<TriggerCondition[]> {
+  async getByTriggerId(triggerId: string, options: { showLog?: boolean } = {}): Promise<TriggerCondition[]> {
     const ids = await this.redis.smembers(conditionSetByTriggerKey(triggerId))
     const pipe = this.redis.pipeline()
 
@@ -101,6 +101,9 @@ export class TriggerConditionCollection {
       if ( condition.type == ConditionType.SetAndCompare ) {
         condition.current = parseFloat(condition.current as string)
         condition.target = parseFloat(condition.target as string)
+      }
+      if (options.showLog) {
+        condition.log = await this.getEventLog(condition.id)
       }
     }
 

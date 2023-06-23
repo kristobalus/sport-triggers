@@ -4,12 +4,12 @@ import { FleetApp } from "../../../fleet-app"
 import { ListResponse, toResponseItem } from "../../../models/dto/response"
 import { TriggerWithConditions } from "../../../models/dto/trigger-with-conditions"
 
-async function ListHandler(this: FleetApp, request: ServiceRequest,): Promise<ListResponse<TriggerWithConditions>> {
+async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ListResponse<TriggerWithConditions>> {
   const { entity, entityId } = request.params as any
 
   const { studioService } = this
 
-  const list = await studioService.getTriggerList(entity, entityId, true)
+  const list = await studioService.getTriggerListByEntity(entity, entityId, { showLog: true, trim: true })
   const data = list.map(item => {
     return toResponseItem<TriggerWithConditions>(item.trigger.id, 'trigger', item)
   })
@@ -19,8 +19,8 @@ async function ListHandler(this: FleetApp, request: ServiceRequest,): Promise<Li
   return { data } as ListResponse<TriggerWithConditions>
 }
 
-ListHandler.schema = 'studio.trigger.list'
-ListHandler.transports = [ActionTransport.amqp, ActionTransport.http]
+Handler.schema = 'studio.trigger.list'
+Handler.transports = [ActionTransport.amqp, ActionTransport.http]
 
-export = ListHandler
+export = Handler
 

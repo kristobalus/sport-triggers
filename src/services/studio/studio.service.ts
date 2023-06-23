@@ -17,7 +17,7 @@ export class StudioService {
 
   constructor(
     private log: Microfleet['log'],
-    private redis: Redis
+    private redis: Redis,
   ) {
     this.triggers = new TriggerCollection(this.redis)
     this.conditions = new TriggerConditionCollection(this.redis)
@@ -33,17 +33,20 @@ export class StudioService {
     return id
   }
 
-  async getTriggerList(entity: string, entityId: string, trim?: boolean): Promise<TriggerWithConditions[]> {
+  async getTriggerListByEntity(
+    entity: string,
+    entityId: string,
+    options: { trim?: boolean, showLog?: boolean } = {}): Promise<TriggerWithConditions[]> {
 
     const ids = await this.triggers.getListByEntity(entity, entityId)
     const items = []
 
     for (const id of ids) {
       const trigger = await this.triggers.getOne(id)
-      const conditions = await this.conditions.getByTriggerId(id)
+      const conditions = await this.conditions.getByTriggerId(id, { showLog: options.showLog })
 
-      if (trim) {
-        for(const condition of conditions) {
+      if (options.trim) {
+        for (const condition of conditions) {
           condition.scopeId = undefined
           condition.scope = undefined
           condition.triggerId = undefined
@@ -57,7 +60,7 @@ export class StudioService {
     return items
   }
 
-  async getSubListByEntity(entity: string, entityId: string) : Promise<TriggerSubscription[]> {
+  async getSubscriptionListByEntity(entity: string, entityId: string): Promise<TriggerSubscription[]> {
 
     const ids = await this.subscriptions.getListByEntity(entity, entityId)
     const items = []
@@ -70,7 +73,7 @@ export class StudioService {
     return items
   }
 
-  async getSubListByTrigger(triggerId: string) : Promise<TriggerSubscription[]> {
+  async getSubscriptionListByTrigger(triggerId: string): Promise<TriggerSubscription[]> {
 
     const ids = await this.subscriptions.getListByTrigger(triggerId)
     const items = []
@@ -89,11 +92,17 @@ export class StudioService {
     await this.subscriptions.deleteByTriggerId(triggerId)
   }
 
-  async subscribeTrigger(triggerId: string, data: EssentialSubscriptionData) : Promise<string> {
+  async subscribeTrigger(triggerId: string, data: EssentialSubscriptionData): Promise<string> {
     return this.subscriptions.create(triggerId, data)
   }
 
   async cancelSubscription(subscriptionId: string) {
     return this.subscriptions.deleteOne(subscriptionId)
+  }
+
+  async getTrigger(id: string): Promise<TriggerWithConditions> {
+    const trigger = await this.triggers.getOne(id)
+    const conditions = await this.conditions.getByTriggerId(id, { showLog: true })
+    return { trigger, conditions } as TriggerWithConditions
   }
 }

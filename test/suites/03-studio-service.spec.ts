@@ -18,7 +18,7 @@ import { TriggerListRequest } from "../../src/models/dto/trigger-list-request"
 import { TriggerCreateResponse } from "../../src/models/dto/trigger-create-response"
 import { TriggerSubRequest } from "../../src/models/dto/trigger-sub-request"
 import { TriggerSubscription } from "../../src/models/entities/trigger-subscription"
-import { SubListRequest } from "../../src/models/dto/sub-list-request"
+import { SubscriptionListRequest } from "../../src/models/dto/subscription-list-request"
 
 interface SuitContext extends TestContext {
   triggerId?: string
@@ -143,7 +143,7 @@ describe(`StudioService`, function () {
     const prefix = ctx.service.config.routerAmqp.prefix
     const response: ListResponse<TriggerSubscription> = await ctx.service.amqp
       .publishAndWait(`${prefix}.studio.subscription.list`,
-        { entity: subEntity, entityId: subEntityId  } as SubListRequest)
+        { entity: subEntity, entityId: subEntityId  } as SubscriptionListRequest)
 
     assert.ok(response)
     assert.ok(response.data)

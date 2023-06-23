@@ -6,15 +6,24 @@ import { Redis } from "ioredis"
 import { SerializedTriggerSubscription, TriggerSubscription } from "../models/entities/trigger-subscription"
 import { assertNoError } from "../utils/pipeline-utils"
 
+/**
+ * set
+ */
 export function subscriptionByTriggerKey(triggerId: string) {
   return `triggers/${triggerId}/subscriptions`
 }
 
+/**
+ * hash
+ */
 export function subscriptionKey(subscriptionId: string) {
   return `subscriptions/${subscriptionId}`
 }
 
-export function entitySubscriptionSetKey(entity: string, entityId: string) {
+/**
+ * set
+ */
+export function subscriptionByEntityKey(entity: string, entityId: string) {
   return `entities/${entity}/${entityId}/subscriptions`
 }
 
@@ -25,11 +34,10 @@ export class TriggerSubscriptionCollection {
   }
 
   async create(triggerId: string, item: Partial<TriggerSubscription>): Promise<string> {
-    const data: SerializedTriggerSubscription = {}
 
+    const data = { ...item } as unknown as SerializedTriggerSubscription
     data.id = randomUUID()
     data.triggerId = triggerId
-    data.route = item.route
 
     if (item.payload) {
       data.payload = JSON.stringify(item.payload)
@@ -42,7 +50,7 @@ export class TriggerSubscriptionCollection {
     const pipe = this.redis.pipeline()
     pipe.hset(subscriptionKey(data.id), data as unknown as Record<string, any>)
     pipe.sadd(subscriptionByTriggerKey(triggerId), data.id)
-    pipe.sadd(entitySubscriptionSetKey(item.entity, item.entityId), data.id)
+    pipe.sadd(subscriptionByEntityKey(item.entity, item.entityId), data.id)
     await pipe.exec()
 
     return data.id
@@ -54,7 +62,7 @@ export class TriggerSubscriptionCollection {
 
     pipe.del(subscriptionKey(item.id))
     pipe.srem(subscriptionByTriggerKey(item.triggerId), id)
-    pipe.srem(entitySubscriptionSetKey(item.entity, item.entityId), id)
+    pipe.srem(subscriptionByEntityKey(item.entity, item.entityId), id)
     const result = await pipe.exec()
 
     assertNoError(result)
@@ -92,7 +100,7 @@ export class TriggerSubscriptionCollection {
   }
 
   async getListByEntity(entity: string, entityId: string): Promise<string[]> {
-    return this.redis.smembers(entitySubscriptionSetKey(entity, entityId))
+    return this.redis.smembers(subscriptionByEntityKey(entity, entityId))
   }
 
 }
