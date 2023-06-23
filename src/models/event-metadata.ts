@@ -12,7 +12,7 @@ export interface EventMetadata {
   type: ConditionType
 }
 
-export const metadata : Record<string, EventMetadata> = {
+export const metadata: Record<string, EventMetadata> = {
 
   [FootballEvents.GameLevel]: {
     title: "Game Level",

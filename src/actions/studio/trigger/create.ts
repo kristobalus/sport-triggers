@@ -6,7 +6,6 @@ import { TriggerCreateRequest } from "../../../models/dto/trigger-create-request
 import { Response, ResponseItem } from "../../../models/dto/response"
 import { TriggerCreateResponse } from "../../../models/dto/trigger-create-response"
 
-
 async function CreateHandler(this: FleetApp, request: ServiceRequest): Promise<Response<TriggerCreateResponse>> {
   const { conditions, trigger } = request.params as unknown as TriggerCreateRequest
 

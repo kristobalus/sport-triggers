@@ -1,5 +1,4 @@
 
-
 export enum FootballPlayerStates {
   FirstDown = "first.down",
   Touchdown = "touchdown",

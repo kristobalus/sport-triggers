@@ -4,8 +4,7 @@ export type EssentialSubscriptionData = Partial<Pick<TriggerSubscription,
   "route" | "payload" | "options" | "entity" | "entityId" >>
 
 export interface TriggerSubRequest {
-  triggerId: string,
+  triggerId: string
   subscription: EssentialSubscriptionData
 }
-
 

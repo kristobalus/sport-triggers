@@ -28,6 +28,7 @@ export class StudioService {
     this.log.debug({ trigger: triggerData, conditions: conditionData }, "create trigger")
 
     const id = await this.triggers.add(triggerData)
+
     await this.conditions.add(id, triggerData.scope, triggerData.scopeId, conditionData)
 
     return id
@@ -37,7 +38,6 @@ export class StudioService {
     entity: string,
     entityId: string,
     options: { trim?: boolean, showLog?: boolean } = {}): Promise<TriggerWithConditions[]> {
-
     const ids = await this.triggers.getListByEntity(entity, entityId)
     const items = []
 
@@ -61,12 +61,12 @@ export class StudioService {
   }
 
   async getSubscriptionListByEntity(entity: string, entityId: string): Promise<TriggerSubscription[]> {
-
     const ids = await this.subscriptions.getListByEntity(entity, entityId)
     const items = []
 
     for (const id of ids) {
       const item = await this.subscriptions.getOne(id)
+
       items.push(item)
     }
 
@@ -74,12 +74,12 @@ export class StudioService {
   }
 
   async getSubscriptionListByTrigger(triggerId: string): Promise<TriggerSubscription[]> {
-
     const ids = await this.subscriptions.getListByTrigger(triggerId)
     const items = []
 
     for (const id of ids) {
       const item = await this.subscriptions.getOne(id)
+
       items.push(item)
     }
 
@@ -103,6 +103,7 @@ export class StudioService {
   async getTrigger(id: string): Promise<TriggerWithConditions> {
     const trigger = await this.triggers.getOne(id)
     const conditions = await this.conditions.getByTriggerId(id, { showLog: true })
+    
     return { trigger, conditions } as TriggerWithConditions
   }
 }

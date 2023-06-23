@@ -1,4 +1,7 @@
+import { CoreOptions } from "@microfleet/core-types"
+
 import { randomUUID } from "crypto"
+import { strict as assert } from "assert"
 
 import { TestContext } from "../module"
 import { Datasource, Scope } from "../../src/models/entities/trigger"
@@ -11,11 +14,9 @@ import {
   TriggerCreateRequest,
 } from "../../src/models/dto/trigger-create-request"
 import { GameLevel } from "../../src/models/events/football/football-game-level.event"
-import { CoreOptions } from "@microfleet/core-types"
 import { TriggerSubRequest } from "../../src/models/dto/trigger-sub-request"
 import { ItemResponse } from "../../src/models/dto/response"
 import { TriggerCreateResponse } from "../../src/models/dto/trigger-create-response"
-import { strict as assert } from "assert"
 import { AdapterPushDto } from "../../src/models/dto/adapter.push.dto"
 import { BaseEvent } from "../../src/models/events/base.event"
 
@@ -27,11 +28,10 @@ interface SuitContext extends TestContext {
   subscriptionId?: string
   consumer?: any
   pending?: Promise<any>
-  resolvePending?: Function
+  resolvePending?: any
 }
 
 describe(`AdapterService`, function () {
-
   const datasource = Datasource.Sportradar
   const scope = Scope.Game
   const scopeId = randomUUID()
@@ -50,7 +50,6 @@ describe(`AdapterService`, function () {
   const ctx: SuitContext = {}
 
   async function createTrigger(ctx: SuitContext) {
-
     const { amqpPrefix } = ctx
 
     const response: ItemResponse<TriggerCreateResponse> =
@@ -84,7 +83,6 @@ describe(`AdapterService`, function () {
   }
 
   async function createSubscription(ctx: SuitContext) {
-
     const { amqpPrefix } = ctx
 
     const response: ItemResponse = await ctx.service.amqp
@@ -102,7 +100,6 @@ describe(`AdapterService`, function () {
   }
 
   async function createConsumer(ctx: SuitContext) {
-
     const { amqp } = ctx.service
 
     // const { queue } = await amqp.createQueue({
@@ -125,7 +122,6 @@ describe(`AdapterService`, function () {
   }
 
   before(async () => {
-
     await startContext(ctx, {
       logger: {
         debug: true,
@@ -181,7 +177,7 @@ describe(`AdapterService`, function () {
 
   it(`check trigger activated`, async () => {
     const message = await ctx.pending
+
     console.log(message)
   })
-
 })

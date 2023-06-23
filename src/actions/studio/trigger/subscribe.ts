@@ -11,7 +11,7 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<ItemRes
   const { studioService } = this
   const id = await studioService.subscribeTrigger(triggerId, subscription)
 
-  this.log.debug({ request: {  triggerId, subscription}, id }, "subscribe for trigger")
+  this.log.debug({ request: {  triggerId, subscription }, id }, "subscribe for trigger")
 
   return {
     data: {

@@ -6,6 +6,7 @@ import { Response } from "../../models/dto/response"
 
 async function Handler(this: FleetApp, _request: ServiceRequest,): Promise<Response<Record<string, EventMetadata>>> {
   const data = metadata
+  
   return { data } as Response<Record<string, EventMetadata>>
 }
 

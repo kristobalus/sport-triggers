@@ -34,8 +34,8 @@ export class TriggerSubscriptionCollection {
   }
 
   async create(triggerId: string, item: Partial<TriggerSubscription>): Promise<string> {
-
     const data = { ...item } as unknown as SerializedTriggerSubscription
+
     data.id = randomUUID()
     data.triggerId = triggerId
 
@@ -48,6 +48,7 @@ export class TriggerSubscriptionCollection {
     }
 
     const pipe = this.redis.pipeline()
+
     pipe.hset(subscriptionKey(data.id), data as unknown as Record<string, any>)
     pipe.sadd(subscriptionByTriggerKey(triggerId), data.id)
     pipe.sadd(subscriptionByEntityKey(item.entity, item.entityId), data.id)
@@ -80,6 +81,7 @@ export class TriggerSubscriptionCollection {
 
   async getOne(subscriptionId: string): Promise<TriggerSubscription> {
     const item = await this.redis.hgetall(subscriptionKey(subscriptionId)) as unknown as TriggerSubscription
+
     if (!item.triggerId) {
       return null
     }
@@ -102,5 +104,4 @@ export class TriggerSubscriptionCollection {
   async getListByEntity(entity: string, entityId: string): Promise<string[]> {
     return this.redis.smembers(subscriptionByEntityKey(entity, entityId))
   }
-
 }

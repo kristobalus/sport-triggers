@@ -25,4 +25,3 @@ export function toResponseItem<T>(id: string, type: string, data: T): ResponseIt
   }
 }
 
-

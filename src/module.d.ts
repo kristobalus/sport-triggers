@@ -2,7 +2,6 @@
 // noinspection ES6UnusedImports
 
 import { Redis } from "ioredis"
-import { ConfigurationRequired } from '@microfleet/core-types'
 
 declare module 'ioredis' {
   export interface Redis {

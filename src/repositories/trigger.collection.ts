@@ -29,15 +29,19 @@ export class TriggerCollection {
     }
 
     const count = await this.redis.hset(triggerKey(item.id), item as Record<string, any>)
+
     if ( count > 0 ) {
       try {
         const pipe = this.redis.pipeline()
+
         pipe.sadd(triggerSetKey(item.scope, item.scopeId), item.id)
         pipe.sadd(entityTriggerSetKey(item.entity, item.entityId), item.id)
         const result = await pipe.exec()
+
         assertNoError(result)
       } catch (err) {
         await this.redis.del(triggerKey(item.id))
+        
         return null
       }
     }
@@ -62,6 +66,7 @@ export class TriggerCollection {
     const result = await this.redis.del(triggerKey(id))
 
     const pipe = this.redis.pipeline()
+
     pipe.srem(triggerSetKey(item.scope, item.scopeId), id)
     pipe.srem(entityTriggerSetKey(item.entity, item.entityId), id)
     await pipe.exec()
@@ -74,7 +79,7 @@ export class TriggerCollection {
     await this.redis.hset(triggerKey(id), item as Record<string, any>)
   }
 
-  async getListByEntity(entity: string, entityId: string) : Promise<string[]>{
-    return await this.redis.smembers(entityTriggerSetKey(entity, entityId))
+  async getListByEntity(entity: string, entityId: string): Promise<string[]> {
+    return this.redis.smembers(entityTriggerSetKey(entity, entityId))
   }
 }

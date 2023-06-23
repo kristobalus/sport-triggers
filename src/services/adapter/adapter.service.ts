@@ -31,7 +31,6 @@ export class AdapterService {
     const triggers = await this.conditionCollection.findTriggersByScopeAndEvent(scope, scopeId, name)
 
     for (const triggerId of triggers) {
-
       const conditions = await this.conditionCollection.getByTriggerId(triggerId)
 
       for (const condition of conditions) {
@@ -52,7 +51,7 @@ export class AdapterService {
       }
 
       if (triggerResult) {
-        // TODO is it redundant?
+        this.log.debug({ triggerId }, `trigger activated`)
         await this.triggerCollection.updateOne(triggerId, { activated: true })
 
         await this.notify(triggerId)
@@ -67,18 +66,12 @@ export class AdapterService {
   private async evaluateCondition(event: BaseEvent, condition: TriggerCondition) {
     this.log.debug({ event, condition }, `evaluating trigger condition`)
     if (condition.type === ConditionType.SetAndCompare) {
-
       await this.setAndCompare(event, condition)
-
     } else if (condition.type === ConditionType.SetAndCompareAsString) {
-
       await this.setAndCompareAsString(event, condition)
-
     } else if (condition.type === ConditionType.IncrAndCompare) {
-
       await this.incrAndCompare(event, condition)
     } else {
-
       this.log.fatal({ event }, `processing flow is not implemented`)
     }
   }
@@ -88,7 +81,8 @@ export class AdapterService {
     const current = event.value as number
 
     try {
-      const [ activated, append ] = await this.redis.set_and_compare(1, key, current)
+      const [activated, append] = await this.redis.set_and_compare(1, key, current)
+
       condition.activated = !!activated
 
       if ( append ) {
@@ -97,7 +91,7 @@ export class AdapterService {
       }
       this.log.debug({ condition }, `evaluation result`)
     } catch (err) {
-      this.log.fatal({ err , key, current }, 'failed to compare')
+      this.log.fatal({ err, key, current }, 'failed to compare')
     }
 
     return condition.activated
@@ -108,15 +102,15 @@ export class AdapterService {
     const current = event.value as string
 
     try {
-      const [ result, append ] = await this.redis.set_and_compare_as_string(1, key, current)
+      const [result, append] = await this.redis.set_and_compare_as_string(1, key, current)
+
       condition.activated = !!result
 
-      if ( append ){
+      if ( append ) {
         await this.conditionCollection.appendToEventLog(condition.id, event)
       }
 
       this.log.debug({ condition }, `evaluation result`)
-
     } catch (err) {
       this.log.fatal({ err, key, value: current }, "failed to compare")
     }

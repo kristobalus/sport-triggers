@@ -1,3 +1,5 @@
+import { CoreOptions } from "@microfleet/core-types"
+
 import * as assert from "assert"
 import { randomUUID } from "crypto"
 
@@ -13,7 +15,6 @@ import {
   TriggerCreateRequest,
 } from "../../src/models/dto/trigger-create-request"
 import { GameLevel } from "../../src/models/events/football/football-game-level.event"
-import { CoreOptions } from "@microfleet/core-types"
 import { TriggerListRequest } from "../../src/models/dto/trigger-list-request"
 import { TriggerCreateResponse } from "../../src/models/dto/trigger-create-response"
 import { TriggerSubRequest } from "../../src/models/dto/trigger-sub-request"
@@ -26,7 +27,6 @@ interface SuitContext extends TestContext {
 }
 
 describe(`StudioService`, function () {
-
   const datasource = Datasource.Sportradar
   const scope = Scope.Game
   const scopeId = randomUUID()
@@ -53,7 +53,6 @@ describe(`StudioService`, function () {
   })
 
   it(`should create trigger`, async () => {
-
     const triggerData = {
       name: "...",
       description: "..",
@@ -99,7 +98,8 @@ describe(`StudioService`, function () {
     assert.ok(response.data.length)
     assert.equal(response.data.length, 1)
 
-    const [ item ] = response.data
+    const [item] = response.data
+
     assert.ok(item.type)
     assert.equal(item.type, "trigger")
   })
@@ -135,7 +135,8 @@ describe(`StudioService`, function () {
     assert.ok(response.data)
     assert.ok(response.data.length)
 
-    const [ item ] = response.data
+    const [item] = response.data
+
     assert.equal(item.attributes.id, ctx.subscriptionId)
   })
 
@@ -149,7 +150,8 @@ describe(`StudioService`, function () {
     assert.ok(response.data)
     assert.ok(response.data.length)
 
-    const [ item ] = response.data
+    const [item] = response.data
+
     assert.ok(item.type)
     assert.ok(item.id)
     assert.equal(item.type, "subscription")
@@ -180,5 +182,4 @@ describe(`StudioService`, function () {
     assert.equal(response.data.type, "trigger")
     assert.equal(response.data.id, ctx.triggerId)
   })
-
 })

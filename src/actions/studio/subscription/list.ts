@@ -11,6 +11,7 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<ListRes
   const { studioService } = this
 
   let list
+
   if ( triggerId ) {
     list = await studioService.getSubscriptionListByTrigger(triggerId)
   } else {

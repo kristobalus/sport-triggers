@@ -8,6 +8,7 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<ItemRes
   const { id } = request.params as any
 
   const { studioService } = this
+
   await studioService.cancelSubscription(id)
 
   this.log.debug({ id }, "cancel subscription")
