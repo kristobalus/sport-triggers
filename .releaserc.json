@@ -1,7 +1,7 @@
 {
   "branches": [
-    "master",
-    { "name": "develop", "prerelease": true }
+    { "name": "master" },
+    { "name": "staging", "prerelease": true }
   ],
   "analyzeCommits": {
     "preset": "angular",
