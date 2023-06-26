@@ -69,9 +69,9 @@ describe(`AdapterService`, function () {
           {
             event: FootballEvents.GamePointsHome,
             compare: CompareOp.GreaterOrEqual,
-            target: 30,
+            target: "30",
             chainOperation: ChainOp.AND,
-          },
+          }
         ] as EssentialConditionData[],
       } as TriggerCreateRequest)
 
