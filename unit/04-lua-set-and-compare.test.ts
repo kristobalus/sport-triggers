@@ -45,7 +45,7 @@ describe("set_and_compare.lua", function () {
         event,
         type: ConditionType.SetAndCompare,
         compare: CompareOp.GreaterOrEqual,
-        target: 30,
+        target: "30",
       },
     ])
 

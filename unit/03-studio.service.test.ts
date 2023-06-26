@@ -54,6 +54,12 @@ describe("StudioService", function () {
     ctx.redis.disconnect()
   })
 
+  it(`should get metadata`, async () => {
+    const metadata = await ctx.service.getMetadata()
+    assert.ok(metadata)
+    assert.ok(metadata[FootballEvents.PlayerState])
+  })
+
   it(`should create trigger`, async () => {
 
     const triggerData = {

@@ -44,7 +44,7 @@ describe("AdapterService", function () {
 
     const log = pino({
       name: "AdapterService",
-      level: "debug",
+      level: "info",
     }, pretty({
       levelFirst: true,
       colorize: true,

@@ -88,8 +88,11 @@ describe("ConditionCollection", function () {
           player: randomUUID()
         }
       }
-    ] as EssentialConditionData[]), (_err) => {
-      console.log(_err)
+    ] as EssentialConditionData[]), (err: Error) => {
+      assert(err)
+      assert.equal(err.name.includes("ArgumentError"), true)
+      assert.equal(err.message.includes("Condition for event"), true)
+      assert.equal(err.message.includes("should have target one of"), true)
       return true
     })
   })

@@ -9,6 +9,7 @@ import { EssentialConditionData, EssentialTriggerData } from "../../models/dto/t
 import { TriggerWithConditions } from "../../models/dto/trigger-with-conditions"
 import { EssentialSubscriptionData } from "../../models/dto/trigger-subscribe-request"
 import { TriggerSubscription } from "../../models/entities/trigger-subscription"
+import { metadata } from "../../models/events/event-metadata"
 
 export class StudioService {
   private triggers: TriggerCollection
@@ -104,5 +105,9 @@ export class StudioService {
     const conditions = await this.conditions.getByTriggerId(id, { showLog: true })
 
     return { trigger, conditions } as TriggerWithConditions
+  }
+
+  getMetadata() {
+    return metadata
   }
 }
