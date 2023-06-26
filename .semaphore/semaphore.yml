@@ -25,7 +25,7 @@ global_job_config:
     commands:
       - set -e
       - sem-version node 18
-      - npm i -g pnpm@8
+      - npm i -g pnpm@7.23.0
       - checkout
       - cache restore node-$(checksum pnpm-lock.yaml)
       - echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} >> ~/.npmrc
