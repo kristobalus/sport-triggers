@@ -1,7 +1,7 @@
 {
   "name": "sl-triggers",
   "version": "1.0.0",
-  "description": "Event trigger processing and notifications",
+  "description": "Event trigger processing",
   "scripts": {
     "start": "mfleet",
     "clean": "rimraf ./lib",
@@ -18,7 +18,10 @@
     "docker-release": "mdep docker release --dba.token=${NPM_TOKEN} --tl --no-in"
   },
   "keywords": [],
-  "author": "Ildar Tamendarov",
+  "author": "StreamLayer, Inc",
+  "maintainers": [
+    "Makeomatic, Inc <https://makeomatic.ca>"
+  ],
   "license": "ISC",
   "devDependencies": {
     "@makeomatic/deploy": "^12.10.3",
