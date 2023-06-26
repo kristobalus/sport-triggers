@@ -26,6 +26,7 @@ interface SuitContext extends TestContext {
   subscriptionId?: string
 }
 
+// TODO change test to proceed with condition params :)
 describe(`Condition params test`, function () {
 
   const scope = Scope.SportradarGames
