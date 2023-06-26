@@ -1,0 +1,57 @@
+version: v1.0
+name: sl-triggers
+agent:
+  machine:
+    type: e1-standard-2
+    os_image: ubuntu2004
+
+execution_time_limit:
+  minutes: 10
+
+fail_fast:
+  stop:
+    when: "true"
+
+auto_cancel:
+  queued:
+    when: "true"
+  running:
+    when: "true"
+
+global_job_config:
+  secrets:
+  - name: gcr-service-account
+  prologue:
+    commands:
+      - set -e
+      - sem-version node 18
+      - npm i -g pnpm@8
+      - checkout
+      - cache restore node-$(checksum pnpm-lock.yaml)
+      - echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} >> ~/.npmrc
+      - pnpm i --frozen-lockfile --prefer-offline --ignore-scripts
+      - cache store node-$(checksum pnpm-lock.yaml) ~/.local/share/pnpm/store
+      - cat ~/io.gcr.peak-orbit-214114.json | docker login -u _json_key --password-stdin https://gcr.io
+
+blocks:
+  - name: test
+    dependencies: []
+    task:
+      secrets:
+        - name: semantic-read
+      jobs:
+      - name: test
+        commands:
+          - pnpm test
+
+  - name: release
+    dependencies: ["test"]
+    skip:
+      when: "branch != 'master' and branch != 'staging'"
+    task:
+      secrets:
+        - name: semantic-release
+      jobs:
+      - name: release
+        commands:
+          - pnpm run semantic-release
