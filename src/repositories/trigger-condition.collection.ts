@@ -29,6 +29,7 @@ export function conditionLogKey(conditionId: string) {
 export class TriggerConditionCollection {
   constructor(
     private redis: Redis,
+    private expiresInSeconds?: number
   ) {
   }
 
@@ -111,6 +112,12 @@ export class TriggerConditionCollection {
       pipe.sadd(conditionSetByTriggerKey(condition.triggerId), condition.id)
       // should add trigger into list of event subscribers
       pipe.sadd(triggersByScopeAndEvent(scope, scopeId, condition.event), triggerId)
+
+      if ( this.expiresInSeconds ) {
+        pipe.expire(conditionKey(condition.id), this.expiresInSeconds)
+        pipe.expire(conditionSetByTriggerKey(condition.triggerId), this.expiresInSeconds)
+        pipe.expire(triggersByScopeAndEvent(scope, scopeId, condition.event), this.expiresInSeconds)
+      }
     }
 
     const results = await pipe.exec()

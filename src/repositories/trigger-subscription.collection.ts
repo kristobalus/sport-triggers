@@ -30,6 +30,7 @@ export function subscriptionByEntityKey(entity: string, entityId: string) {
 export class TriggerSubscriptionCollection {
   constructor(
     private redis: Redis,
+    private expiresInSeconds?: number
   ) {
   }
 
@@ -52,6 +53,13 @@ export class TriggerSubscriptionCollection {
     pipe.hset(subscriptionKey(data.id), data as unknown as Record<string, any>)
     pipe.sadd(subscriptionByTriggerKey(triggerId), data.id)
     pipe.sadd(subscriptionByEntityKey(item.entity, item.entityId), data.id)
+
+    if ( this.expiresInSeconds ) {
+      pipe.expire(subscriptionKey(data.id), this.expiresInSeconds)
+      pipe.expire(subscriptionByTriggerKey(triggerId), this.expiresInSeconds)
+      pipe.expire(subscriptionByEntityKey(item.entity, item.entityId), this.expiresInSeconds)
+    }
+
     await pipe.exec()
 
     return data.id

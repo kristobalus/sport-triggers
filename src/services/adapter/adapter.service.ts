@@ -18,11 +18,12 @@ export class AdapterService {
   constructor(
     private readonly log: Microfleet['log'],
     private readonly redis: Redis,
-    private readonly amqp: AMQPTransport
+    private readonly amqp: AMQPTransport,
+    options?: { triggerLifetimeSeconds?: number }
   ) {
-    this.triggerCollection = new TriggerCollection(this.redis)
-    this.conditionCollection = new TriggerConditionCollection(this.redis)
-    this.subscriptionCollection = new TriggerSubscriptionCollection(this.redis)
+    this.triggerCollection = new TriggerCollection(this.redis, options?.triggerLifetimeSeconds)
+    this.conditionCollection = new TriggerConditionCollection(this.redis, options?.triggerLifetimeSeconds)
+    this.subscriptionCollection = new TriggerSubscriptionCollection(this.redis, options?.triggerLifetimeSeconds)
   }
 
   async pushEvent(event: Event) {

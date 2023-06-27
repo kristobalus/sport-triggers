@@ -20,7 +20,8 @@ export function triggerSetByEntityKey(entity: string, entityId: string) {
 
 export class TriggerCollection {
   constructor(
-    private redis: Redis
+    private redis: Redis,
+    private expiresInSeconds?: number
   ) {}
 
   async add(item: Partial<Trigger>): Promise<string> {
@@ -35,8 +36,13 @@ export class TriggerCollection {
         const pipe = this.redis.pipeline()
 
         pipe.sadd(triggerSetByScopeKey(item.scope, item.scopeId), item.id)
+        pipe.expire(triggerSetByScopeKey(item.scope, item.scopeId), this.expiresInSeconds)
+
         if ( item.entity && item.entityId ) {
           pipe.sadd(triggerSetByEntityKey(item.entity, item.entityId), item.id)
+          if ( this.expiresInSeconds ) {
+            pipe.expire(triggerSetByEntityKey(item.entity, item.entityId), this.expiresInSeconds)
+          }
         }
 
         const result = await pipe.exec()

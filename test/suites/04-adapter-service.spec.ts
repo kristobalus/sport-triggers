@@ -18,7 +18,7 @@ import { TriggerSubscribeRequest } from "../../src/models/dto/trigger-subscribe-
 import { ItemResponse } from "../../src/models/dto/response"
 import { TriggerCreateResponse } from "../../src/models/dto/trigger-create-response"
 import { AdapterPushRequest } from "../../src/models/dto/adapter-push-request"
-import { Event } from "../../src/models/events/event"
+
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string
@@ -36,14 +36,24 @@ describe(`AdapterService`, function () {
   const entity = "moderation"
   const entityId = randomUUID()
 
-  // const events = {
-  //   event1: {
-  //     name: FootballEvents.GameLevel,
-  //   } as BaseEvent,
-  //   event2: {
-  //     name: FootballEvents.GamePointsHome,
-  //   } as BaseEvent,
-  // }
+  const events = {
+    [FootballEvents.GameLevel]: {
+      id: randomUUID(),
+      name: FootballEvents.GameLevel,
+      value: GameLevel.Start,
+      scope,
+      scopeId,
+      timestamp: Date.now()
+    },
+    [FootballEvents.GamePointsHome]: {
+      id: randomUUID(),
+      name: FootballEvents.GamePointsHome,
+      value: "30",
+      scope,
+      scopeId,
+      timestamp: Date.now() + 1
+    },
+  }
 
   const ctx: SuitContext = {}
 
@@ -139,17 +149,9 @@ describe(`AdapterService`, function () {
   })
 
   it(`push event ${FootballEvents.GameLevel}`, async () => {
-    assert(ctx.request, `context has no "got" instance`)
     await ctx.request.post("adapter/event/push", {
       json: {
-        event: {
-          id: randomUUID(),
-          name: FootballEvents.GameLevel,
-          value: GameLevel.Start,
-          scope,
-          scopeId,
-          timestamp: Date.now()
-        } as Required<Event>,
+        event: events[FootballEvents.GameLevel],
       } as AdapterPushRequest,
     })
   })
@@ -157,14 +159,7 @@ describe(`AdapterService`, function () {
   it(`push event ${FootballEvents.GamePointsHome}`, async () => {
     await ctx.request.post("adapter/event/push", {
       json: {
-        event: {
-          id: randomUUID(),
-          name: FootballEvents.GamePointsHome,
-          value: "30",
-          scope,
-          scopeId,
-          timestamp: Date.now()
-        },
+        event: events[FootballEvents.GamePointsHome],
       } as AdapterPushRequest,
     })
   })

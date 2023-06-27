@@ -19,10 +19,11 @@ export class StudioService {
   constructor(
     private log: Microfleet['log'],
     private redis: Redis,
+    options?: { triggerLifetimeSeconds?: number }
   ) {
-    this.triggers = new TriggerCollection(this.redis)
-    this.conditions = new TriggerConditionCollection(this.redis)
-    this.subscriptions = new TriggerSubscriptionCollection(this.redis)
+    this.triggers = new TriggerCollection(this.redis, options?.triggerLifetimeSeconds)
+    this.conditions = new TriggerConditionCollection(this.redis, options?.triggerLifetimeSeconds)
+    this.subscriptions = new TriggerSubscriptionCollection(this.redis, options?.triggerLifetimeSeconds)
   }
 
   async createTrigger(triggerData: EssentialTriggerData, conditionData: EssentialConditionData[]) {

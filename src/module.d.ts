@@ -3,6 +3,16 @@
 
 import { Redis } from "ioredis"
 
+export type TriggerConfig = {
+  triggerLifetimeSeconds: number
+}
+
+declare module '@microfleet/core-types' {
+  export interface ConfigurationOptional {
+    triggers: TriggerConfig
+  }
+}
+
 declare module 'ioredis' {
   export interface Redis {
     set_and_compare(
