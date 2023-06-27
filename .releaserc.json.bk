@@ -3,6 +3,21 @@
     { "name": "master" },
     { "name": "staging", "prerelease": "rc" }
   ],
+  "verifyConditions": [
+    "@semantic-release/changelog",
+    "@semantic-release/git",
+    "@semantic-release/github"
+  ],
+  "prepare": [
+    "@semantic-release/changelog",
+    "@semantic-release/npm",
+    { "path": "@semantic-release/exec", "cmd": "pnpm docker-release --tl --include_node false" },
+    "@semantic-release/git"
+  ],
+  "publish": [
+    "@semantic-release/npm",
+    "@semantic-release/github"
+  ],
   "analyzeCommits": {
     "preset": "angular",
     "releaseRules": [
