@@ -7,8 +7,21 @@
         },
         "entityId": {
             "type": "string"
+        },
+        "scope": {
+            "type": "string"
+        },
+        "scopeId": {
+            "type": "string"
         }
     },
     "additionalProperties": false,
-    "required": ["entity", "entityId"]
+    "anyOf": [
+        {
+            "required": ["scope","scopeId"]
+        },
+        {
+            "required": ["entity", "entityId"]
+        }
+    ]
 }

@@ -98,7 +98,7 @@ describe("ConditionCollection", function () {
   })
 
   it(`should get triggers by event ${FootballEvents.GamePointsHome} and scope`, async () => {
-    const items = await ctx.conditions.findTriggersByScopeAndEvent(scope, scopeId, FootballEvents.GamePointsHome)
+    const items = await ctx.conditions.getTriggerListByScopeAndEvent(scope, scopeId, FootballEvents.GamePointsHome)
     assert.ok(items.length)
   })
 

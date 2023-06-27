@@ -61,10 +61,6 @@ export class TriggerCollection {
     return data.id ? data : null
   }
 
-  async findByScope(scope: string, scopeId: string): Promise<string[]> {
-    return this.redis.smembers(triggerSetByScopeKey(scope, scopeId))
-  }
-
   async deleteOne(id: string): Promise<boolean> {
     const item = await this.getOne(id)
     const result = await this.redis.del(triggerKey(id))
@@ -85,6 +81,10 @@ export class TriggerCollection {
 
   async getListByEntity(entity: string, entityId: string): Promise<string[]> {
     return this.redis.smembers(triggerSetByEntityKey(entity, entityId))
+  }
+
+  async getListByScope(scope: string, scopeId: string): Promise<string[]> {
+    return this.redis.smembers(triggerSetByScopeKey(scope, scopeId))
   }
 
   async clean(id: string) {

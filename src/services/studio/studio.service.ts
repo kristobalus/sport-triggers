@@ -11,6 +11,11 @@ import { EssentialSubscriptionData } from "../../models/dto/trigger-subscribe-re
 import { TriggerSubscription } from "../../models/entities/trigger-subscription"
 import { metadata } from "../../models/events/event-metadata"
 
+export interface TriggerOptions {
+  showLog?: boolean
+  trim?: boolean
+}
+
 export class StudioService {
   private triggers: TriggerCollection
   private conditions: TriggerConditionCollection
@@ -39,24 +44,28 @@ export class StudioService {
   async getTriggerListByEntity(
     entity: string,
     entityId: string,
-    options: { trim?: boolean, showLog?: boolean } = {}): Promise<TriggerWithConditions[]> {
+    options: TriggerOptions = {}): Promise<TriggerWithConditions[]> {
     const ids = await this.triggers.getListByEntity(entity, entityId)
     const items = []
 
     for (const id of ids) {
-      const trigger = await this.triggers.getOne(id)
-      const conditions = await this.conditions.getByTriggerId(id, { showLog: options.showLog })
+      const trigger = await this.getTrigger(id, options)
+      items.push(trigger)
+    }
 
-      if (options.trim) {
-        for (const condition of conditions) {
-          condition.scopeId = undefined
-          condition.scope = undefined
-          condition.triggerId = undefined
-          condition.type = undefined
-        }
-      }
+    return items
+  }
 
-      items.push({ trigger, conditions } as TriggerWithConditions)
+  async getTriggerListByScope(
+    scope: string,
+    scopeId: string,
+    options: TriggerOptions = {}): Promise<TriggerWithConditions[]> {
+    const ids = await this.triggers.getListByScope(scope, scopeId)
+    const items = []
+
+    for (const id of ids) {
+      const trigger = await this.getTrigger(id, options)
+      items.push(trigger)
     }
 
     return items
@@ -102,9 +111,18 @@ export class StudioService {
     return this.subscriptions.deleteOne(subscriptionId)
   }
 
-  async getTrigger(id: string): Promise<TriggerWithConditions> {
+  async getTrigger(id: string, options: TriggerOptions = {}): Promise<TriggerWithConditions> {
     const trigger = await this.triggers.getOne(id)
-    const conditions = await this.conditions.getByTriggerId(id, { showLog: true })
+    const conditions = await this.conditions.getByTriggerId(id, { showLog: options.showLog })
+
+    if (options.trim) {
+      for (const condition of conditions) {
+        condition.scopeId = undefined
+        condition.scope = undefined
+        condition.triggerId = undefined
+        condition.type = undefined
+      }
+    }
 
     return { trigger, conditions } as TriggerWithConditions
   }

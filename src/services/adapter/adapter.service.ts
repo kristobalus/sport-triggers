@@ -32,7 +32,7 @@ export class AdapterService {
     this.log.debug({ event, uri }, `incoming event`)
 
     const { scope, scopeId, name } = event
-    const triggers = await this.conditionCollection.findTriggersByScopeAndEvent(scope, scopeId, name)
+    const triggers = await this.conditionCollection.getTriggerListByScopeAndEvent(scope, scopeId, name)
 
     this.log.debug({ triggers }, `triggers found`)
 

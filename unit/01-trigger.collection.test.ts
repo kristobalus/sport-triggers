@@ -49,7 +49,7 @@ describe("TriggerCollection", function () {
   })
 
   it('should be able to find trigger set by scope', async () => {
-    const items = await ctx.triggers.findByScope(ctx.scope, ctx.scopeId)
+    const items = await ctx.triggers.getListByScope(ctx.scope, ctx.scopeId)
     assert.ok(items.length)
     assert.equal(items[0], ctx.triggerId)
   })

@@ -88,13 +88,13 @@ describe("StudioService", function () {
   })
 
   it(`should find list of triggers by scope`, async () => {
-    const triggers = await ctx.triggers.findByScope(scope, scopeId)
-    assert.equal(triggers.length, 1)
-    assert.equal(triggers.indexOf(ctx.triggerId), 0)
+    const [ id ]  = await ctx.triggers.getListByScope(scope, scopeId)
+    assert.ok(id)
+    assert.equal(ctx.triggerId, id)
   })
 
   it(`should be able to find trigger by event and scope`, async () => {
-    const triggers = await ctx.conditions.findTriggersByScopeAndEvent(scope, scopeId, FootballEvents.GameLevel)
+    const triggers = await ctx.conditions.getTriggerListByScopeAndEvent(scope, scopeId, FootballEvents.GameLevel)
     assert.equal(triggers.length, 1)
     assert.equal(triggers.indexOf(ctx.triggerId), 0)
   })

@@ -73,10 +73,10 @@ sequenceDiagram
     participant triggers
     studio->>glossary: get list of NBA games, players etc
     glossary->>studio: list of reference data
-    studio->>triggers: get list of triggers for game_id
-    triggers->>studio: list of triggers <br/>[ { trigger_id, conditions, description } ]
+    studio->>triggers: get list of triggers for entity=moderation, entity_id=1
+    triggers->>studio: list of triggers <br/>[ { trigger, conditions } ]
     studio->>triggers: create new trigger if none suits
-    triggers->>studio: trigger object { trigger_id }
+    triggers->>studio: trigger object { id }
     studio->>triggers: subscribe service <br/>{ trigger_id, route, <br/>payload, service: "polls", <br/>entity: "question", entity_id }
     triggers->>studio: ok, subscribed
 ```

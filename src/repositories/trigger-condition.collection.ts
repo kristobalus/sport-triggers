@@ -156,7 +156,7 @@ export class TriggerConditionCollection {
     }
   }
 
-  async findTriggersByScopeAndEvent(
+  async getTriggerListByScopeAndEvent(
     scope: string,
     scopeId: string,
     eventName: string): Promise<string[]> {
