@@ -2,12 +2,12 @@ import { randomUUID } from "crypto"
 
 import { Redis } from "ioredis"
 import { inPlaceSort } from "fast-sort"
+import { ArgumentError } from "common-errors"
 
 import { ChainOp, ConditionType, TriggerCondition } from "../models/entities/trigger-condition"
 import { assertNoError, createArrayFromHGetAll } from "../utils/pipeline-utils"
 import { Event } from "../models/events/event"
 import { metadata } from "../models/events/event-metadata"
-import { ArgumentError } from "common-errors"
 import { toUriByCondition } from "../models/events/uri"
 
 export function conditionSetByTriggerKey(triggerId: string) {
@@ -38,7 +38,6 @@ export class TriggerConditionCollection {
     scope: string,
     scopeId: string,
     conditions: Partial<TriggerCondition>[]) {
-
     if (conditions.length == 0) {
       throw new ArgumentError(`Cannot create trigger without conditions`)
     }
@@ -112,12 +111,6 @@ export class TriggerConditionCollection {
       pipe.sadd(conditionSetByTriggerKey(condition.triggerId), condition.id)
       // should add trigger into list of event subscribers
       pipe.sadd(triggersByScopeAndEvent(scope, scopeId, condition.event), triggerId)
-
-      if ( this.expiresInSeconds ) {
-        pipe.expire(conditionKey(condition.id), this.expiresInSeconds)
-        pipe.expire(conditionSetByTriggerKey(condition.triggerId), this.expiresInSeconds)
-        pipe.expire(triggersByScopeAndEvent(scope, scopeId, condition.event), this.expiresInSeconds)
-      }
     }
 
     const results = await pipe.exec()
@@ -187,6 +180,28 @@ export class TriggerConditionCollection {
     inPlaceSort(result).asc('timestamp')
 
     return result
+  }
+
+  async cleanByTriggerId(triggerId: string) {
+    const conditions = await this.getByTriggerId(triggerId)
+
+    for (const item of conditions) {
+      const pipe = this.redis.pipeline()
+
+      if ( this.expiresInSeconds ) {
+        pipe.expire(conditionSetByTriggerKey(triggerId), this.expiresInSeconds)
+        pipe.expire(conditionKey(triggerId), this.expiresInSeconds)
+        pipe.expire(conditionLogKey(item.id), this.expiresInSeconds)
+      } else {
+        pipe.del(conditionSetByTriggerKey(triggerId))
+        pipe.del(conditionKey(item.id))
+        pipe.del(conditionLogKey(item.id))
+      }
+
+      pipe.srem(triggersByScopeAndEvent(item.scope, item.scopeId, item.event), triggerId)
+
+      await pipe.exec()
+    }
   }
 }
 

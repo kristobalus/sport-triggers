@@ -25,62 +25,41 @@ https://docs.google.com/spreadsheets/d/1YBeSAcBpC596bcqI0M_mkXIqGHSMgbGh4myCF4Er
 
 All events extend the base standard event
 ```typescript
-interface Event {
-    // unique raw event identifier from datasource
-    id: string 
-    datasource: "sportradar"
-    // scope of event
-    scope: "game"
-    // unique scope identifier, e.g. d8539eb6-3e27-40c8-906f-9cd1736321d8, adapter takes it from datasource raw data
-    scopeId: string
-    // event name
-    name: string    
-    // event value
-    value: string | number
-    // timestamp, unixtime millis
-    timestamp: number
+export interface Event {
+  // unique raw event identifier from datasource
+  id: string
+  // scope of event
+  scope: string
+  // unique scope identifier, e.g. d8539eb6-3e27-40c8-906f-9cd1736321d8,
+  // adapter takes it from datasource raw data
+  scopeId: string
+  // event name
+  name: string
+  // event value
+  value: string
+  // timestamp, unixtime millis
+  timestamp: number
 }
 ```
 
-Example of events derived from Event
+Example of event derived from Event
 ```ts
-interface GameLevelEvent extends Event {
-    name: "game.level" 
-    value: "game.start" | "game.quarter.start" | "game.half.start" | "game.quarter.end" | "game.half.end" | "game.end" | "game.under_review"
-}
-
-interface GameHomePointsEvent extends Event {
-    name: "game.home_points"    
-    value: number
-}
-
-interface GameAwayPointsEvent extends Event {
-    name: "game.away_points"    
-    value: number
+export interface FootballGameLevelEvent extends Event {
+  name: FootballEvents.GameLevel
+  value: GameLevel
 }
 ```
 
-the event objects will be like
+the event objects will finally look like
 ```js
-{   
-    datasource: "sportradar",
-    scope: "game",
-    scopeId: "d8539eb6-3e27-40c8-906f-9cd1736321d8",    
-    id: "ab362b76-b89d-4cd8-80e3-340b048f98c8",
-    name: "game.level",
-    value: "game.start",
-    timestamp: 1686054201993
-} as GameLevelEvent
-
 {
-   datasource: "sportradar",
-   scope: "game",
-   scopeId: "d8539eb6-3e27-40c8-906f-9cd1736321d8",
-   id: "ab362b76-b89d-4cd8-80e3-340b048f98c8",
-   name: "game.home_points",         
-   value: 100,
-   timestamp: 1686054201993
-} as GameHomePointsEvent
+    id: "ab362b76-b89d-4cd8-80e3-340b048f98c8",
+    name: "football.game.level",
+    value: "start",
+    scope: "sportradar.game",
+    scopeId: "d8539eb6-3e27-40c8-906f-9cd1736321d8",
+    timestamp: 1686054201993
+}
 ```
 
 ## Create and subscribe for trigger <a name="studio"></a>

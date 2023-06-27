@@ -63,10 +63,7 @@ export class AdapterService {
         await this.triggerCollection.updateOne(triggerId, { activated: true })
 
         await this.notify(triggerId)
-
-        await this.triggerCollection.deleteOne(triggerId)
-        await this.conditionCollection.deleteByTriggerId(triggerId)
-        await this.subscriptionCollection.deleteByTriggerId(triggerId)
+        await this.cleanup(triggerId)
       }
     }
   }
@@ -99,7 +96,6 @@ export class AdapterService {
       }
 
       this.log.debug({ condition }, `evaluation result`)
-
     } catch (err) {
       this.log.fatal({ err, key, current }, 'failed to compare')
     }
@@ -142,5 +138,11 @@ export class AdapterService {
       await this.amqp.publishAndWait(route, { ...payload }, { ...options })
       this.log.debug({ route, payload, options, triggerId, subscriptionId: id }, `message sent`)
     }
+  }
+
+  private async cleanup(triggerId: string) {
+    await this.triggerCollection.clean(triggerId)
+    await this.conditionCollection.cleanByTriggerId(triggerId)
+    await this.subscriptionCollection.deleteByTriggerId(triggerId)
   }
 }

@@ -1,4 +1,5 @@
 import { CompareOp, ConditionType } from "../entities/trigger-condition"
+
 import { FootballEvents } from "./football/football-events"
 import { GameLevel } from "./football/football-game-level.event"
 import { FootballPlayerStates } from "./football/football-player-state.event"

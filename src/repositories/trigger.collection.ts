@@ -36,13 +36,8 @@ export class TriggerCollection {
         const pipe = this.redis.pipeline()
 
         pipe.sadd(triggerSetByScopeKey(item.scope, item.scopeId), item.id)
-        pipe.expire(triggerSetByScopeKey(item.scope, item.scopeId), this.expiresInSeconds)
-
         if ( item.entity && item.entityId ) {
           pipe.sadd(triggerSetByEntityKey(item.entity, item.entityId), item.id)
-          if ( this.expiresInSeconds ) {
-            pipe.expire(triggerSetByEntityKey(item.entity, item.entityId), this.expiresInSeconds)
-          }
         }
 
         const result = await pipe.exec()
@@ -90,5 +85,21 @@ export class TriggerCollection {
 
   async getListByEntity(entity: string, entityId: string): Promise<string[]> {
     return this.redis.smembers(triggerSetByEntityKey(entity, entityId))
+  }
+
+  async clean(id: string) {
+    const item = await this.getOne(id)
+    const pipe = this.redis.pipeline()
+
+    if ( this.expiresInSeconds ) {
+      pipe.expire(triggerKey(id), this.expiresInSeconds)
+    } else {
+      pipe.del(triggerKey(id))
+    }
+
+    pipe.srem(triggerSetByScopeKey(item.scope, item.scopeId), id)
+    pipe.srem(triggerSetByEntityKey(item.entity, item.entityId), id)
+
+    await pipe.exec()
   }
 }

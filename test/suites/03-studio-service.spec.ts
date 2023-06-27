@@ -20,6 +20,8 @@ import { TriggerCreateResponse } from "../../src/models/dto/trigger-create-respo
 import { TriggerSubscribeRequest } from "../../src/models/dto/trigger-subscribe-request"
 import { TriggerSubscription } from "../../src/models/entities/trigger-subscription"
 import { SubscriptionListRequest } from "../../src/models/dto/subscription-list-request"
+import { TriggerGetRequest } from "../../src/models/dto/trigger-get-request"
+import { TriggerWithConditions } from "../../src/models/dto/trigger-with-conditions"
 
 interface SuitContext extends TestContext {
   triggerId?: string
@@ -27,7 +29,6 @@ interface SuitContext extends TestContext {
 }
 
 describe(`StudioService`, function () {
-
   const scope = Scope.SportradarGames
   const scopeId = randomUUID()
   const entity = "moderation"
@@ -84,6 +85,21 @@ describe(`StudioService`, function () {
     assert.equal(response.data.type, "trigger")
 
     ctx.triggerId = response.data.id
+  })
+
+  it(`should get trigger by id`, async () => {
+    const prefix = ctx.service.config.routerAmqp.prefix
+    const response: ItemResponse<TriggerWithConditions> =
+      await ctx.service.amqp.publishAndWait(`${prefix}.studio.trigger.get`,
+        { id: ctx.triggerId } as TriggerGetRequest)
+
+    assert.ok(response)
+    assert.ok(response.data)
+
+    const item = response.data
+
+    assert.ok(item.type)
+    assert.equal(item.type, "trigger")
   })
 
   it(`should list triggers`, async () => {

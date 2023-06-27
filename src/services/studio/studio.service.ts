@@ -30,6 +30,7 @@ export class StudioService {
     this.log.debug({ trigger: triggerData, conditions: conditionData }, "create trigger")
 
     const id = await this.triggers.add(triggerData)
+
     await this.conditions.add(id, triggerData.scope, triggerData.scopeId, conditionData)
 
     return id

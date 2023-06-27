@@ -1,5 +1,6 @@
 import { TriggerConfig } from "../module"
 
 export const triggers: TriggerConfig = {
-  triggerLifetimeSeconds: 86_400 * 90
+  // shows how long data about trigger will be kept after activation
+  triggerLifetimeSeconds: 86_400
 }

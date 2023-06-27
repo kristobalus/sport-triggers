@@ -1,9 +1,9 @@
 // noinspection JSUnusedGlobalSymbols
 
 import { Event } from "../event"
+import { Player } from "../player"
 
 import { FootballEvents } from "./football-events"
-import { Player } from "../player"
 
 export enum FootballPlayerStates {
   FirstDown = "first.down",

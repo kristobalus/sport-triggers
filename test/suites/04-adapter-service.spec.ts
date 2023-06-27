@@ -18,26 +18,35 @@ import { TriggerSubscribeRequest } from "../../src/models/dto/trigger-subscribe-
 import { ItemResponse } from "../../src/models/dto/response"
 import { TriggerCreateResponse } from "../../src/models/dto/trigger-create-response"
 import { AdapterPushRequest } from "../../src/models/dto/adapter-push-request"
-
+import {
+  FootballPlayerStateEvent,
+  FootballPlayerStates,
+} from "../../src/models/events/football/football-player-state.event"
+import { FootballGamePointsHomeEvent } from "../../src/models/events/football/football-game-points-home.event"
+import { TriggerWithConditions } from "../../src/models/dto/trigger-with-conditions"
+import { TriggerGetRequest } from "../../src/models/dto/trigger-get-request"
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string
   triggerId?: string
   subscriptionId?: string
   consumer?: any
-  pending?: Promise<any>
+  pendingSubscriberMessage?: Promise<any>
   resolvePending?: any
+  triggerReceiverRoute?: string
+  triggerReceiverPayload?: { id: number }
+  triggerReceiverEntity: string
+  triggerReceiverEntityId: string
 }
 
 describe(`AdapterService`, function () {
-
   const scope = Scope.SportradarGames
   const scopeId = randomUUID()
   const entity = "moderation"
   const entityId = randomUUID()
 
   const events = {
-    [FootballEvents.GameLevel]: {
+    gameLevelStart: {
       id: randomUUID(),
       name: FootballEvents.GameLevel,
       value: GameLevel.Start,
@@ -45,17 +54,40 @@ describe(`AdapterService`, function () {
       scopeId,
       timestamp: Date.now()
     },
-    [FootballEvents.GamePointsHome]: {
+    homeTeamPoints: {
       id: randomUUID(),
       name: FootballEvents.GamePointsHome,
       value: "30",
       scope,
       scopeId,
       timestamp: Date.now() + 1
-    },
+    } as FootballGamePointsHomeEvent,
+    wrongPlayerTouchdown: {
+      id: randomUUID(),
+      name: FootballEvents.PlayerState,
+      value: FootballPlayerStates.Touchdown,
+      scope,
+      scopeId,
+      timestamp: Date.now() + 2,
+      player: randomUUID()
+    } as FootballPlayerStateEvent,
+    correctPlayerTouchdown: {
+      id: randomUUID(),
+      name: FootballEvents.PlayerState,
+      value: FootballPlayerStates.Touchdown,
+      scope,
+      scopeId,
+      timestamp: Date.now() + 3,
+      player: randomUUID()
+    } as FootballPlayerStateEvent,
   }
 
-  const ctx: SuitContext = {}
+  const ctx: SuitContext = {
+    triggerReceiverRoute: "trigger.receiver",
+    triggerReceiverPayload: { id: 1 },
+    triggerReceiverEntity: "question",
+    triggerReceiverEntityId: "1"
+  }
 
   async function createTrigger(ctx: SuitContext) {
     const { amqpPrefix } = ctx
@@ -74,13 +106,22 @@ describe(`AdapterService`, function () {
           {
             event: FootballEvents.GameLevel,
             compare: CompareOp.Equal,
-            target: GameLevel.Start,
+            target: events.gameLevelStart.value,
           },
           {
             event: FootballEvents.GamePointsHome,
             compare: CompareOp.GreaterOrEqual,
-            target: "30",
+            target: events.homeTeamPoints.value,
             chainOperation: ChainOp.AND,
+          },
+          {
+            event: FootballEvents.PlayerState,
+            compare: CompareOp.Equal,
+            target: FootballPlayerStates.Touchdown,
+            chainOperation: ChainOp.AND,
+            params: {
+              player: events.correctPlayerTouchdown.player
+            }
           }
         ] as EssentialConditionData[],
       } as TriggerCreateRequest)
@@ -95,10 +136,10 @@ describe(`AdapterService`, function () {
       .publishAndWait(`${amqpPrefix}.studio.trigger.subscribe`, {
         triggerId: ctx.triggerId,
         subscription: {
-          route: "trigger",
-          payload: { id: 1 },
-          entity: "question",
-          entityId: "1",
+          route: ctx.triggerReceiverRoute,
+          payload: ctx.triggerReceiverPayload,
+          entity: ctx.triggerReceiverEntity,
+          entityId: ctx.triggerReceiverEntityId,
         },
       } as TriggerSubscribeRequest)
 
@@ -108,23 +149,29 @@ describe(`AdapterService`, function () {
   async function createConsumer(ctx: SuitContext) {
     const { amqp } = ctx.service
 
-    // const { queue } = await amqp.createQueue({
-    //   queue: 'service',
-    //   arguments: {
-    //     'x-max-priority': 5,
-    //   },
-    // })
-    // await queue.bind("amq.direct", "on.trigger")
-    // ctx.consumer = await amqp.consume("service", { noAck: true } as ConsumeOpts, (_message) => {
-    //   console.log(_message)
-    // })
-
     await amqp.createConsumedQueue((message) => {
       ctx.resolvePending?.(message)
       ctx.resolvePending = null
-    }, ["trigger"], { queue: "service", noAck: true })
+    }, [ctx.triggerReceiverRoute], { queue: "service", noAck: true })
 
-    ctx.pending = new Promise((resolve) => ctx.resolvePending = resolve)
+    ctx.pendingSubscriberMessage = new Promise((resolve) => ctx.resolvePending = resolve)
+  }
+
+  async function getTriggerActivated(): Promise<boolean> {
+    const response: ItemResponse<TriggerWithConditions> =
+      await ctx.service.amqp.publishAndWait(`${ctx.amqpPrefix}.studio.trigger.get`,
+        { id: ctx.triggerId } as TriggerGetRequest)
+
+    assert.ok(response)
+    assert.ok(response.data)
+
+    const item = response.data
+
+    assert.ok(item.type)
+    assert.equal(item.type, "trigger")
+    assert.equal(item.type, "trigger")
+
+    return item.attributes.trigger.activated
   }
 
   before(async () => {
@@ -148,24 +195,49 @@ describe(`AdapterService`, function () {
     await stopContext(ctx)
   })
 
-  it(`push event ${FootballEvents.GameLevel}`, async () => {
+  it(`push game level event`, async () => {
     await ctx.request.post("adapter/event/push", {
       json: {
-        event: events[FootballEvents.GameLevel],
+        event: events.gameLevelStart,
       } as AdapterPushRequest,
     })
+
+    assert.equal(await getTriggerActivated(), false)
   })
 
-  it(`push event ${FootballEvents.GamePointsHome}`, async () => {
+  it(`push home team points event`, async () => {
     await ctx.request.post("adapter/event/push", {
       json: {
-        event: events[FootballEvents.GamePointsHome],
+        event: events.homeTeamPoints,
       } as AdapterPushRequest,
     })
+
+    assert.equal(await getTriggerActivated(), false)
   })
 
-  it(`check trigger activated`, async () => {
-    const message = await ctx.pending
+  it(`push wrong player touchdown event`, async () => {
+    await ctx.request.post("adapter/event/push", {
+      json: {
+        event: events.wrongPlayerTouchdown,
+      } as AdapterPushRequest,
+    })
+
+    assert.equal(await getTriggerActivated(), false)
+  })
+
+  it(`push correct player touchdown event`, async () => {
+    await ctx.request.post("adapter/event/push", {
+      json: {
+        event: events.correctPlayerTouchdown,
+      } as AdapterPushRequest,
+    })
+
+    assert.equal(await getTriggerActivated(), true)
+  })
+
+  it(`should send message to subscriber`, async () => {
+    const message = await ctx.pendingSubscriberMessage
+
     assert.ok(message)
     assert.equal(message.id, 1)
   })
