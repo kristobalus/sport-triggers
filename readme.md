@@ -73,11 +73,11 @@ sequenceDiagram
     participant triggers
     studio->>glossary: get list of NBA games, players etc
     glossary->>studio: list of reference data
-    studio->>triggers: get list of triggers for entity=moderation, entity_id=1
+    studio->>triggers: studio.trigger.list { entity, entity_id } or { scope, scope_id }
     triggers->>studio: list of triggers <br/>[ { trigger, conditions } ]
-    studio->>triggers: create new trigger if none suits
-    triggers->>studio: trigger object { id }
-    studio->>triggers: subscribe service <br/>{ trigger_id, route, <br/>payload, service: "polls", <br/>entity: "question", entity_id }
+    studio->>triggers: if none suits studio.trigger.create { conditions }
+    triggers->>studio: { id }
+    studio->>triggers: subscribe service <br/>{ trigger_id, route, <br/>payload, entity, <br/>, entity_id }
     triggers->>studio: ok, subscribed
 ```
 
@@ -128,44 +128,76 @@ interface TriggerCondition {
 ```
 
 example of trigger object
-```ts
+```json
 {
-   id: "{uuid}",
-   name: "home points 30+",
-   description: "should trigger when home points reach 30 or more",
-   datasource: "sportradar",
-   scope: "game",
-   scopeId: "d8539eb6-3e27-40c8-906f-9cd1736321d8",
-   conditions: [
-      {
-         id: "{uuid}",
-         event: "game.home_points",
-         type: "set-and-compare",
-         compare: "ge",
-         target: 30,         
-         current: 10,
-         log: {
-            "event_1-{uuid}": {
-               datasource: "sportradar",
-               scope: "game",
-               scopeId: "d8539eb6-3e27-40c8-906f-9cd1736321d8",
-               id: "ab362b76-b89d-4cd8-80e3-340b048f98c8",
-               name: "game.home_points",         
-               value: 0,
-               timestamp: 1686054201993
-            },
-            "event_2-{uuid}": {
-               datasource: "sportradar",
-               scope: "game",
-               scopeId: "d8539eb6-3e27-40c8-906f-9cd1736321d8",
-               id: "ab362b76-b89d-4cd8-80e3-340b048f98c8",
-               name: "game.home_points",         
-               value: 10,
-               timestamp: 1686054201994
-            },
-         }
-      }
-   ]
+  "trigger": {
+    "name": "...",
+    "description": "..",
+    "scope": "sportradar.games",
+    "scopeId": "c24ad602-2290-4787-9b22-81e4e32dd582",
+    "entity": "moderation",
+    "entityId": "aebc7224-399d-4d08-876c-8eeab8b42a8f",
+    "id": "1696a45b-66be-4a7d-a939-a08fa722f8f2",
+    "activated": false
+  },
+  "conditions": [
+    {
+      "activated": true,
+      "current": "start",
+      "compare": "eq",
+      "uri": "event://sportradar.games/c24ad602-2290-4787-9b22-81e4e32dd582/football.game.level",
+      "target": "start",
+      "event": "football.game.level",
+      "chainOrder": 0,
+      "chainOperation": "and",
+      "id": "08ae3940-cbfd-4f4e-9be6-1ea6b8d4d881",
+      "log": [
+        {
+          "id": "183e36c7-9cb1-4edc-9164-c86a9b55f834",
+          "name": "football.game.level",
+          "value": "start",
+          "scope": "sportradar.games",
+          "scopeId": "c24ad602-2290-4787-9b22-81e4e32dd582",
+          "timestamp": 1687854426302
+        }
+      ]
+    },
+    {
+      "activated": true,
+      "current": "30",
+      "compare": "ge",
+      "uri": "event://sportradar.games/c24ad602-2290-4787-9b22-81e4e32dd582/football.game.points.home",
+      "target": "30",
+      "event": "football.game.points.home",
+      "chainOrder": 1,
+      "chainOperation": "and",
+      "id": "144dbdc5-d83c-43b5-b278-1594e64453f3",
+      "log": [
+        {
+          "id": "9401f798-f9c2-4140-9c37-ce610b43f3f1",
+          "name": "football.game.points.home",
+          "value": "30",
+          "scope": "sportradar.games",
+          "scopeId": "c24ad602-2290-4787-9b22-81e4e32dd582",
+          "timestamp": 1687854426303
+        }
+      ]
+    },
+    {
+      "compare": "eq",
+      "uri": "event://sportradar.games/c24ad602-2290-4787-9b22-81e4e32dd582/football.player.state/player/dae23dc8-1912-4308-8ed7-993776246936",
+      "target": "touchdown",
+      "event": "football.player.state",
+      "chainOrder": 2,
+      "chainOperation": "and",
+      "params": {
+        "player": "dae23dc8-1912-4308-8ed7-993776246936"
+      },
+      "id": "49135ab0-f4d7-4dec-b9f9-678c241b5543",
+      "activated": false,
+      "log": []
+    }
+  ]
 }
 ```
 
