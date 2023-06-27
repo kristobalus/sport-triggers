@@ -1,8 +1,8 @@
-import { CompareOp, ConditionType } from "../entities/trigger-condition"
+import { CompareOp, ConditionType } from '../entities/trigger-condition'
 
-import { FootballEvents } from "./football/football-events"
-import { GameLevel } from "./football/football-game-level.event"
-import { FootballPlayerStates } from "./football/football-player-state.event"
+import { FootballEvents } from './football/football-events'
+import { GameLevel } from './football/football-game-level.event'
+import { FootballPlayerStates } from './football/football-player-state.event'
 
 export interface EventMetadata {
   sport: string
@@ -18,7 +18,7 @@ export interface EventMetadata {
 export const metadata: Record<string, EventMetadata> = {
 
   [FootballEvents.GameLevel]: {
-    sport: "football",
+    sport: 'football',
     input: false,
     type: ConditionType.SetAndCompareAsString,
     targets: [
@@ -33,19 +33,19 @@ export const metadata: Record<string, EventMetadata> = {
   },
 
   [FootballEvents.GamePointsHome]: {
-    sport: "football",
+    sport: 'football',
     input: true,
     type: ConditionType.SetAndCompare
   },
 
   [FootballEvents.GamePointsAway]: {
-    sport: "football",
+    sport: 'football',
     input: true,
     type: ConditionType.SetAndCompare
   },
 
   [FootballEvents.PlayerState]: {
-    sport: "football",
+    sport: 'football',
     input: true,
     type: ConditionType.SetAndCompareAsString,
     compare: [
@@ -63,7 +63,7 @@ export const metadata: Record<string, EventMetadata> = {
   },
 
   [FootballEvents.PlayerPassing]: {
-    sport: "football",
+    sport: 'football',
     input: true,
     type: ConditionType.SetAndCompare,
     params: {
@@ -72,7 +72,7 @@ export const metadata: Record<string, EventMetadata> = {
   },
 
   [FootballEvents.PlayerRushing]: {
-    sport: "football",
+    sport: 'football',
     input: true,
     type: ConditionType.SetAndCompare,
     params: {
@@ -81,7 +81,7 @@ export const metadata: Record<string, EventMetadata> = {
   },
 
   [FootballEvents.PlayerReceiving]: {
-    sport: "football",
+    sport: 'football',
     input: true,
     type: ConditionType.SetAndCompare,
     params: {

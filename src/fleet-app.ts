@@ -1,5 +1,5 @@
-import { Microfleet } from "@microfleet/core"
-import { CoreOptions } from "@microfleet/core-types"
+import { Microfleet } from '@microfleet/core'
+import { CoreOptions } from '@microfleet/core-types'
 import '@microfleet/plugin-validator'
 import '@microfleet/plugin-logger'
 import '@microfleet/plugin-router'
@@ -10,14 +10,14 @@ import '@microfleet/plugin-router-hapi'
 import '@microfleet/plugin-redis-sentinel'
 
 import { resolve } from 'node:path'
-import { strict as assert } from "node:assert"
+import { strict as assert } from 'node:assert'
 
 import { Store } from 'ms-conf'
 
-import { AdapterService } from "./services/adapter/adapter.service"
-import { StudioService } from "./services/studio/studio.service"
-import { init as initAdapterService } from "./plugins/adapter-service.plugin"
-import { init as initStudioService } from "./plugins/studio-service.plugin"
+import { AdapterService } from './services/adapter/adapter.service'
+import { StudioService } from './services/studio/studio.service'
+import { init as initAdapterService } from './plugins/adapter-service.plugin'
+import { init as initStudioService } from './plugins/studio-service.plugin'
 
 // import { EventMetadata } from "./models/event-metadata"
 // declare module '@microfleet/core-types' {
@@ -39,7 +39,7 @@ export class FleetApp extends Microfleet {
 }
 
 export async function loadConfiguration() {
-  assert(process.env.NCONF_NAMESPACE, `should have env NCONF_NAMESPACE defined`)
+  assert(process.env.NCONF_NAMESPACE, 'should have env NCONF_NAMESPACE defined')
 
   const store = new Store({ defaultOpts: { env: process.env.NODE_ENV } })
   const path = resolve(__dirname, './configs')

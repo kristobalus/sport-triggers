@@ -1,30 +1,30 @@
-import { CoreOptions } from "@microfleet/core-types"
+import { CoreOptions } from '@microfleet/core-types'
 
-import { randomUUID } from "crypto"
-import { strict as assert } from "assert"
+import { randomUUID } from 'crypto'
+import { strict as assert } from 'assert'
 
-import { TestContext } from "../module"
-import { Scope } from "../../src/models/entities/trigger"
-import { startContext, stopContext } from "../helpers/common"
-import { FootballEvents } from "../../src/models/events/football/football-events"
-import { ChainOp, CompareOp } from "../../src/models/entities/trigger-condition"
+import { TestContext } from '../module'
+import { Scope } from '../../src/models/entities/trigger'
+import { startContext, stopContext } from '../helpers/common'
+import { FootballEvents } from '../../src/models/events/football/football-events'
+import { ChainOp, CompareOp } from '../../src/models/entities/trigger-condition'
 import {
   EssentialConditionData,
   EssentialTriggerData,
   TriggerCreateRequest,
-} from "../../src/models/dto/trigger-create-request"
-import { GameLevel } from "../../src/models/events/football/football-game-level.event"
-import { TriggerSubscribeRequest } from "../../src/models/dto/trigger-subscribe-request"
-import { ItemResponse } from "../../src/models/dto/response"
-import { TriggerCreateResponse } from "../../src/models/dto/trigger-create-response"
-import { AdapterPushRequest } from "../../src/models/dto/adapter-push-request"
+} from '../../src/models/dto/trigger-create-request'
+import { GameLevel } from '../../src/models/events/football/football-game-level.event'
+import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-request'
+import { ItemResponse } from '../../src/models/dto/response'
+import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
+import { AdapterPushRequest } from '../../src/models/dto/adapter-push-request'
 import {
   FootballPlayerStateEvent,
   FootballPlayerStates,
-} from "../../src/models/events/football/football-player-state.event"
-import { FootballGamePointsHomeEvent } from "../../src/models/events/football/football-game-points-home.event"
-import { TriggerWithConditions } from "../../src/models/dto/trigger-with-conditions"
-import { TriggerGetRequest } from "../../src/models/dto/trigger-get-request"
+} from '../../src/models/events/football/football-player-state.event'
+import { FootballGamePointsHomeEvent } from '../../src/models/events/football/football-game-points-home.event'
+import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
+import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string
@@ -39,10 +39,10 @@ interface SuitContext extends TestContext {
   triggerReceiverEntityId: string
 }
 
-describe(`AdapterService`, function () {
+describe('AdapterService', function () {
   const scope = Scope.SportradarGames
   const scopeId = randomUUID()
-  const entity = "moderation"
+  const entity = 'moderation'
   const entityId = randomUUID()
 
   const events = {
@@ -57,7 +57,7 @@ describe(`AdapterService`, function () {
     homeTeamPoints: {
       id: randomUUID(),
       name: FootballEvents.GamePointsHome,
-      value: "30",
+      value: '30',
       scope,
       scopeId,
       timestamp: Date.now() + 1
@@ -83,10 +83,10 @@ describe(`AdapterService`, function () {
   }
 
   const ctx: SuitContext = {
-    triggerReceiverRoute: "trigger.receiver",
+    triggerReceiverRoute: 'trigger.receiver',
     triggerReceiverPayload: { id: 1 },
-    triggerReceiverEntity: "question",
-    triggerReceiverEntityId: "1"
+    triggerReceiverEntity: 'question',
+    triggerReceiverEntityId: '1'
   }
 
   async function createTrigger(ctx: SuitContext) {
@@ -95,8 +95,8 @@ describe(`AdapterService`, function () {
     const response: ItemResponse<TriggerCreateResponse> =
       await ctx.service.amqp.publishAndWait(`${amqpPrefix}.studio.trigger.create`, {
         trigger: {
-          name: "...",
-          description: "..",
+          name: '...',
+          description: '..',
           scope,
           scopeId,
           entity,
@@ -152,7 +152,7 @@ describe(`AdapterService`, function () {
     await amqp.createConsumedQueue((message) => {
       ctx.resolvePending?.(message)
       ctx.resolvePending = null
-    }, [ctx.triggerReceiverRoute], { queue: "service", noAck: true })
+    }, [ctx.triggerReceiverRoute], { queue: 'service', noAck: true })
 
     ctx.pendingSubscriberMessage = new Promise((resolve) => ctx.resolvePending = resolve)
   }
@@ -168,8 +168,8 @@ describe(`AdapterService`, function () {
     const item = response.data
 
     assert.ok(item.type)
-    assert.equal(item.type, "trigger")
-    assert.equal(item.type, "trigger")
+    assert.equal(item.type, 'trigger')
+    assert.equal(item.type, 'trigger')
 
     return item.attributes.trigger.activated
   }
@@ -179,7 +179,7 @@ describe(`AdapterService`, function () {
       logger: {
         debug: true,
         options: {
-          level: "trace",
+          level: 'trace',
         },
       },
     } as Partial<CoreOptions>)
@@ -195,8 +195,8 @@ describe(`AdapterService`, function () {
     await stopContext(ctx)
   })
 
-  it(`push game level event`, async () => {
-    await ctx.request.post("adapter/event/push", {
+  it('push game level event', async () => {
+    await ctx.request.post('adapter/event/push', {
       json: {
         event: events.gameLevelStart,
       } as AdapterPushRequest,
@@ -205,8 +205,8 @@ describe(`AdapterService`, function () {
     assert.equal(await getTriggerActivated(), false)
   })
 
-  it(`push home team points event`, async () => {
-    await ctx.request.post("adapter/event/push", {
+  it('push home team points event', async () => {
+    await ctx.request.post('adapter/event/push', {
       json: {
         event: events.homeTeamPoints,
       } as AdapterPushRequest,
@@ -215,8 +215,8 @@ describe(`AdapterService`, function () {
     assert.equal(await getTriggerActivated(), false)
   })
 
-  it(`push wrong player touchdown event`, async () => {
-    await ctx.request.post("adapter/event/push", {
+  it('push wrong player touchdown event', async () => {
+    await ctx.request.post('adapter/event/push', {
       json: {
         event: events.wrongPlayerTouchdown,
       } as AdapterPushRequest,
@@ -225,8 +225,8 @@ describe(`AdapterService`, function () {
     assert.equal(await getTriggerActivated(), false)
   })
 
-  it(`push correct player touchdown event`, async () => {
-    await ctx.request.post("adapter/event/push", {
+  it('push correct player touchdown event', async () => {
+    await ctx.request.post('adapter/event/push', {
       json: {
         event: events.correctPlayerTouchdown,
       } as AdapterPushRequest,
@@ -235,7 +235,7 @@ describe(`AdapterService`, function () {
     assert.equal(await getTriggerActivated(), true)
   })
 
-  it(`should send message to subscriber`, async () => {
+  it('should send message to subscriber', async () => {
     const message = await ctx.pendingSubscriberMessage
 
     assert.ok(message)

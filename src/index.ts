@@ -1,10 +1,11 @@
-import { createFleetApp, FleetApp } from "./fleet-app"
+import { createFleetApp, FleetApp } from './fleet-app'
 
 /**
  *
  * required by @microfleet/core mfleet.js to resolve package
  */
-export default async function load(): Promise<FleetApp> {
+// eslint-disable-next-line import/no-default-export
+export default function load(): Promise<FleetApp> {
   return createFleetApp()
 }
 

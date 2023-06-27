@@ -1,8 +1,8 @@
-import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
+import { ActionTransport, ServiceRequest } from '@microfleet/plugin-router'
 
-import { FleetApp } from "../../fleet-app"
+import { FleetApp } from '../../fleet-app'
 
-async function Handler(this: FleetApp, _request: ServiceRequest,) {
+function Handler(this: FleetApp, _request: ServiceRequest) {
   const data = this.studioService.getMetadata()
 
   return { data }

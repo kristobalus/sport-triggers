@@ -1,5 +1,5 @@
 
-import { GotInstance } from "got"
+import { GotInstance } from 'got'
 
 interface TestContext {
   service?: import('@microfleet/core').Microfleet

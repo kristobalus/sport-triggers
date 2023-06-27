@@ -1,4 +1,4 @@
-import { CoreOptions } from "@microfleet/core"
+import { CoreOptions } from '@microfleet/core'
 
 export const notifier: CoreOptions['notifier'] = {
   enabled: true,

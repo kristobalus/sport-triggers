@@ -1,40 +1,40 @@
-import { CoreOptions } from "@microfleet/core-types"
+import { CoreOptions } from '@microfleet/core-types'
 
-import * as assert from "assert"
-import { randomUUID } from "crypto"
+import * as assert from 'assert'
+import { randomUUID } from 'crypto'
 
-import { TestContext } from "../module"
-import { Scope } from "../../src/models/entities/trigger"
-import { ListResponse, ItemResponse } from "../../src/models/dto/response"
-import { startContext, stopContext } from "../helpers/common"
-import { FootballEvents } from "../../src/models/events/football/football-events"
-import { CompareOp } from "../../src/models/entities/trigger-condition"
+import { TestContext } from '../module'
+import { Scope } from '../../src/models/entities/trigger'
+import { ListResponse, ItemResponse } from '../../src/models/dto/response'
+import { startContext, stopContext } from '../helpers/common'
+import { FootballEvents } from '../../src/models/events/football/football-events'
+import { CompareOp } from '../../src/models/entities/trigger-condition'
 import {
   EssentialConditionData,
   EssentialTriggerData,
   TriggerCreateRequest,
-} from "../../src/models/dto/trigger-create-request"
-import { GameLevel } from "../../src/models/events/football/football-game-level.event"
-import { TriggerListRequest } from "../../src/models/dto/trigger-list-request"
-import { TriggerCreateResponse } from "../../src/models/dto/trigger-create-response"
-import { TriggerSubscribeRequest } from "../../src/models/dto/trigger-subscribe-request"
-import { TriggerSubscription } from "../../src/models/entities/trigger-subscription"
-import { SubscriptionListRequest } from "../../src/models/dto/subscription-list-request"
-import { TriggerGetRequest } from "../../src/models/dto/trigger-get-request"
-import { TriggerWithConditions } from "../../src/models/dto/trigger-with-conditions"
+} from '../../src/models/dto/trigger-create-request'
+import { GameLevel } from '../../src/models/events/football/football-game-level.event'
+import { TriggerListRequest } from '../../src/models/dto/trigger-list-request'
+import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
+import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-request'
+import { TriggerSubscription } from '../../src/models/entities/trigger-subscription'
+import { SubscriptionListRequest } from '../../src/models/dto/subscription-list-request'
+import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
+import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
 
 interface SuitContext extends TestContext {
   triggerId?: string
   subscriptionId?: string
 }
 
-describe(`StudioService`, function () {
+describe('StudioService', function () {
   const scope = Scope.SportradarGames
   const scopeId = randomUUID()
-  const entity = "moderation"
+  const entity = 'moderation'
   const entityId = randomUUID()
-  const subEntity = "question"
-  const subEntityId = "1"
+  const subEntity = 'question'
+  const subEntityId = '1'
 
   const ctx: SuitContext = {}
 
@@ -43,7 +43,7 @@ describe(`StudioService`, function () {
       logger: {
         debug: true,
         options: {
-          level: "trace",
+          level: 'trace',
         },
       },
     } as Partial<CoreOptions>)
@@ -53,10 +53,10 @@ describe(`StudioService`, function () {
     await stopContext(ctx)
   })
 
-  it(`should create trigger`, async () => {
+  it('should create trigger', async () => {
     const triggerData = {
-      name: "...",
-      description: "..",
+      name: '...',
+      description: '..',
       scope,
       scopeId,
       entity,
@@ -82,12 +82,12 @@ describe(`StudioService`, function () {
     assert.ok(response.data)
     assert.ok(response.data.id)
     assert.ok(response.data.type)
-    assert.equal(response.data.type, "trigger")
+    assert.equal(response.data.type, 'trigger')
 
     ctx.triggerId = response.data.id
   })
 
-  it(`should get trigger by id`, async () => {
+  it('should get trigger by id', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
     const response: ItemResponse<TriggerWithConditions> =
       await ctx.service.amqp.publishAndWait(`${prefix}.studio.trigger.get`,
@@ -99,10 +99,10 @@ describe(`StudioService`, function () {
     const item = response.data
 
     assert.ok(item.type)
-    assert.equal(item.type, "trigger")
+    assert.equal(item.type, 'trigger')
   })
 
-  it(`should list triggers`, async () => {
+  it('should list triggers', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
     const response: ListResponse = await ctx.service.amqp.publishAndWait(`${prefix}.studio.trigger.list`,
       { entity, entityId } as TriggerListRequest)
@@ -115,17 +115,17 @@ describe(`StudioService`, function () {
     const [item] = response.data
 
     assert.ok(item.type)
-    assert.equal(item.type, "trigger")
+    assert.equal(item.type, 'trigger')
   })
 
-  it(`should subscribe for trigger`, async () => {
+  it('should subscribe for trigger', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
     const response: ItemResponse = await ctx.service.amqp
       .publishAndWait(`${prefix}.studio.trigger.subscribe`,
         {
           triggerId: ctx.triggerId, subscription: {
-            route: "interactive.question.activate",
-            payload: { foo: "bar", id: "1" },
+            route: 'interactive.question.activate',
+            payload: { foo: 'bar', id: '1' },
             entity: subEntity,
             entityId: subEntityId,
           },
@@ -135,12 +135,12 @@ describe(`StudioService`, function () {
     assert.ok(response.data)
     assert.ok(response.data.id)
     assert.ok(response.data.type)
-    assert.equal(response.data.type, "subscription")
+    assert.equal(response.data.type, 'subscription')
 
     ctx.subscriptionId = response.data.id
   })
 
-  it(`should get subscription list by trigger`, async () => {
+  it('should get subscription list by trigger', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
     const response: ListResponse<TriggerSubscription> = await ctx.service.amqp
       .publishAndWait(`${prefix}.studio.subscription.list`, { triggerId: ctx.triggerId })
@@ -154,7 +154,7 @@ describe(`StudioService`, function () {
     assert.equal(item.attributes.id, ctx.subscriptionId)
   })
 
-  it(`should get subscription list by entity`, async () => {
+  it('should get subscription list by entity', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
     const response: ListResponse<TriggerSubscription> = await ctx.service.amqp
       .publishAndWait(`${prefix}.studio.subscription.list`,
@@ -168,12 +168,12 @@ describe(`StudioService`, function () {
 
     assert.ok(item.type)
     assert.ok(item.id)
-    assert.equal(item.type, "subscription")
+    assert.equal(item.type, 'subscription')
     assert.equal(item.id, ctx.subscriptionId)
     assert.equal(item.attributes.id, ctx.subscriptionId)
   })
 
-  it(`should cancel subscription`, async () => {
+  it('should cancel subscription', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
     const response: ItemResponse = await ctx.service.amqp
       .publishAndWait(`${prefix}.studio.subscription.cancel`, { id: ctx.subscriptionId })
@@ -184,7 +184,7 @@ describe(`StudioService`, function () {
     assert.equal(response.data.id, ctx.subscriptionId)
   })
 
-  it(`should delete trigger`, async () => {
+  it('should delete trigger', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
     const response: ItemResponse = await ctx.service.amqp
       .publishAndWait(`${prefix}.studio.trigger.delete`, { id: ctx.triggerId })
@@ -193,7 +193,7 @@ describe(`StudioService`, function () {
     assert.ok(response.data)
     assert.ok(response.data.id)
     assert.ok(response.data.type)
-    assert.equal(response.data.type, "trigger")
+    assert.equal(response.data.type, 'trigger')
     assert.equal(response.data.id, ctx.triggerId)
   })
 })

@@ -1,9 +1,9 @@
-import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
+import { ActionTransport, ServiceRequest } from '@microfleet/plugin-router'
 
-import { FleetApp } from "../../../fleet-app"
-import { ItemResponse, toResponseItem } from "../../../models/dto/response"
-import { TriggerWithConditions } from "../../../models/dto/trigger-with-conditions"
-import { TriggerGetRequest } from "../../../models/dto/trigger-get-request"
+import { FleetApp } from '../../../fleet-app'
+import { ItemResponse, toResponseItem } from '../../../models/dto/response'
+import { TriggerWithConditions } from '../../../models/dto/trigger-with-conditions'
+import { TriggerGetRequest } from '../../../models/dto/trigger-get-request'
 
 async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ItemResponse<TriggerWithConditions>> {
   const { id } = request.params as TriggerGetRequest
@@ -12,7 +12,7 @@ async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ItemRe
 
   const trigger = await studioService.getTrigger(id, { showLog: true, trim: true })
 
-  this.log.debug({ request: { id }, trigger }, "get trigger")
+  this.log.debug({ request: { id }, trigger }, 'get trigger')
 
   return {
     data: toResponseItem<TriggerWithConditions>(id, 'trigger', trigger)

@@ -1,9 +1,18 @@
 {
-  "extends": "eslint-config-streamlayer",
+  "extends": ["eslint-config-streamlayer"],
   "rules": {
     "@typescript-eslint/ban-ts-comment": 0,
-    "@typescript-eslint/no-floating-promises": "error",
-    "require-await": "off"
+    "curly": "error",
+    "quotes": ["error", "single"],
+    "space-unary-ops": "error",
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ]
   },
   "overrides": [
     {

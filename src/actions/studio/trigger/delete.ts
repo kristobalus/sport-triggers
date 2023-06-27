@@ -1,9 +1,9 @@
 
-import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
+import { ActionTransport, ServiceRequest } from '@microfleet/plugin-router'
 
-import { FleetApp } from "../../../fleet-app"
-import { ItemResponse } from "../../../models/dto/response"
-import { TriggerDeleteRequest } from "../../../models/dto/trigger-delete-request"
+import { FleetApp } from '../../../fleet-app'
+import { ItemResponse } from '../../../models/dto/response'
+import { TriggerDeleteRequest } from '../../../models/dto/trigger-delete-request'
 
 async function DeleteHandler(this: FleetApp, request: ServiceRequest): Promise<ItemResponse> {
   const { id } = request.params as TriggerDeleteRequest
@@ -15,7 +15,7 @@ async function DeleteHandler(this: FleetApp, request: ServiceRequest): Promise<I
   return {
     data: {
       id,
-      type: "trigger"
+      type: 'trigger'
     }
   } as ItemResponse
 }

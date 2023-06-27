@@ -1,14 +1,14 @@
 
-import { CoreOptions } from "@microfleet/core-types"
+import { CoreOptions } from '@microfleet/core-types'
 
-import { strict as assert } from "assert"
+import { strict as assert } from 'assert'
 
-import { HTTPError } from "got"
+import { HTTPError } from 'got'
 
-import { startContext, stopContext } from "../helpers/common"
-import { TestContext } from "../module"
+import { startContext, stopContext } from '../helpers/common'
+import { TestContext } from '../module'
 
-describe(`echo test via hapi (http)`, () => {
+describe('echo test via hapi (http)', () => {
   const ctx: TestContext = {} as TestContext
 
   before(async () => {
@@ -29,8 +29,8 @@ describe(`echo test via hapi (http)`, () => {
   })
 
   it('should get pong via http', async () => {
-    assert(ctx.request, `context has no got instance`)
-    const res = await ctx.request.post("echo", {
+    assert(ctx.request, 'context has no got instance')
+    const res = await ctx.request.post('echo', {
       json: { ping: true }
     })
 
@@ -38,12 +38,12 @@ describe(`echo test via hapi (http)`, () => {
     assert(res.body)
     const doc = JSON.parse(res.body)
 
-    assert(doc.pong === true, "pong should be positive boolean")
+    assert(doc.pong === true, 'pong should be positive boolean')
   })
 
   it('should get 403 error via http', async () => {
-    assert(ctx.request, `context has no got instance`)
-    const req = ctx.request.post("echo", {
+    assert(ctx.request, 'context has no got instance')
+    const req = ctx.request.post('echo', {
       json: { ping: false }
     })
 

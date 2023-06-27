@@ -1,10 +1,10 @@
-import { randomUUID } from "crypto"
-import * as assert from "assert"
+import { randomUUID } from 'crypto'
+import * as assert from 'assert'
 
-import { Redis } from "ioredis"
+import { Redis } from 'ioredis'
 
-import { Trigger } from "../models/entities/trigger"
-import { assertNoError } from "../utils/pipeline-utils"
+import { Trigger } from '../models/entities/trigger'
+import { assertNoError } from '../utils/pipeline-utils'
 
 export function triggerKey(triggerId: string) {
   return `triggers/${triggerId}`
@@ -22,7 +22,7 @@ export class TriggerCollection {
   constructor(
     private redis: Redis,
     private expiresInSeconds?: number
-  ) {}
+  ) { }
 
   async add(item: Partial<Trigger>): Promise<string> {
     if (!item.id) {
@@ -31,12 +31,12 @@ export class TriggerCollection {
 
     const count = await this.redis.hset(triggerKey(item.id), item as Record<string, any>)
 
-    if ( count > 0 ) {
+    if (count > 0) {
       try {
         const pipe = this.redis.pipeline()
 
         pipe.sadd(triggerSetByScopeKey(item.scope, item.scopeId), item.id)
-        if ( item.entity && item.entityId ) {
+        if (item.entity && item.entityId) {
           pipe.sadd(triggerSetByEntityKey(item.entity, item.entityId), item.id)
         }
 
@@ -56,7 +56,7 @@ export class TriggerCollection {
   async getOne(id: string): Promise<Trigger> {
     const data = await this.redis.hgetall(triggerKey(id)) as unknown as Trigger
 
-    data.activated = (data.activated as unknown as string) == "true"
+    data.activated = (data.activated as unknown as string) == 'true'
 
     return data.id ? data : null
   }
@@ -79,11 +79,11 @@ export class TriggerCollection {
     await this.redis.hset(triggerKey(id), item as Record<string, any>)
   }
 
-  async getListByEntity(entity: string, entityId: string): Promise<string[]> {
+  getListByEntity(entity: string, entityId: string): Promise<string[]> {
     return this.redis.smembers(triggerSetByEntityKey(entity, entityId))
   }
 
-  async getListByScope(scope: string, scopeId: string): Promise<string[]> {
+  getListByScope(scope: string, scopeId: string): Promise<string[]> {
     return this.redis.smembers(triggerSetByScopeKey(scope, scopeId))
   }
 
@@ -91,7 +91,7 @@ export class TriggerCollection {
     const item = await this.getOne(id)
     const pipe = this.redis.pipeline()
 
-    if ( this.expiresInSeconds ) {
+    if (this.expiresInSeconds) {
       pipe.expire(triggerKey(id), this.expiresInSeconds)
     } else {
       pipe.del(triggerKey(id))

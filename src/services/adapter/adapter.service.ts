@@ -1,14 +1,14 @@
-import { Microfleet } from "@microfleet/core-types"
-import { AMQPTransport } from "@microfleet/transport-amqp"
+import { Microfleet } from '@microfleet/core-types'
+import { AMQPTransport } from '@microfleet/transport-amqp'
 
-import { Redis } from "ioredis"
+import { Redis } from 'ioredis'
 
-import { conditionKey, TriggerConditionCollection } from "../../repositories/trigger-condition.collection"
-import { Event } from "../../models/events/event"
-import { ChainOp, ConditionType, TriggerCondition } from "../../models/entities/trigger-condition"
-import { TriggerSubscriptionCollection } from "../../repositories/trigger-subscription.collection"
-import { TriggerCollection } from "../../repositories/trigger.collection"
-import { toUriByEvent } from "../../models/events/uri"
+import { conditionKey, TriggerConditionCollection } from '../../repositories/trigger-condition.collection'
+import { Event } from '../../models/events/event'
+import { ChainOp, ConditionType, TriggerCondition } from '../../models/entities/trigger-condition'
+import { TriggerSubscriptionCollection } from '../../repositories/trigger-subscription.collection'
+import { TriggerCollection } from '../../repositories/trigger.collection'
+import { toUriByEvent } from '../../models/events/uri'
 
 export class AdapterService {
   private conditionCollection: TriggerConditionCollection
@@ -29,20 +29,20 @@ export class AdapterService {
   async pushEvent(event: Event) {
     const uri = toUriByEvent(event)
 
-    this.log.debug({ event, uri }, `incoming event`)
+    this.log.debug({ event, uri }, 'incoming event')
 
     const { scope, scopeId, name } = event
     const triggers = await this.conditionCollection.getTriggerListByScopeAndEvent(scope, scopeId, name)
 
-    this.log.debug({ triggers }, `triggers found`)
+    this.log.debug({ triggers }, 'triggers found')
 
     for (const triggerId of triggers) {
       const conditions = await this.conditionCollection.getByTriggerId(triggerId)
 
-      this.log.debug({ triggerId, conditions }, `conditions found`)
+      this.log.debug({ triggerId, conditions }, 'conditions found')
 
       for (const condition of conditions) {
-        if (condition.activated) continue
+        if (condition.activated) { continue }
         if (condition.uri === uri) {
           await this.evaluateCondition(event, condition)
         }
@@ -59,7 +59,7 @@ export class AdapterService {
       }
 
       if (triggerResult) {
-        this.log.debug({ triggerId }, `trigger activated`)
+        this.log.debug({ triggerId }, 'trigger activated')
         await this.triggerCollection.updateOne(triggerId, { activated: true })
 
         await this.notify(triggerId)
@@ -69,7 +69,7 @@ export class AdapterService {
   }
 
   private async evaluateCondition(event: Event, condition: TriggerCondition) {
-    this.log.debug({ event, condition }, `evaluating trigger condition`)
+    this.log.debug({ event, condition }, 'evaluating trigger condition')
     if (condition.type === ConditionType.SetAndCompare) {
       await this.setAndCompare(event, condition)
     } else if (condition.type === ConditionType.SetAndCompareAsString) {
@@ -77,7 +77,7 @@ export class AdapterService {
     } else if (condition.type === ConditionType.IncrAndCompare) {
       await this.incrAndCompare(event, condition)
     } else {
-      this.log.fatal({ event }, `processing flow is not implemented`)
+      this.log.fatal({ event }, 'processing flow is not implemented')
     }
   }
 
@@ -90,12 +90,12 @@ export class AdapterService {
 
       condition.activated = !!activated
 
-      if ( append ) {
+      if (append) {
         condition.current = current
         await this.conditionCollection.appendToEventLog(condition.id, event)
       }
 
-      this.log.debug({ condition }, `evaluation result`)
+      this.log.debug({ condition }, 'evaluation result')
     } catch (err) {
       this.log.fatal({ err, key, current }, 'failed to compare')
     }
@@ -112,13 +112,13 @@ export class AdapterService {
 
       condition.activated = !!result
 
-      if ( append ) {
+      if (append) {
         await this.conditionCollection.appendToEventLog(condition.id, event)
       }
 
-      this.log.debug({ condition }, `evaluation result`)
+      this.log.debug({ condition }, 'evaluation result')
     } catch (err) {
-      this.log.fatal({ err, key, value: current }, "failed to compare")
+      this.log.fatal({ err, key, value: current }, 'failed to compare')
     }
 
     return condition.activated
@@ -136,7 +136,7 @@ export class AdapterService {
       const { route, payload, options } = subscription
 
       await this.amqp.publishAndWait(route, { ...payload }, { ...options })
-      this.log.debug({ route, payload, options, triggerId, subscriptionId: id }, `message sent`)
+      this.log.debug({ route, payload, options, triggerId, subscriptionId: id }, 'message sent')
     }
   }
 

@@ -1,9 +1,9 @@
 
-import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
+import { ActionTransport, ServiceRequest } from '@microfleet/plugin-router'
 
-import { FleetApp } from "../../../fleet-app"
-import { TriggerSubscribeRequest } from "../../../models/dto/trigger-subscribe-request"
-import { ItemResponse } from "../../../models/dto/response"
+import { FleetApp } from '../../../fleet-app'
+import { TriggerSubscribeRequest } from '../../../models/dto/trigger-subscribe-request'
+import { ItemResponse } from '../../../models/dto/response'
 
 async function Handler(this: FleetApp, request: ServiceRequest): Promise<ItemResponse> {
   const { triggerId, subscription } = request.params as TriggerSubscribeRequest
@@ -11,12 +11,12 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<ItemRes
   const { studioService } = this
   const id = await studioService.subscribeTrigger(triggerId, subscription)
 
-  this.log.debug({ request: {  triggerId, subscription }, id }, "subscribe for trigger")
+  this.log.debug({ request: { triggerId, subscription }, id }, 'subscribe for trigger')
 
   return {
     data: {
       id,
-      type: "subscription"
+      type: 'subscription'
     }
   } as ItemResponse
 }

@@ -1,9 +1,9 @@
 
-import { ActionTransport, ServiceRequest } from "@microfleet/plugin-router"
+import { ActionTransport, ServiceRequest } from '@microfleet/plugin-router'
 
-import { FleetApp } from "../../../fleet-app"
-import { ItemResponse } from "../../../models/dto/response"
-import { SubscriptionCancelRequest } from "../../../models/dto/subscription-cancel-request"
+import { FleetApp } from '../../../fleet-app'
+import { ItemResponse } from '../../../models/dto/response'
+import { SubscriptionCancelRequest } from '../../../models/dto/subscription-cancel-request'
 
 async function Handler(this: FleetApp, request: ServiceRequest): Promise<ItemResponse> {
   const { id } = request.params as SubscriptionCancelRequest
@@ -12,12 +12,12 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<ItemRes
 
   await studioService.cancelSubscription(id)
 
-  this.log.debug({ id }, "cancel subscription")
+  this.log.debug({ id }, 'cancel subscription')
 
   return {
     data: {
       id,
-      type: "subscription"
+      type: 'subscription'
     }
   } as ItemResponse
 }

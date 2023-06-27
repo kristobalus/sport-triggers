@@ -1,10 +1,10 @@
 // import * as assert from "assert"
-import { randomUUID } from "crypto"
+import { randomUUID } from 'crypto'
 
-import { Redis } from "ioredis"
+import { Redis } from 'ioredis'
 
-import { SerializedTriggerSubscription, TriggerSubscription } from "../models/entities/trigger-subscription"
-import { assertNoError } from "../utils/pipeline-utils"
+import { SerializedTriggerSubscription, TriggerSubscription } from '../models/entities/trigger-subscription'
+import { assertNoError } from '../utils/pipeline-utils'
 
 /**
  * set
@@ -54,7 +54,7 @@ export class TriggerSubscriptionCollection {
     pipe.sadd(subscriptionByTriggerKey(triggerId), data.id)
     pipe.sadd(subscriptionByEntityKey(item.entity, item.entityId), data.id)
 
-    if ( this.expiresInSeconds ) {
+    if (this.expiresInSeconds) {
       pipe.expire(subscriptionKey(data.id), this.expiresInSeconds)
       pipe.expire(subscriptionByTriggerKey(triggerId), this.expiresInSeconds)
       pipe.expire(subscriptionByEntityKey(item.entity, item.entityId), this.expiresInSeconds)
@@ -94,7 +94,7 @@ export class TriggerSubscriptionCollection {
       return null
     }
 
-    if ( item.payload ) {
+    if (item.payload) {
       item.payload = JSON.parse(item.payload as unknown as string)
     }
 
@@ -105,11 +105,11 @@ export class TriggerSubscriptionCollection {
     return item as unknown as TriggerSubscription
   }
 
-  async getListByTrigger(triggerId: string): Promise<string[]> {
+  getListByTrigger(triggerId: string): Promise<string[]> {
     return this.redis.smembers(subscriptionByTriggerKey(triggerId))
   }
 
-  async getListByEntity(entity: string, entityId: string): Promise<string[]> {
+  getListByEntity(entity: string, entityId: string): Promise<string[]> {
     return this.redis.smembers(subscriptionByEntityKey(entity, entityId))
   }
 }

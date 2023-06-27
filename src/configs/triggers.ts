@@ -1,4 +1,4 @@
-import { TriggerConfig } from "../module"
+import { TriggerConfig } from '../module'
 
 export const triggers: TriggerConfig = {
   // shows how long data about trigger will be kept after activation

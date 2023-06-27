@@ -6,7 +6,7 @@ export function getStr(pipeRes: PipelineResult<string>): string {
   const [err, value] = pipeRes
 
   if (err)
-    throw new CommonErrors.RedisError(`error in pipeline result`, err)
+  { throw new CommonErrors.RedisError('error in pipeline result', err) }
 
   return value
 }
@@ -15,7 +15,7 @@ export function getInt(pipeRes: PipelineResult<string>, defaultValue?: number): 
   const [err, value] = pipeRes
 
   if (err)
-    throw new CommonErrors.RedisError(`error in pipeline result`, err)
+  { throw new CommonErrors.RedisError('error in pipeline result', err) }
   const out = parseInt(value)
 
   return !isNaN(out) ? out : defaultValue
@@ -25,7 +25,7 @@ export function getStrArr(pipeRes: PipelineResult<string[]>, defaultValue?: stri
   const [err, arr] = pipeRes
 
   if (err)
-    throw new CommonErrors.RedisError(`error in pipeline result`, err)
+  { throw new CommonErrors.RedisError('error in pipeline result', err) }
 
   return arr ?? defaultValue
 }
@@ -39,7 +39,7 @@ export function createObjectFromHmGet(pipeRes: PipelineResult<string[]>, fields:
   const [err, piped] = pipeRes
 
   if (err)
-    throw new CommonErrors.RedisError(`error in pipeline result`, err)
+  { throw new CommonErrors.RedisError('error in pipeline result', err) }
 
   const data = {}
 
@@ -53,7 +53,7 @@ export function createObjectFromHmGet(pipeRes: PipelineResult<string[]>, fields:
 export function createArrayFromHGetAll<T>(results: PipelineResult<T>[]) {
   for (const [err] of results) {
     if (err)
-      throw err
+    { throw err }
   }
 
   return results.map(([, res]) => res)
@@ -62,6 +62,6 @@ export function createArrayFromHGetAll<T>(results: PipelineResult<T>[]) {
 export function assertNoError<T>(results: PipelineResult<T>[]) {
   for (const [err] of results) {
     if (err)
-      throw err
+    { throw err }
   }
 }

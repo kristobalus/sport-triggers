@@ -1,15 +1,15 @@
-import { Microfleet } from "@microfleet/core-types"
+import { Microfleet } from '@microfleet/core-types'
 
-import { Redis } from "ioredis"
+import { Redis } from 'ioredis'
 
-import { TriggerCollection } from "../../repositories/trigger.collection"
-import { TriggerConditionCollection } from "../../repositories/trigger-condition.collection"
-import { TriggerSubscriptionCollection } from "../../repositories/trigger-subscription.collection"
-import { EssentialConditionData, EssentialTriggerData } from "../../models/dto/trigger-create-request"
-import { TriggerWithConditions } from "../../models/dto/trigger-with-conditions"
-import { EssentialSubscriptionData } from "../../models/dto/trigger-subscribe-request"
-import { TriggerSubscription } from "../../models/entities/trigger-subscription"
-import { metadata } from "../../models/events/event-metadata"
+import { TriggerCollection } from '../../repositories/trigger.collection'
+import { TriggerConditionCollection } from '../../repositories/trigger-condition.collection'
+import { TriggerSubscriptionCollection } from '../../repositories/trigger-subscription.collection'
+import { EssentialConditionData, EssentialTriggerData } from '../../models/dto/trigger-create-request'
+import { TriggerWithConditions } from '../../models/dto/trigger-with-conditions'
+import { EssentialSubscriptionData } from '../../models/dto/trigger-subscribe-request'
+import { TriggerSubscription } from '../../models/entities/trigger-subscription'
+import { metadata } from '../../models/events/event-metadata'
 
 export interface TriggerOptions {
   showLog?: boolean
@@ -32,7 +32,7 @@ export class StudioService {
   }
 
   async createTrigger(triggerData: EssentialTriggerData, conditionData: EssentialConditionData[]) {
-    this.log.debug({ trigger: triggerData, conditions: conditionData }, "create trigger")
+    this.log.debug({ trigger: triggerData, conditions: conditionData }, 'create trigger')
 
     const id = await this.triggers.add(triggerData)
 
@@ -50,6 +50,7 @@ export class StudioService {
 
     for (const id of ids) {
       const trigger = await this.getTrigger(id, options)
+
       items.push(trigger)
     }
 
@@ -65,6 +66,7 @@ export class StudioService {
 
     for (const id of ids) {
       const trigger = await this.getTrigger(id, options)
+
       items.push(trigger)
     }
 
@@ -103,11 +105,11 @@ export class StudioService {
     await this.subscriptions.deleteByTriggerId(triggerId)
   }
 
-  async subscribeTrigger(triggerId: string, data: EssentialSubscriptionData): Promise<string> {
+  subscribeTrigger(triggerId: string, data: EssentialSubscriptionData): Promise<string> {
     return this.subscriptions.create(triggerId, data)
   }
 
-  async cancelSubscription(subscriptionId: string) {
+  cancelSubscription(subscriptionId: string) {
     return this.subscriptions.deleteOne(subscriptionId)
   }
 

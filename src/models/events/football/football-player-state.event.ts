@@ -1,15 +1,15 @@
 // noinspection JSUnusedGlobalSymbols
 
-import { Event } from "../event"
-import { Player } from "../player"
+import { Event } from '../event'
+import { Player } from '../player'
 
-import { FootballEvents } from "./football-events"
+import { FootballEvents } from './football-events'
 
 export enum FootballPlayerStates {
-  FirstDown = "first.down",
-  Touchdown = "touchdown",
-  BigPlay="big.play",
-  Penalty="penalty"
+  FirstDown = 'first.down',
+  Touchdown = 'touchdown',
+  BigPlay='big.play',
+  Penalty='penalty'
 }
 
 export interface FootballPlayerStateEvent extends Event, Player {

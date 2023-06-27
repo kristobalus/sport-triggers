@@ -1,22 +1,22 @@
-import { Event } from "../events/event"
+import { Event } from '../events/event'
 
 export enum ConditionType {
-  SetAndCompare = "set_and_compare",
-  IncrAndCompare = "incr_and_compare",
-  SetAndCompareAsString = "set_and_compare_as_string"
+  SetAndCompare = 'set_and_compare',
+  IncrAndCompare = 'incr_and_compare',
+  SetAndCompareAsString = 'set_and_compare_as_string'
 }
 
 export enum CompareOp {
-  Equal="eq",
-  LessThan="lt",
-  GreaterThan="gt",
-  LessOrEqual="le",
-  GreaterOrEqual="ge"
+  Equal = 'eq',
+  LessThan = 'lt',
+  GreaterThan = 'gt',
+  LessOrEqual = 'le',
+  GreaterOrEqual = 'ge'
 }
 
 export enum ChainOp {
-  AND="and",
-  OR="or"
+  AND = 'and',
+  OR = 'or'
 }
 
 export interface ConditionParams {

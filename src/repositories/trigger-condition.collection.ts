@@ -1,14 +1,14 @@
-import { randomUUID } from "crypto"
+import { randomUUID } from 'crypto'
 
-import { Redis } from "ioredis"
-import { inPlaceSort } from "fast-sort"
-import { ArgumentError } from "common-errors"
+import { Redis } from 'ioredis'
+import { inPlaceSort } from 'fast-sort'
+import { ArgumentError } from 'common-errors'
 
-import { ChainOp, ConditionType, TriggerCondition } from "../models/entities/trigger-condition"
-import { assertNoError, createArrayFromHGetAll } from "../utils/pipeline-utils"
-import { Event } from "../models/events/event"
-import { metadata } from "../models/events/event-metadata"
-import { toUriByCondition } from "../models/events/uri"
+import { ChainOp, ConditionType, TriggerCondition } from '../models/entities/trigger-condition'
+import { assertNoError, createArrayFromHGetAll } from '../utils/pipeline-utils'
+import { Event } from '../models/events/event'
+import { metadata } from '../models/events/event-metadata'
+import { toUriByCondition } from '../models/events/uri'
 
 export function conditionSetByTriggerKey(triggerId: string) {
   return `triggers/${triggerId}/conditions`
@@ -39,7 +39,7 @@ export class TriggerConditionCollection {
     scopeId: string,
     conditions: Partial<TriggerCondition>[]) {
     if (conditions.length == 0) {
-      throw new ArgumentError(`Cannot create trigger without conditions`)
+      throw new ArgumentError('Cannot create trigger without conditions')
     }
 
     // prefill data
@@ -49,28 +49,28 @@ export class TriggerConditionCollection {
       if (!condition.triggerId) {
         condition.triggerId = triggerId
       } else if (condition.triggerId !== triggerId) {
-        throw new ArgumentError(`Owner conflict`)
+        throw new ArgumentError('Owner conflict')
       }
 
-      if ( metadata[condition.event].params?.player ) {
-        if ( !condition.params?.player ) {
+      if (metadata[condition.event].params?.player) {
+        if (!condition.params?.player) {
           throw new ArgumentError(`Condition for event ${condition.event} should have player parameter.`)
         }
       } else {
-        if ( condition.params?.player ) {
+        if (condition.params?.player) {
           throw new ArgumentError(`Condition for event ${condition.event} should have no player parameter.`)
         }
       }
 
-      if ( metadata[condition.event].targets?.length > 0 ) {
-        if ( !metadata[condition.event].targets.includes(condition.target) ) {
+      if (metadata[condition.event].targets?.length > 0) {
+        if (!metadata[condition.event].targets.includes(condition.target)) {
           throw new ArgumentError(`Condition for event ${condition.event} should `
             + `have target one of ${JSON.stringify(metadata[condition.event].targets)}.`)
         }
       }
 
-      if ( metadata[condition.event].compare?.length > 0 ) {
-        if ( !metadata[condition.event].compare.includes(condition.compare) ) {
+      if (metadata[condition.event].compare?.length > 0) {
+        if (!metadata[condition.event].compare.includes(condition.compare)) {
           throw new ArgumentError(`Condition for event ${condition.event} should `
             + `have compare one of ${JSON.stringify(metadata[condition.event].compare)}.`)
         }
@@ -81,11 +81,11 @@ export class TriggerConditionCollection {
       }
 
       if (condition.type == ConditionType.SetAndCompare) {
-        condition.current = "0"
+        condition.current = '0'
       }
 
       if (condition.type == ConditionType.SetAndCompareAsString) {
-        condition.current = ""
+        condition.current = ''
       }
 
       if (!condition.chainOperation) {
@@ -98,7 +98,7 @@ export class TriggerConditionCollection {
       condition.chainOrder = i
       condition.uri = toUriByCondition(condition)
 
-      if ( condition.params ) {
+      if (condition.params) {
         condition.params = JSON.stringify(condition.params) as any
       }
     }
@@ -131,8 +131,8 @@ export class TriggerConditionCollection {
 
     for (const condition of conditions) {
       condition.chainOrder = parseInt(condition.chainOrder as unknown as string)
-      condition.activated = (condition.activated as unknown as string) == "1"
-      if ( condition.params ) {
+      condition.activated = (condition.activated as unknown as string) == '1'
+      if (condition.params) {
         condition.params = JSON.parse(condition.params as any)
       }
       if (options.showLog) {
@@ -156,7 +156,7 @@ export class TriggerConditionCollection {
     }
   }
 
-  async getTriggerListByScopeAndEvent(
+  getTriggerListByScopeAndEvent(
     scope: string,
     scopeId: string,
     eventName: string): Promise<string[]> {
@@ -188,7 +188,7 @@ export class TriggerConditionCollection {
     for (const item of conditions) {
       const pipe = this.redis.pipeline()
 
-      if ( this.expiresInSeconds ) {
+      if (this.expiresInSeconds) {
         pipe.expire(conditionSetByTriggerKey(triggerId), this.expiresInSeconds)
         pipe.expire(conditionKey(triggerId), this.expiresInSeconds)
         pipe.expire(conditionLogKey(item.id), this.expiresInSeconds)
