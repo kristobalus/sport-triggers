@@ -9,7 +9,8 @@ export function init(parent: FleetApp) {
   parent.addConnector(ConnectorsTypes.application, async () => {
     const { log, redis, amqp, config } = parent
     const { triggerLifetimeSeconds } = config.triggers
-    instance = parent.adapterService = new AdapterService(log, redis, amqp, triggerLifetimeSeconds)
+    
+    instance = parent.adapterService = new AdapterService(log, redis, amqp, { triggerLifetimeSeconds })
   })
 
   parent.addDestructor(ConnectorsTypes.application, async () => {
