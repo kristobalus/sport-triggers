@@ -133,7 +133,7 @@ example of trigger object
   "trigger": {
     "name": "...",
     "description": "..",
-    "scope": "sportradar.games",
+    "scope": "sportradar.game",
     "scopeId": "c24ad602-2290-4787-9b22-81e4e32dd582",
     "entity": "moderation",
     "entityId": "aebc7224-399d-4d08-876c-8eeab8b42a8f",
