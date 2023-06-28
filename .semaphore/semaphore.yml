@@ -24,6 +24,7 @@ global_job_config:
   prologue:
     commands:
       - nvm install 18.16.0
+      - pnpm i -g pnpm
       - corepack enable
       - checkout
       - cache restore node-$(checksum pnpm-lock.yaml)
