@@ -6,10 +6,9 @@ ENV NCONF_NAMESPACE=SL_TRIGGERS \
 ARG token
 WORKDIR /src
 
-RUN corepack enable
-
 # pnpm fetch does require only lockfile
 COPY --chown=node:node pnpm-lock.yaml package.json ./
+RUN corepack enable
 RUN \
   apk --update upgrade \
   && apk --update add --virtual .buildDeps git ca-certificates openssl g++ make python3 linux-headers \

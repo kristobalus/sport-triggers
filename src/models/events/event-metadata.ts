@@ -1,8 +1,12 @@
 import { CompareOp, ConditionType } from '../entities/trigger-condition'
 
 import { FootballEvents } from './football/football-events'
-import { GameLevel } from './football/football-game-level.event'
+import { BaseballEvents } from './baseball/baseball-events'
+import { GameLevel as FootballGameLevel } from './football/football-game-level.event'
+import { GameLevel as BasketballGameLevel } from './basketball/basketball-game-level.event'
+import { GameLevel as BaseballGameLevel } from './baseball/baseball-game-level.event'
 import { FootballPlayerStates } from './football/football-player-state.event'
+import { BasketballEvents } from "./basketball/basketball-events"
 
 export interface EventMetadata {
   sport: string
@@ -21,14 +25,17 @@ export const metadata: Record<string, EventMetadata> = {
     sport: 'football',
     input: false,
     type: ConditionType.SetAndCompareAsString,
+    compare: [
+      CompareOp.Equal
+    ],
     targets: [
-      GameLevel.Start,
-      GameLevel.End,
-      GameLevel.HalfStart,
-      GameLevel.HalfEnd,
-      GameLevel.QuarterStart,
-      GameLevel.QuarterEnd,
-      GameLevel.UnderReview,
+      FootballGameLevel.Start,
+      FootballGameLevel.End,
+      FootballGameLevel.HalfStart,
+      FootballGameLevel.HalfEnd,
+      FootballGameLevel.QuarterStart,
+      FootballGameLevel.QuarterEnd,
+      FootballGameLevel.UnderReview,
     ],
   },
 
@@ -87,6 +94,40 @@ export const metadata: Record<string, EventMetadata> = {
     params: {
       player: true
     }
+  },
+
+  [BasketballEvents.GameLevel]: {
+    sport: 'basketball',
+    input: false,
+    type: ConditionType.SetAndCompareAsString,
+    compare: [
+      CompareOp.Equal
+    ],
+    targets: [
+      BasketballGameLevel.Start,
+      BasketballGameLevel.End,
+      BasketballGameLevel.HalfStart,
+      BasketballGameLevel.HalfEnd,
+      BasketballGameLevel.QuarterStart,
+      BasketballGameLevel.QuarterEnd
+    ]
+  },
+
+  [BaseballEvents.GameLevel]: {
+    sport: 'baseball',
+    input: false,
+    type: ConditionType.SetAndCompareAsString,
+    compare: [
+      CompareOp.Equal
+    ],
+    targets: [
+      BaseballGameLevel.Start,
+      BaseballGameLevel.End,
+      BaseballGameLevel.HalfStart,
+      BaseballGameLevel.HalfEnd,
+      BaseballGameLevel.QuarterStart,
+      BaseballGameLevel.QuarterEnd
+    ]
   },
 
 }
