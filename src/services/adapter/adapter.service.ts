@@ -37,6 +37,10 @@ export class AdapterService {
     this.log.debug({ triggers }, 'triggers found')
 
     for (const triggerId of triggers) {
+      const trigger = await this.triggerCollection.getOne(triggerId)
+
+      if ( trigger.activated ) { continue }
+
       const conditions = await this.conditionCollection.getByTriggerId(triggerId)
 
       this.log.debug({ triggerId, conditions }, 'conditions found')
