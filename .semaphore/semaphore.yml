@@ -25,6 +25,7 @@ global_job_config:
     commands:
       - nvm install 18.16.0
       - corepack enable
+      - corepack prepare pnpm@8.6.3 --activate
       - checkout
       - cache restore node-$(checksum pnpm-lock.yaml)
       - echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} >> ~/.npmrc
