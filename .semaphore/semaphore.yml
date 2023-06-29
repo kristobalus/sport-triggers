@@ -24,9 +24,8 @@ global_job_config:
   prologue:
     commands:
       - nvm install 18.16.0
-      - corepack enable
-      - corepack prepare pnpm@8.6.3 --activate
       - checkout
+      - corepack enable
       - cache restore node-$(checksum pnpm-lock.yaml)
       - echo //registry.npmjs.org/:_authToken=${NPM_TOKEN} >> ~/.npmrc
       - pnpm i --frozen-lockfile --prefer-offline --ignore-scripts
