@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Event trigger processing",
   "scripts": {
-    "start": "mfleet",
+    "start": "mfleet --src lib",
     "clean": "rimraf ./lib",
     "precompile": "pnpm run clean",
     "compile": "tsc -b ./tsconfig.build.json",

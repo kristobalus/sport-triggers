@@ -31,6 +31,14 @@ export class StudioService {
     this.subscriptions = new TriggerSubscriptionCollection(this.redis, options?.triggerLifetimeSeconds)
   }
 
+  /**
+   * @description Studio creates trigger specifying entity data to be attached to.
+   *              Studio supplies conditions for the trigger to be activated upon matching.
+   *              When building conditions Studio should use metadata information
+   *              to provide allowed compare operations and targets for the event.
+   * @param triggerData
+   * @param conditionData
+   */
   async createTrigger(triggerData: EssentialTriggerData, conditionData: EssentialConditionData[]) {
     this.log.debug({ trigger: triggerData, conditions: conditionData }, 'create trigger')
 
@@ -41,6 +49,12 @@ export class StudioService {
     return id
   }
 
+  /**
+   * @description returns to Studio a list of triggers attached to the entity { entity, entityId }
+   * @param entity
+   * @param entityId
+   * @param options
+   */
   async getTriggerListByEntity(
     entity: string,
     entityId: string,
@@ -57,6 +71,13 @@ export class StudioService {
     return items
   }
 
+  /**
+   * @description returns to Studio a list of triggers attached to scope,
+   *              e.g "datasource.game" + game identifier
+   * @param scope
+   * @param scopeId
+   * @param options
+   */
   async getTriggerListByScope(
     scope: string,
     scopeId: string,
@@ -73,6 +94,14 @@ export class StudioService {
     return items
   }
 
+  /**
+   * @description Method returns a list of subscriptions attached to the trigger by subscribed entity,
+   *              e.g. question can be subscribed.
+   *              Upon trigger activation those subscriptions will be notified by amqp message to
+   *              appropriate route with given payload.
+   * @param entity
+   * @param entityId
+   */
   async getSubscriptionListByEntity(entity: string, entityId: string): Promise<TriggerSubscription[]> {
     const ids = await this.subscriptions.getListByEntity(entity, entityId)
     const items = []
@@ -86,6 +115,10 @@ export class StudioService {
     return items
   }
 
+  /**
+   * @description returns
+   * @param triggerId
+   */
   async getSubscriptionListByTrigger(triggerId: string): Promise<TriggerSubscription[]> {
     const ids = await this.subscriptions.getListByTrigger(triggerId)
     const items = []
@@ -105,6 +138,15 @@ export class StudioService {
     await this.subscriptions.deleteByTriggerId(triggerId)
   }
 
+  /**
+   * @description Creates subscription for the trigger.
+   *              Studio supplies "route" and "payload" to be forwarded to the route upon trigger
+   *              activation;
+   *              e.g. Studio can schedule question activation upon player touchdown,
+   *
+   * @param triggerId
+   * @param data
+   */
   subscribeTrigger(triggerId: string, data: EssentialSubscriptionData): Promise<string> {
     return this.subscriptions.create(triggerId, data)
   }
