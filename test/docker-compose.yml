@@ -11,6 +11,6 @@ services:
       #
       # for ms-conf
       # NCONF_NAMESPACE - MUST be specified, as it will return configuration relative to this namespace
-      NCONF_NAMESPACE: "SL_POLLS_IMPORTER"
+      NCONF_NAMESPACE: "SL_TRIGGERS"
       # NCONF_FILE_PATH - external JSON configuration file that will be used to provide variables
       # NCONF_FILE_PATH: "[\"/src/test/configs/amqp.js\", \"/src/test/configs/router.js\", \"/src/test/configs/redis.sentinel.js\"]"
