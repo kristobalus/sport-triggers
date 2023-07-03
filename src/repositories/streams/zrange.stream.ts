@@ -20,9 +20,8 @@ export class ZRangeStream extends Readable {
     super(options)
     this.key = options.key
     this.redis = options.redis
-    this.start = 0
     this.limit = options.limit ?? 100
-    this.setStop()
+    this.setRangeStart(0)
   }
 
   _read(_size: number) {
@@ -38,14 +37,14 @@ export class ZRangeStream extends Readable {
     if (items.length === 0) {
       this.push(null)
     } else {
-      this.start = this.stop + 1
-      this.setStop()
+      this.setRangeStart(this.stop + 1)
       this.push(items)
     }
   }
 
-  private setStop() {
-    this.stop = this.start + this.limit - 1
+  private setRangeStart(start: number) {
+    this.start = start
+    this.stop = start + this.limit - 1
   }
 
 }
