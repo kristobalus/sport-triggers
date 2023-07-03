@@ -49,7 +49,7 @@ export class TriggerConditionCollection {
       throw new ArgumentError('Cannot create trigger without conditions')
     }
 
-    // prefill data
+    // prefill and validate data
     for (let i = 0; i < conditions.length; i++) {
       const condition = conditions[i]
 

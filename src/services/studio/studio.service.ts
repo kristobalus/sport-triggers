@@ -10,6 +10,7 @@ import { TriggerWithConditions } from '../../models/dto/trigger-with-conditions'
 import { EssentialSubscriptionData } from '../../models/dto/trigger-subscribe-request'
 import { TriggerSubscription } from '../../models/entities/trigger-subscription'
 import { metadata } from '../../models/events/event-metadata'
+import { ArgumentError } from "common-errors"
 
 export interface TriggerOptions {
   showLog?: boolean
@@ -42,9 +43,23 @@ export class StudioService {
   async createTrigger(triggerData: EssentialTriggerData, conditionData: EssentialConditionData[]) {
     this.log.debug({ trigger: triggerData, conditions: conditionData }, 'create trigger')
 
-    const id = await this.triggers.add(triggerData)
+    let id
+    try {
+      id = await this.triggers.add(triggerData)
+    } catch (err){
+      this.log.fatal({ err }, 'failed to create trigger instance')
+      throw new ArgumentError('failed to create trigger', err)
+    }
 
-    await this.conditions.add(id, triggerData.scope, triggerData.scopeId, conditionData)
+    try {
+      await this.conditions.add(id, triggerData.scope, triggerData.scopeId, conditionData)
+    } catch(err){
+      if(id) {
+        await this.triggers.deleteOne(id)
+      }
+      this.log.fatal({ err }, 'failed to create condition instance')
+      throw new ArgumentError('failed to create trigger', err)
+    }
 
     return id
   }
