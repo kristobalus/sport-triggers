@@ -164,13 +164,14 @@ describe('StudioService', function () {
     assert.ok(response.data)
     assert.ok(response.data.length)
 
-    const [item] = response.data
+    const [ found ] = response.data.filter(item => item.id == ctx.subscriptionId)
 
-    assert.ok(item.type)
-    assert.ok(item.id)
-    assert.equal(item.type, 'subscription')
-    assert.equal(item.id, ctx.subscriptionId)
-    assert.equal(item.attributes.id, ctx.subscriptionId)
+    assert.ok(found)
+    assert.ok(found.type)
+    assert.ok(found.id)
+    assert.equal(found.type, 'subscription')
+    assert.equal(found.id, ctx.subscriptionId)
+    assert.equal(found.attributes.id, ctx.subscriptionId)
   })
 
   it('should cancel subscription', async () => {

@@ -102,4 +102,5 @@ export class TriggerCollection {
 
     await pipe.exec()
   }
+
 }

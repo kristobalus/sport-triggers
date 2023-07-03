@@ -94,7 +94,7 @@ describe("StudioService", function () {
   })
 
   it(`should be able to find trigger by event and scope`, async () => {
-    const triggers = await ctx.conditions.getTriggerListByScopeAndEvent(scope, scopeId, FootballEvents.GameLevel)
+    const triggers = await ctx.conditions.getTriggerListByScopeAndEventName(scope, scopeId, FootballEvents.GameLevel)
     assert.equal(triggers.length, 1)
     assert.equal(triggers.indexOf(ctx.triggerId), 0)
   })

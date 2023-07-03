@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+import { Readable } from 'node:stream'
 
 import { Redis } from 'ioredis'
 import { inPlaceSort } from 'fast-sort'
@@ -10,6 +11,8 @@ import { Event } from '../models/events/event'
 import { metadata } from '../models/events/event-metadata'
 import { toUriByCondition } from '../models/events/uri'
 
+import { ZRangeStream } from "./streams/zrange.stream"
+
 export function conditionSetByTriggerKey(triggerId: string) {
   return `triggers/${triggerId}/conditions`
 }
@@ -18,8 +21,12 @@ export function conditionKey(conditionId: string) {
   return `conditions/${conditionId}`
 }
 
-export function triggersByScopeAndEvent(scope: string, scopeId: string, eventName: string) {
+export function triggerSetByScopeAndEvent(scope: string, scopeId: string, eventName: string) {
   return `scopes/${scope}/${scopeId}/events/${eventName}/triggers`
+}
+
+export function triggerSetByUri(uri: string) {
+  return `uri/${uri}/triggers`
 }
 
 export function conditionLogKey(conditionId: string) {
@@ -110,7 +117,9 @@ export class TriggerConditionCollection {
       // should add condition into list of trigger conditions
       pipe.sadd(conditionSetByTriggerKey(condition.triggerId), condition.id)
       // should add trigger into list of event subscribers
-      pipe.sadd(triggersByScopeAndEvent(scope, scopeId, condition.event), triggerId)
+      pipe.zadd(triggerSetByScopeAndEvent(scope, scopeId, condition.event), Date.now(), triggerId)
+      // should add trigger into list of uri subscribers
+      pipe.zadd(triggerSetByUri(toUriByCondition(condition)), Date.now(), triggerId)
     }
 
     const results = await pipe.exec()
@@ -147,20 +156,41 @@ export class TriggerConditionCollection {
 
   async deleteByTriggerId(triggerId: string) {
     const conditions = await this.getByTriggerId(triggerId)
+    const pipe = this.redis.pipeline()
 
-    for (const item of conditions) {
-      await this.redis.del(conditionKey(item.id))
-      await this.redis.del(conditionLogKey(item.id))
-      await this.redis.srem(conditionSetByTriggerKey(triggerId), item.id)
-      await this.redis.srem(triggersByScopeAndEvent(item.scope, item.scopeId, item.event), triggerId)
+    for (const condition of conditions) {
+      pipe.del(conditionKey(condition.id))
+      pipe.del(conditionLogKey(condition.id))
+      pipe.srem(conditionSetByTriggerKey(triggerId), condition.id)
+      pipe.zrem(triggerSetByScopeAndEvent(condition.scope, condition.scopeId, condition.event), triggerId)
+      pipe.zrem(triggerSetByUri(toUriByCondition(condition)), triggerId)
     }
+
+    await pipe.exec()
   }
 
-  getTriggerListByScopeAndEvent(
+  getTriggerListByScopeAndEventName(
     scope: string,
     scopeId: string,
-    eventName: string): Promise<string[]> {
-    return this.redis.smembers(triggersByScopeAndEvent(scope, scopeId, eventName))
+    eventName: string,
+    start: number = 0,
+    stop: number = -1): Promise<string[]> {
+    return this.redis.zrange(triggerSetByScopeAndEvent(scope, scopeId, eventName), start, stop)
+  }
+
+  getTriggerListByUri(uri: string, start: number = 0, stop: number = -1): Promise<string[]> {
+    return this.redis.zrange(triggerSetByUri(uri), start, stop)
+  }
+
+  countTriggersByUri(uri: string): Promise<number> {
+    return this.redis.zcard(triggerSetByUri(uri))
+  }
+
+  getTriggerStreamByUri(uri: string): Readable {
+    return new ZRangeStream({
+      redis: this.redis,
+      key: triggerSetByUri(uri)
+    })
   }
 
   async appendToEventLog(conditionId: string, event: Event): Promise<boolean> {
@@ -185,20 +215,24 @@ export class TriggerConditionCollection {
   async cleanByTriggerId(triggerId: string) {
     const conditions = await this.getByTriggerId(triggerId)
 
-    for (const item of conditions) {
+    for (const condition of conditions) {
       const pipe = this.redis.pipeline()
 
       if (this.expiresInSeconds) {
         pipe.expire(conditionSetByTriggerKey(triggerId), this.expiresInSeconds)
         pipe.expire(conditionKey(triggerId), this.expiresInSeconds)
-        pipe.expire(conditionLogKey(item.id), this.expiresInSeconds)
+        pipe.expire(conditionLogKey(condition.id), this.expiresInSeconds)
       } else {
         pipe.del(conditionSetByTriggerKey(triggerId))
-        pipe.del(conditionKey(item.id))
-        pipe.del(conditionLogKey(item.id))
+        pipe.del(conditionKey(condition.id))
+        pipe.del(conditionLogKey(condition.id))
       }
 
-      pipe.srem(triggersByScopeAndEvent(item.scope, item.scopeId, item.event), triggerId)
+      pipe.zrem(triggerSetByScopeAndEvent(condition.scope, condition.scopeId, condition.event), triggerId)
+
+      const uri = toUriByCondition(condition)
+
+      pipe.zrem(triggerSetByUri(uri), triggerId)
 
       await pipe.exec()
     }

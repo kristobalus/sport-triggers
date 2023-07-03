@@ -1,6 +1,6 @@
 
 export enum Scope {
-  SportradarGames = 'sportradar.games'
+  SportradarGames = 'sportradar.game'
 }
 
 export interface Trigger {

@@ -6,7 +6,7 @@ import { GameLevel as FootballGameLevel } from './football/football-game-level.e
 import { GameLevel as BasketballGameLevel } from './basketball/basketball-game-level.event'
 import { GameLevel as BaseballGameLevel } from './baseball/baseball-game-level.event'
 import { FootballPlayerStates } from './football/football-player-state.event'
-import { BasketballEvents } from "./basketball/basketball-events"
+import { BasketballEvents } from './basketball/basketball-events'
 
 export interface EventMetadata {
   sport: string

@@ -1,7 +1,7 @@
 import { TriggerSubscription } from '../entities/trigger-subscription'
 
-export type EssentialSubscriptionData = Partial<Pick<TriggerSubscription,
-  'route' | 'payload' | 'options' | 'entity' | 'entityId' >>
+export type EssentialSubscriptionData = Pick<TriggerSubscription,
+  'route' | 'payload' > & Partial<Pick<TriggerSubscription, 'options' | 'entity' | 'entityId'>>
 
 export interface TriggerSubscribeRequest {
   triggerId: string

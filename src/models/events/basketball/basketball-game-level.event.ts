@@ -1,6 +1,7 @@
 
 import { Event } from '../event'
-import { BasketballEvents } from "./basketball-events"
+
+import { BasketballEvents } from './basketball-events'
 
 export enum GameLevel {
   Start='start',

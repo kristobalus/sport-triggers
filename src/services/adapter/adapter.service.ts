@@ -1,6 +1,9 @@
 import { Microfleet } from '@microfleet/core-types'
 import { AMQPTransport } from '@microfleet/transport-amqp'
 
+import { Transform } from 'node:stream'
+import { Readable } from 'stream'
+
 import { Redis } from 'ioredis'
 
 import { conditionKey, TriggerConditionCollection } from '../../repositories/trigger-condition.collection'
@@ -9,17 +12,24 @@ import { ChainOp, ConditionType, TriggerCondition } from '../../models/entities/
 import { TriggerSubscriptionCollection } from '../../repositories/trigger-subscription.collection'
 import { TriggerCollection } from '../../repositories/trigger.collection'
 import { toUriByEvent } from '../../models/events/uri'
+import { Trigger } from '../../models/entities/trigger'
+
+export interface CompareResult {
+  activated: boolean
+  changed: boolean
+  error?: Error
+}
 
 export class AdapterService {
-  private conditionCollection: TriggerConditionCollection
-  private subscriptionCollection: TriggerSubscriptionCollection
-  private triggerCollection: TriggerCollection
+  private readonly conditionCollection: TriggerConditionCollection
+  private readonly subscriptionCollection: TriggerSubscriptionCollection
+  private readonly triggerCollection: TriggerCollection
 
   constructor(
     private readonly log: Microfleet['log'],
     private readonly redis: Redis,
     private readonly amqp: AMQPTransport,
-    options?: { triggerLifetimeSeconds?: number }
+    options?: { triggerLifetimeSeconds?: number },
   ) {
     this.triggerCollection = new TriggerCollection(this.redis, options?.triggerLifetimeSeconds)
     this.conditionCollection = new TriggerConditionCollection(this.redis, options?.triggerLifetimeSeconds)
@@ -32,104 +42,190 @@ export class AdapterService {
     this.log.debug({ event, uri }, 'incoming event')
 
     const { scope, scopeId, name } = event
-    const triggers = await this.conditionCollection.getTriggerListByScopeAndEvent(scope, scopeId, name)
+    const triggers = await this.conditionCollection.getTriggerListByScopeAndEventName(scope, scopeId, name)
 
-    this.log.debug({ triggers }, 'triggers found')
+    this.log.debug({ triggers }, 'triggers found for pushed event')
 
     for (const triggerId of triggers) {
       const trigger = await this.triggerCollection.getOne(triggerId)
 
-      if ( trigger.activated ) { continue }
-
-      const conditions = await this.conditionCollection.getByTriggerId(triggerId)
-
-      this.log.debug({ triggerId, conditions }, 'conditions found')
-
-      for (const condition of conditions) {
-        if (condition.activated) { continue }
-        if (condition.uri === uri) {
-          await this.evaluateCondition(event, condition)
-        }
+      if (trigger.activated) {
+        continue
       }
-
-      let triggerResult = conditions.length > 0
-
-      for (const condition of conditions) {
-        if (condition.chainOperation == ChainOp.AND) {
-          triggerResult = (triggerResult && condition.activated)
-        } else if (condition.chainOperation == ChainOp.OR) {
-          triggerResult = (triggerResult || condition.activated)
-        }
-      }
-
-      if (triggerResult) {
-        this.log.debug({ triggerId }, 'trigger activated')
-        await this.triggerCollection.updateOne(triggerId, { activated: true })
-
-        await this.notify(triggerId)
-        await this.cleanup(triggerId)
-      }
+      await this.evaluateTrigger(event, trigger)
     }
   }
 
-  private async evaluateCondition(event: Event, condition: TriggerCondition) {
+  async evaluateTrigger(event: Event, trigger: Trigger): Promise<boolean> {
+    const uri = toUriByEvent(event)
+
+    this.log.debug({ event, uri }, 'incoming event')
+
+    const conditions = await this.conditionCollection.getByTriggerId(trigger.id)
+
+    this.log.debug({ trigger, conditions }, 'conditions found')
+
+    for (const condition of conditions) {
+      if (condition.activated) {
+        continue
+      }
+      if (condition.uri === uri) {
+        const result = await this.evaluateCondition(condition, event)
+
+        condition.activated = result.activated
+      }
+    }
+
+    let triggerResult = conditions.length > 0
+
+    for (const condition of conditions) {
+      // combine a chain of conditions into single result
+      // each condition is preset by Studio with chaining operator (AND, OR)
+      // for sake of simplicity assume no grouping and just apply logical operators in sequence
+      if (condition.chainOperation == ChainOp.AND) {
+        triggerResult = (triggerResult && condition.activated)
+      } else if (condition.chainOperation == ChainOp.OR) {
+        triggerResult = (triggerResult || condition.activated)
+      }
+    }
+
+    if (triggerResult) {
+      this.log.debug({ trigger }, 'trigger activated')
+      await this.triggerCollection.updateOne(trigger.id, { activated: true })
+
+      await this.notify(trigger.id)
+      await this.cleanup(trigger.id)
+    }
+
+    return triggerResult
+  }
+
+  async getTriggersByEvent(event: Event): Promise<Trigger[]> {
+    const uri = toUriByEvent(event)
+    const ids = await this.conditionCollection.getTriggerListByUri(uri)
+    const result = []
+
+    for (const id of ids) {
+      const trigger = await this.triggerCollection.getOne(id)
+
+      result.push(trigger)
+    }
+
+    return result
+  }
+
+  async hasTriggers(event: Event): Promise<boolean> {
+    const uri = toUriByEvent(event)
+    const { conditionCollection } = this
+    const count = await conditionCollection.countTriggersByUri(uri)
+
+    return count > 0
+  }
+
+  getTriggerStreamByEvent(event: Event): Readable {
+    const uri = toUriByEvent(event)
+    const { triggerCollection, conditionCollection } = this
+
+    const stream = conditionCollection.getTriggerStreamByUri(uri)
+
+    return stream.pipe(new Transform({
+      autoDestroy: true,
+      objectMode: true,
+      transform: function (batch, _encoding, callback) {
+        (async () => {
+          const result = []
+
+          for (const id of batch) {
+            const trigger = await triggerCollection.getOne(id)
+
+            result.push(trigger)
+          }
+          this.push(result)
+          callback()
+        })().catch(callback)
+      }
+    }))
+  }
+
+  private evaluateCondition(
+    condition: TriggerCondition,
+    event: Event,
+  ): Promise<CompareResult> {
     this.log.debug({ event, condition }, 'evaluating trigger condition')
+
     if (condition.type === ConditionType.SetAndCompare) {
-      await this.setAndCompare(event, condition)
+      return this.setAndCompare(condition.id, event)
     } else if (condition.type === ConditionType.SetAndCompareAsString) {
-      await this.setAndCompareAsString(event, condition)
+      return this.setAndCompareAsString(condition.id, event)
     } else if (condition.type === ConditionType.IncrAndCompare) {
-      await this.incrAndCompare(event, condition)
+      return this.incrAndCompare(condition.id, event)
     } else {
       this.log.fatal({ event }, 'processing flow is not implemented')
+
+      return Promise.resolve({ activated: false, changed: false } as CompareResult)
     }
   }
 
-  private async setAndCompare(event: Event, condition: TriggerCondition) {
-    const key = conditionKey(condition.id)
+  private async setAndCompare(conditionId: string, event: Event): Promise<CompareResult> {
+    const key = conditionKey(conditionId)
     const current = event.value
 
+    const result: CompareResult = {
+      activated: false,
+      changed: false,
+    }
+
     try {
-      const [activated, append] = await this.redis.set_and_compare(1, key, current)
+      const [activated, changed] = await this.redis.set_and_compare(1, key, current)
 
-      condition.activated = !!activated
+      result.activated = !!activated
+      result.changed = !!changed
 
-      if (append) {
-        condition.current = current
-        await this.conditionCollection.appendToEventLog(condition.id, event)
+      if (result.changed) {
+        await this.conditionCollection.appendToEventLog(conditionId, event)
       }
 
-      this.log.debug({ condition }, 'evaluation result')
+      this.log.debug({ key, current, result }, 'evaluation result')
     } catch (err) {
       this.log.fatal({ err, key, current }, 'failed to compare')
+      result.error = err
     }
 
-    return condition.activated
+    return result
   }
 
-  private async setAndCompareAsString(event: Event, condition: TriggerCondition) {
-    const key = conditionKey(condition.id)
+  private async setAndCompareAsString(conditionId: string, event: Event): Promise<CompareResult> {
+    const key = conditionKey(conditionId)
     const current = event.value
 
-    try {
-      const [result, append] = await this.redis.set_and_compare_as_string(1, key, current)
-
-      condition.activated = !!result
-
-      if (append) {
-        await this.conditionCollection.appendToEventLog(condition.id, event)
-      }
-
-      this.log.debug({ condition }, 'evaluation result')
-    } catch (err) {
-      this.log.fatal({ err, key, value: current }, 'failed to compare')
+    const result: CompareResult = {
+      activated: false,
+      changed: false,
     }
 
-    return condition.activated
+    try {
+      const [activated, changed] = await this.redis.set_and_compare_as_string(1, key, current)
+
+      result.activated = !!activated
+      result.changed = !!changed
+
+      if (result.changed) {
+        await this.conditionCollection.appendToEventLog(conditionId, event)
+      }
+
+      this.log.debug({ key, current, result }, 'evaluation result')
+    } catch (err) {
+      this.log.fatal({ err, key, current }, 'failed to compare')
+      result.error = err
+    }
+
+    return result
   }
 
-  private async incrAndCompare(_event: Event, _condition: TriggerCondition) {
+  private incrAndCompare(_conditionId: string, _event: Event): Promise<CompareResult> {
     // run lua script
+    // TODO not implemented yet
+    return Promise.resolve({ activated: false, changed: false })
   }
 
   private async notify(triggerId: string) {

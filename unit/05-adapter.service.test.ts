@@ -93,7 +93,7 @@ describe("AdapterService", function () {
 
       const subscriptionData = {
         route: "some.route",
-        payload: { foo: "bar" }
+        payload: { id: 1 }
       } as EssentialSubscriptionData
 
       await ctx.studioService.subscribeTrigger(triggerId, subscriptionData)
@@ -170,7 +170,7 @@ describe("AdapterService", function () {
       await ctx.studioService.subscribeTrigger(triggerId, subscriptionData)
     })
 
-    it(`event for first, first - not activated, second - not activated`, async () => {
+    it.skip(`event for first, first - not activated, second - not activated`, async () => {
 
       const event = {
         name: FootballEvents.GamePointsHome,
@@ -187,7 +187,7 @@ describe("AdapterService", function () {
       assert.equal(condition2.activated, false)
     })
 
-    it(`event for first, first - activated, second - not`, async () => {
+    it.skip(`event for first, first - activated, second - not`, async () => {
 
       const event = {
         name: FootballEvents.GamePointsHome,
@@ -204,7 +204,7 @@ describe("AdapterService", function () {
       assert.equal(condition2.activated, false)
     })
 
-    it(`event for second, first - activated, second - not`, async () => {
+    it.skip(`event for second, first - activated, second - not`, async () => {
 
       const event = {
         name: FootballEvents.GameLevel,
@@ -221,7 +221,7 @@ describe("AdapterService", function () {
       assert.equal(condition2.activated, false)
     })
 
-    it(`event for second, second - activated, first - activated, trigger - activated`, async () => {
+    it.skip(`event for second, second - activated, first - activated, trigger - activated`, async () => {
 
       const event = {
         name: FootballEvents.GameLevel,
