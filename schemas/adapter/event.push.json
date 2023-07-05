@@ -27,9 +27,10 @@
           }
         }
       },
-      "required": ["id","scope","scopeId","name","value","timestamp"]
+      "additionalProperties": false,
+      "required": ["id", "datasource", "scope", "scopeId", "timestamp", "options"]
     }
   },
   "additionalProperties": false,
-  "required": ["id", "datasource", "scope", "scopeId", "timestamp", "options"]
+  "required": ["event"]
 }
