@@ -1,7 +1,7 @@
 import { CompareOp, ConditionType } from '../../entities/trigger-condition'
 import { EventMetadata } from "../event-metadata"
 import { BasketballEvents } from "./basketball-events"
-import { GameLevel } from "./basketball-game-level.event"
+import { GameLevel } from "./basketball-game-level"
 
 export const metadata: Record<string, EventMetadata> = {
 
