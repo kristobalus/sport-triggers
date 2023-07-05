@@ -13,18 +13,17 @@ import {
   EssentialTriggerData,
   TriggerCreateRequest,
 } from '../../src/models/dto/trigger-create-request'
-import { GameLevel } from '../../src/models/events/football/football-game-level.event'
+import { GameLevel } from '../../src/models/events/football/football-game-level'
 import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-request'
 import { ItemResponse } from '../../src/models/dto/response'
 import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
 import { AdapterPushRequest } from '../../src/models/dto/adapter-push-request'
 import {
-  FootballPlayerStateEvent,
-  FootballPlayerStates,
-} from '../../src/models/events/football/football-player-state.event'
-import { FootballGamePointsHomeEvent } from '../../src/models/events/football/football-game-points-home.event'
+  FootballPlayerState,
+} from '../../src/models/events/football/football-player-state'
 import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
+import { AdapterEvent } from "../../src/models/events/adapter-event"
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string
@@ -42,46 +41,56 @@ interface SuitContext extends TestContext {
 }
 
 describe('AdapterService', function () {
+
+  const datasource = "sportradar"
   const scope = Scope.Game
   const scopeId = randomUUID()
   const entity = 'moderation'
   const entityId = randomUUID()
 
-  const events = {
+  const events: Record<string, AdapterEvent> = {
     gameLevelStart: {
       id: randomUUID(),
-      name: FootballEvents.GameLevel,
-      value: GameLevel.Start,
+      datasource,
       scope,
       scopeId,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      options: {
+        [FootballEvents.GameLevel]: GameLevel.Start
+      }
     },
     homeTeamPoints: {
       id: randomUUID(),
-      name: FootballEvents.GamePointsHome,
-      value: '30',
+      datasource,
       scope,
       scopeId,
-      timestamp: Date.now() + 1
-    } as FootballGamePointsHomeEvent,
+      timestamp: Date.now() + 1,
+      options: {
+        [FootballEvents.GamePointsHome]: "30"
+      }
+    },
     wrongPlayerTouchdown: {
       id: randomUUID(),
-      name: FootballEvents.PlayerState,
-      value: FootballPlayerStates.Touchdown,
+      datasource,
       scope,
       scopeId,
       timestamp: Date.now() + 2,
-      player: randomUUID()
-    } as FootballPlayerStateEvent,
+      options: {
+        [FootballEvents.PlayerState]: FootballPlayerState.Touchdown,
+        [FootballEvents.Player]: randomUUID()
+      }
+    },
     correctPlayerTouchdown: {
       id: randomUUID(),
-      name: FootballEvents.PlayerState,
-      value: FootballPlayerStates.Touchdown,
+      datasource,
       scope,
       scopeId,
       timestamp: Date.now() + 3,
-      player: randomUUID()
-    } as FootballPlayerStateEvent,
+      options: {
+        [FootballEvents.PlayerState]: FootballPlayerState.Touchdown,
+        [FootballEvents.Player]: randomUUID()
+      }
+    }
   }
 
   const ctx: SuitContext = {
@@ -96,6 +105,35 @@ describe('AdapterService', function () {
   async function createTrigger(ctx: SuitContext) {
     const { amqpPrefix } = ctx
 
+    const conditionData: EssentialConditionData[] = [
+      {
+        event: FootballEvents.GameLevel,
+        compare: CompareOp.Equal,
+        target: events.gameLevelStart.options[FootballEvents.GameLevel],
+        options: []
+      },
+      {
+        event: FootballEvents.GamePointsHome,
+        compare: CompareOp.GreaterOrEqual,
+        target: events.homeTeamPoints.options[FootballEvents.GamePointsHome],
+        chainOperation: ChainOp.AND,
+        options: []
+      },
+      {
+        event: FootballEvents.PlayerState,
+        compare: CompareOp.Equal,
+        target: FootballPlayerState.Touchdown,
+        chainOperation: ChainOp.AND,
+        options: [
+          {
+            event: FootballEvents.Player,
+            compare: CompareOp.Equal,
+            target: events.correctPlayerTouchdown.options[FootballEvents.Player]
+          }
+        ]
+      }
+    ]
+
     const response: ItemResponse<TriggerCreateResponse> =
       await ctx.service.amqp.publishAndWait(`${amqpPrefix}.studio.trigger.create`, {
         trigger: {
@@ -106,28 +144,7 @@ describe('AdapterService', function () {
           entity,
           entityId,
         } as EssentialTriggerData,
-        conditions: [
-          {
-            event: FootballEvents.GameLevel,
-            compare: CompareOp.Equal,
-            target: events.gameLevelStart.value,
-          },
-          {
-            event: FootballEvents.GamePointsHome,
-            compare: CompareOp.GreaterOrEqual,
-            target: events.homeTeamPoints.value,
-            chainOperation: ChainOp.AND,
-          },
-          {
-            event: FootballEvents.PlayerState,
-            compare: CompareOp.Equal,
-            target: FootballPlayerStates.Touchdown,
-            chainOperation: ChainOp.AND,
-            params: {
-              player: events.correctPlayerTouchdown.player
-            }
-          }
-        ] as EssentialConditionData[],
+        conditions: conditionData,
       } as TriggerCreateRequest)
 
     ctx.triggerId = response.data.id
@@ -207,7 +224,7 @@ describe('AdapterService', function () {
       } as AdapterPushRequest,
     })
 
-    // assert.equal(await getTriggerActivated(), false)
+    assert.equal(await getTriggerActivated(), false)
   })
 
   it.skip('push home team points event', async () => {

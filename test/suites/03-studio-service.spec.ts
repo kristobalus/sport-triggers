@@ -22,6 +22,8 @@ import { TriggerSubscription } from '../../src/models/entities/trigger-subscript
 import { SubscriptionListRequest } from '../../src/models/dto/subscription-list-request'
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
+import { SubscriptionCancelRequest } from "../../src/models/dto/subscription-cancel-request"
+import { TriggerDeleteRequest } from "../../src/models/dto/trigger-delete-request"
 
 interface SuitContext extends TestContext {
   triggerId?: string
@@ -29,12 +31,14 @@ interface SuitContext extends TestContext {
 }
 
 describe('StudioService', function () {
+
+  const datasource = "sportradar"
   const scope = Scope.Game
   const scopeId = randomUUID()
   const entity = 'moderation'
   const entityId = randomUUID()
   const subEntity = 'question'
-  const subEntityId = '1'
+  const subEntityId = randomUUID()
 
   const ctx: SuitContext = {}
 
@@ -54,29 +58,35 @@ describe('StudioService', function () {
   })
 
   it('should create trigger', async () => {
-    const triggerData = {
+
+    const triggerData: EssentialTriggerData = {
       name: '...',
       description: '..',
+      datasource,
       scope,
       scopeId,
       entity,
       entityId,
-    } as EssentialTriggerData
+    }
 
-    const conditionData = [
+    const conditionData: EssentialConditionData[] = [
       {
         event: FootballEvents.GameLevel,
         compare: CompareOp.Equal,
-        target: GameLevel.Start
+        target: GameLevel.Start,
+        options: []
       },
-    ] as EssentialConditionData[]
+    ]
 
     const prefix = ctx.service.config.routerAmqp.prefix
 
-    const response: ItemResponse<TriggerCreateResponse> = await ctx.service.amqp.publishAndWait(`${prefix}.studio.trigger.create`, {
+    const data: TriggerCreateRequest = {
       trigger: triggerData,
       conditions: conditionData,
-    } as TriggerCreateRequest)
+    }
+
+    const response: ItemResponse<TriggerCreateResponse> = await ctx.service
+      .amqp.publishAndWait(`${prefix}.studio.trigger.create`, data)
 
     assert.ok(response)
     assert.ok(response.data)
@@ -104,8 +114,8 @@ describe('StudioService', function () {
 
   it('should list triggers', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
-    const response: ListResponse = await ctx.service.amqp.publishAndWait(`${prefix}.studio.trigger.list`,
-      { entity, entityId } as TriggerListRequest)
+    const response: ListResponse = await ctx.service
+      .amqp.publishAndWait(`${prefix}.studio.trigger.list`, { entity, entityId } as TriggerListRequest)
 
     assert.ok(response)
     assert.ok(response.data)
@@ -120,16 +130,18 @@ describe('StudioService', function () {
 
   it('should subscribe for trigger', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
+
+    const data: TriggerSubscribeRequest = {
+      triggerId: ctx.triggerId, subscription: {
+        route: 'interactive.question.activate',
+        payload: { foo: 'bar', id: '1' },
+        entity: subEntity,
+        entityId: subEntityId,
+      }
+    }
+
     const response: ItemResponse = await ctx.service.amqp
-      .publishAndWait(`${prefix}.studio.trigger.subscribe`,
-        {
-          triggerId: ctx.triggerId, subscription: {
-            route: 'interactive.question.activate',
-            payload: { foo: 'bar', id: '1' },
-            entity: subEntity,
-            entityId: subEntityId,
-          },
-        } as TriggerSubscribeRequest)
+      .publishAndWait(`${prefix}.studio.trigger.subscribe`, data)
 
     assert.ok(response)
     assert.ok(response.data)
@@ -142,8 +154,10 @@ describe('StudioService', function () {
 
   it('should get subscription list by trigger', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
+    const data = { triggerId: ctx.triggerId } as SubscriptionListRequest
+
     const response: ListResponse<TriggerSubscription> = await ctx.service.amqp
-      .publishAndWait(`${prefix}.studio.subscription.list`, { triggerId: ctx.triggerId })
+      .publishAndWait(`${prefix}.studio.subscription.list`, data)
 
     assert.ok(response)
     assert.ok(response.data)
@@ -156,9 +170,9 @@ describe('StudioService', function () {
 
   it('should get subscription list by entity', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
+    const data = { entity: subEntity, entityId: subEntityId  } as SubscriptionListRequest
     const response: ListResponse<TriggerSubscription> = await ctx.service.amqp
-      .publishAndWait(`${prefix}.studio.subscription.list`,
-        { entity: subEntity, entityId: subEntityId  } as SubscriptionListRequest)
+      .publishAndWait(`${prefix}.studio.subscription.list`, data)
 
     assert.ok(response)
     assert.ok(response.data)
@@ -175,9 +189,12 @@ describe('StudioService', function () {
   })
 
   it('should cancel subscription', async () => {
+
     const prefix = ctx.service.config.routerAmqp.prefix
+    const data = { id: ctx.subscriptionId } as SubscriptionCancelRequest
+
     const response: ItemResponse = await ctx.service.amqp
-      .publishAndWait(`${prefix}.studio.subscription.cancel`, { id: ctx.subscriptionId })
+      .publishAndWait(`${prefix}.studio.subscription.cancel`, data)
 
     assert.ok(response)
     assert.ok(response.data)
@@ -187,8 +204,10 @@ describe('StudioService', function () {
 
   it('should delete trigger', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
+    const data = { id: ctx.triggerId } as TriggerDeleteRequest
+
     const response: ItemResponse = await ctx.service.amqp
-      .publishAndWait(`${prefix}.studio.trigger.delete`, { id: ctx.triggerId })
+      .publishAndWait(`${prefix}.studio.trigger.delete`, data)
 
     assert.ok(response)
     assert.ok(response.data)
