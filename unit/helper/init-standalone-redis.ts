@@ -9,9 +9,9 @@ export async function initStandaloneRedis() : Promise<Redis> {
     lua: fs.readFileSync(path.resolve(__dirname, '../../lua/set_and_compare.lua')).toString("utf-8"),
   })
 
-  redis.defineCommand("set_and_compare_as_string", {
-    lua: fs.readFileSync(path.resolve(__dirname, '../../lua/set_and_compare_as_string.lua')).toString("utf-8"),
-  })
+  // redis.defineCommand("set_and_compare_as_string", {
+  //   lua: fs.readFileSync(path.resolve(__dirname, '../../lua/set_and_compare_as_string.lua')).toString("utf-8"),
+  // })
 
   await redis.flushall()
 

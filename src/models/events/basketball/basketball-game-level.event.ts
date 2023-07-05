@@ -1,5 +1,5 @@
 
-import { Event } from '../event'
+import { AdapterEvent } from '../adapter-event'
 
 import { BasketballEvents } from './basketball-events'
 
@@ -12,7 +12,7 @@ export enum GameLevel {
   End='end'
 }
 
-export interface BasketballGameLevelEvent extends Event {
+export interface BasketballGameLevelEvent extends AdapterEvent {
   name: BasketballEvents.GameLevel
   value: GameLevel
 }

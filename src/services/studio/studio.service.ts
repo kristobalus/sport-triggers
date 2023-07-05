@@ -41,27 +41,35 @@ export class StudioService {
    * @param conditionData
    */
   async createTrigger(triggerData: EssentialTriggerData, conditionData: EssentialConditionData[]) {
-    this.log.debug({ trigger: triggerData, conditions: conditionData }, 'create trigger')
+    this.log.debug({
+      trigger: triggerData,
+      conditions: conditionData
+    }, 'create trigger')
 
-    let id
+    let triggerId
     try {
-      id = await this.triggers.add(triggerData)
+      triggerId = await this.triggers.add(triggerData)
     } catch (err){
       this.log.fatal({ err }, 'failed to create trigger instance')
       throw new ArgumentError('failed to create trigger', err)
     }
 
     try {
-      await this.conditions.add(id, triggerData.scope, triggerData.scopeId, conditionData)
+      await this.conditions.add(
+        triggerId,
+        triggerData.datasource,
+        triggerData.scope,
+        triggerData.scopeId,
+        conditionData)
     } catch(err){
-      if(id) {
-        await this.triggers.deleteOne(id)
+      if(triggerId) {
+        await this.triggers.deleteOne(triggerId)
       }
       this.log.fatal({ err }, 'failed to create condition instance')
       throw new ArgumentError('failed to create trigger', err)
     }
 
-    return id
+    return triggerId
   }
 
   /**
@@ -110,10 +118,10 @@ export class StudioService {
   }
 
   /**
-   * @description Method returns a list of subscriptions attached to the trigger by subscribed entity,
-   *              e.g. question can be subscribed.
-   *              Upon trigger activation those subscriptions will be notified by amqp message to
-   *              appropriate route with given payload.
+   * @description returns a list of subscriptions for a trigger activation
+   *              by subscribed { entity, entityId }
+   *              Upon trigger activation these subscriptions will be notified by amqp message sent to
+   *              given route with given payload. It can be any service within SL using amqp transport.
    * @param entity
    * @param entityId
    */
@@ -131,8 +139,7 @@ export class StudioService {
   }
 
   /**
-   * @description returns
-   * @param triggerId
+   * @description returns a list of subscriptions for a trigger activation
    */
   async getSubscriptionListByTrigger(triggerId: string): Promise<TriggerSubscription[]> {
     const ids = await this.subscriptions.getListByTrigger(triggerId)
@@ -166,10 +173,18 @@ export class StudioService {
     return this.subscriptions.create(triggerId, data)
   }
 
+  /**
+   * @description cancels existing subscription for trigger
+   */
   cancelSubscription(subscriptionId: string) {
     return this.subscriptions.deleteOne(subscriptionId)
   }
 
+  /**
+   * @description returns trigger along with conditions,
+   *              option "showLog" attaches event log to conditions
+   *              options "trim" removes redundant information to reduce response size
+   */
   async getTrigger(id: string, options: TriggerOptions = {}): Promise<TriggerWithConditions> {
     const trigger = await this.triggers.getOne(id)
     const conditions = await this.conditions.getByTriggerId(id, { showLog: options.showLog })
@@ -186,6 +201,10 @@ export class StudioService {
     return { trigger, conditions } as TriggerWithConditions
   }
 
+  /**
+   * @description returns metadata description for standard events
+   *              studio should use it as a reference while building trigger request
+   */
   getMetadata() {
     return metadata
   }

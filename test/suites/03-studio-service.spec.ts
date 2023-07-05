@@ -14,7 +14,7 @@ import {
   EssentialTriggerData,
   TriggerCreateRequest,
 } from '../../src/models/dto/trigger-create-request'
-import { GameLevel } from '../../src/models/events/football/football-game-level.event'
+import { GameLevel } from '../../src/models/events/football/football-game-level'
 import { TriggerListRequest } from '../../src/models/dto/trigger-list-request'
 import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
 import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-request'
@@ -29,7 +29,7 @@ interface SuitContext extends TestContext {
 }
 
 describe('StudioService', function () {
-  const scope = Scope.SportradarGames
+  const scope = Scope.Game
   const scopeId = randomUUID()
   const entity = 'moderation'
   const entityId = randomUUID()

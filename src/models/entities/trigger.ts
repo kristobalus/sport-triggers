@@ -1,6 +1,6 @@
 
 export enum Scope {
-  SportradarGames = 'sportradar.game'
+  Game = 'game'
 }
 
 export interface Trigger {
@@ -10,6 +10,7 @@ export interface Trigger {
   name: string
   // human-readable name just for description purposes
   description: string
+  datasource: string
   scope: Scope
   scopeId: string
   activated: boolean

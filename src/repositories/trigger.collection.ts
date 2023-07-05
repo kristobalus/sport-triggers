@@ -10,8 +10,8 @@ export function triggerKey(triggerId: string) {
   return `triggers/${triggerId}`
 }
 
-export function triggerSetByScopeKey(scope: string, scopeId: string) {
-  return `scopes/${scope}/${scopeId}/triggers`
+export function triggerSetByScopeKey(datasource: string, scope: string, scopeId: string) {
+  return `scopes/${datasource}/${scope}/${scopeId}/triggers`
 }
 
 export function triggerSetByEntityKey(entity: string, entityId: string) {
@@ -35,7 +35,7 @@ export class TriggerCollection {
       try {
         const pipe = this.redis.pipeline()
 
-        pipe.sadd(triggerSetByScopeKey(item.scope, item.scopeId), item.id)
+        pipe.sadd(triggerSetByScopeKey(item.datasource, item.scope, item.scopeId), item.id)
         if (item.entity && item.entityId) {
           pipe.sadd(triggerSetByEntityKey(item.entity, item.entityId), item.id)
         }
@@ -67,7 +67,7 @@ export class TriggerCollection {
 
     const pipe = this.redis.pipeline()
 
-    pipe.srem(triggerSetByScopeKey(item.scope, item.scopeId), id)
+    pipe.srem(triggerSetByScopeKey(item.datasource, item.scope, item.scopeId), id)
     pipe.srem(triggerSetByEntityKey(item.entity, item.entityId), id)
     await pipe.exec()
 
@@ -83,8 +83,8 @@ export class TriggerCollection {
     return this.redis.smembers(triggerSetByEntityKey(entity, entityId))
   }
 
-  getListByScope(scope: string, scopeId: string): Promise<string[]> {
-    return this.redis.smembers(triggerSetByScopeKey(scope, scopeId))
+  getListByScope(datasource: string, scope: string, scopeId: string): Promise<string[]> {
+    return this.redis.smembers(triggerSetByScopeKey(datasource, scope, scopeId))
   }
 
   async clean(id: string) {
@@ -97,7 +97,7 @@ export class TriggerCollection {
       pipe.del(triggerKey(id))
     }
 
-    pipe.srem(triggerSetByScopeKey(item.scope, item.scopeId), id)
+    pipe.srem(triggerSetByScopeKey(item.datasource, item.scope, item.scopeId), id)
     pipe.srem(triggerSetByEntityKey(item.entity, item.entityId), id)
 
     await pipe.exec()

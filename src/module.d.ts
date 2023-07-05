@@ -13,13 +13,9 @@ declare module 'ioredis' {
     set_and_compare(
       numberOfKeys: 1,
       conditionKey: string,
-      currentValue: string,
-    ): Promise<[number, number]>
-    set_and_compare_as_string(
-      numberOfKeys: 1,
-      conditionKey: string,
-      currentValue: string,
-    ): Promise<[number, number]>
+      current: string,
+      ...options: string[]
+    ): Promise<any>
     incr_and_compare(
       numberOfKeys: 1,
       conditionKey: string,

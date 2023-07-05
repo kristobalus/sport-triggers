@@ -10,23 +10,30 @@ import { AMQPTransport, Publish } from "@microfleet/transport-amqp"
 import { randomUUID } from "crypto"
 import { StudioService } from "../src/services/studio/studio.service"
 // import assert from "assert"
+import { Trigger } from "../src/models/entities/trigger"
 import { EssentialConditionData, EssentialTriggerData } from "../src/models/dto/trigger-create-request"
 import { CompareOp } from "../src/models/entities/trigger-condition"
 import { TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
-import { FootballGamePointsHomeEvent } from "../src/models/events/football/football-game-points-home.event"
 import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subscription.collection"
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
 import { FootballEvents } from "../src/models/events/football/football-events"
-import { GameLevel } from "../src/models/events/football/football-game-level.event"
+import { GameLevel } from "../src/models/events/football/football-game-level"
 import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
 import { QueueService } from "../src/services/queue/queue.service"
-import { delay  } from "bluebird"
+import { AdapterEvent } from "../src/models/events/adapter-event"
+import { FootballPlayerState } from "../src/models/events/football/football-player-state"
+import { Defer } from "../src/utils/defer"
+import assert from "assert"
 
 describe("QueueService", function () {
 
-  const scope = Scope.SportradarGames
+  const scope = Scope.Game
   const scopeId = randomUUID()
+  const datasource = "sportradar"
+  const entity = "moderation"
+  const entityId = randomUUID()
+  const playerId = randomUUID()
 
   const ctx: {
     redis?: Redis,
@@ -37,7 +44,9 @@ describe("QueueService", function () {
     conditions?: TriggerConditionCollection
     subscriptions?: TriggerSubscriptionCollection
     notifications: any[],
-    receiver?: EssentialSubscriptionData
+    receiver?: EssentialSubscriptionData,
+    deferred?: Defer,
+    trigger?: Trigger
   } = {
     notifications: [],
   }
@@ -57,7 +66,7 @@ describe("QueueService", function () {
 
     const log = pino({
       name: "test",
-      level: "debug",
+      level: "info",
     }, pretty({
       levelFirst: true,
       colorize: true,
@@ -67,11 +76,12 @@ describe("QueueService", function () {
     const amqp = {
       async publishAndWait<T = any>(route: string, message: any, options?: Publish): Promise<T> {
         ctx.notifications.push({ route, message, options })
+        log.debug({ notification: { route, message, options } }, 'notification received')
         return {} as T
       },
     } as AMQPTransport
 
-    ctx.adapter = new AdapterService(log, ctx.redis, amqp)
+    ctx.adapter = new AdapterService(log, ctx.redis, amqp, { triggerLifetimeSeconds: 3600 })
     ctx.studio = new StudioService(log, ctx.redis)
     ctx.queue = new QueueService(log, ctx.adapter, {})
     ctx.triggers = new TriggerCollection(ctx.redis)
@@ -79,33 +89,55 @@ describe("QueueService", function () {
     ctx.subscriptions = new TriggerSubscriptionCollection(ctx.redis)
     ctx.notifications = []
 
-    const triggerData = {
+    const triggerData: EssentialTriggerData = {
       name: "...",
       description: "...",
+      datasource,
       scope,
       scopeId,
-    } as EssentialTriggerData
+      entity,
+      entityId
+    }
 
-    const triggerConditions: EssentialConditionData[] = [
+    const conditionData: EssentialConditionData[] = [
       {
         event: FootballEvents.GamePointsHome,
         compare: CompareOp.GreaterOrEqual,
         target: "30",
+        options: []
       },
       {
         event: FootballEvents.GameLevel,
         compare: CompareOp.Equal,
         target: GameLevel.End,
+        options: []
+      },
+      {
+        event: FootballEvents.PlayerState,
+        compare: CompareOp.Equal,
+        target: FootballPlayerState.Touchdown,
+        options: [
+          {
+            event: FootballEvents.Player,
+            compare: CompareOp.Equal,
+            target: playerId
+          }
+        ]
       },
     ]
 
-    let triggerId = await ctx.studio.createTrigger(triggerData, triggerConditions)
+    let triggerId = await ctx.studio.createTrigger(triggerData, conditionData)
+    const result = await ctx.studio.getTrigger(triggerId)
+    ctx.trigger = result.trigger
 
     const subscriptionData = {
       ...ctx.receiver,
     } as EssentialSubscriptionData
 
     await ctx.studio.subscribeTrigger(triggerId, subscriptionData)
+    ctx.queue.debugCallback = (result) => {
+      ctx.deferred?.resolve(result)
+    }
   })
 
   after(async () => {
@@ -113,93 +145,76 @@ describe("QueueService", function () {
     await ctx.queue.close()
   })
 
-  // it.skip(`direct event push`, async () => {
-  //
-  //   const event = {
-  //     name: FootballEvents.GamePointsHome,
-  //     id: randomUUID(),
-  //     value: "20",
-  //     scope,
-  //     scopeId,
-  //     timestamp: Date.now(),
-  //   } as FootballGamePointsHomeEvent
-  //
-  //   await ctx.adapter.pushEvent(event)
-  //   const [ condition1, condition2 ] = await ctx.conditions.getByTriggerId(triggerId)
-  //   assert.equal(condition1.activated, false)
-  //   assert.equal(condition2.activated, false)
-  // })
+  it(`complete first condition`, async () => {
 
-  it(`use event queue`, async () => {
-
-    const event = {
-      name: FootballEvents.GamePointsHome,
+    const event: AdapterEvent = {
       id: randomUUID(),
-      value: "30",
+      datasource,
       scope,
       scopeId,
       timestamp: Date.now(),
-    } as FootballGamePointsHomeEvent
+      options: {
+        [FootballEvents.GamePointsHome]: "30"
+      }
+    }
 
+    ctx.deferred = new Defer<any>()
     await ctx.queue.addEvent(event)
+    await ctx.deferred.promise
 
-    // TODO replace for a waiting of trigger activation
-    await delay(5000)
+    const [ condition1, condition2, condition3 ] = await ctx.conditions.getByTriggerId(ctx.trigger.id)
+    assert.equal(condition1.activated, true)
+    assert.equal(condition2.activated, false)
+    assert.equal(condition3.activated, false)
   })
 
-  // it.skip(`event for first, first - activated, second - not`, async () => {
-  //
-  //   const event = {
-  //     name: FootballEvents.GamePointsHome,
-  //     value: "40",
-  //     id: randomUUID(),
-  //     scope,
-  //     scopeId,
-  //     timestamp: Date.now(),
-  //   } as FootballGamePointsHomeEvent
-  //
-  //   await ctx.adapter.pushEvent(event)
-  //   const [ condition1, condition2 ] = await ctx.conditions.getByTriggerId(triggerId)
-  //   assert.equal(condition1.activated, true)
-  //   assert.equal(condition2.activated, false)
-  // })
-  //
-  // it.skip(`event for second, first - activated, second - not`, async () => {
-  //
-  //   const event = {
-  //     name: FootballEvents.GameLevel,
-  //     value: GameLevel.Start,
-  //     id: randomUUID(),
-  //     scope,
-  //     scopeId,
-  //     timestamp: Date.now(),
-  //   } as FootballGameLevelEvent
-  //
-  //   await ctx.adapter.pushEvent(event)
-  //   const [ condition1, condition2 ] = await ctx.conditions.getByTriggerId(triggerId)
-  //   assert.equal(condition1.activated, true)
-  //   assert.equal(condition2.activated, false)
-  // })
-  //
-  // it.skip(`event for second, second - activated, first - activated, trigger - activated`, async () => {
-  //
-  //   const event = {
-  //     name: FootballEvents.GameLevel,
-  //     value: GameLevel.End,
-  //     id: randomUUID(),
-  //     scope,
-  //     scopeId,
-  //     timestamp: Date.now(),
-  //   } as FootballGameLevelEvent
-  //
-  //   await ctx.adapter.pushEvent(event)
-  //
-  //   const conditions = await ctx.conditions.getByTriggerId(triggerId)
-  //   assert.equal(conditions.length, 0)
-  //
-  //   const [ notification ] = ctx.notifications
-  //   assert.equal(ctx.notifications.length, 1)
-  //   assert.equal(notification.route, "some.route2")
-  // })
+  it(`complete second condition`, async () => {
+
+    const event: AdapterEvent = {
+      id: randomUUID(),
+      datasource,
+      scope,
+      scopeId,
+      timestamp: Date.now(),
+      options: {
+        [FootballEvents.GameLevel]: GameLevel.End
+      }
+    }
+
+    ctx.deferred = new Defer<any>()
+    await ctx.queue.addEvent(event)
+    await ctx.deferred.promise
+
+    const [ condition1, condition2, condition3 ] = await ctx.conditions.getByTriggerId(ctx.trigger.id)
+    assert.equal(condition1.activated, true)
+    assert.equal(condition2.activated, true)
+    assert.equal(condition3.activated, false)
+  })
+
+
+  it(`complete third condition`, async () => {
+
+    const event: AdapterEvent = {
+      id: randomUUID(),
+      datasource,
+      scope,
+      scopeId,
+      timestamp: Date.now(),
+      options: {
+        [FootballEvents.PlayerState]: FootballPlayerState.Touchdown,
+        [FootballEvents.Player]: playerId
+      }
+    }
+
+    ctx.deferred = new Defer<any>()
+    await ctx.queue.addEvent(event)
+    await ctx.deferred.promise
+
+    const [ condition1, condition2, condition3 ] = await ctx.conditions.getByTriggerId(ctx.trigger.id)
+    assert.equal(condition1.activated, true)
+    assert.equal(condition2.activated, true)
+    assert.equal(condition3.activated, true)
+  })
+
 
 })

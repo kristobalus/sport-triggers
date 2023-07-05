@@ -4,11 +4,11 @@ import { Microfleet } from '@microfleet/core-types'
 import { Worker, Job, Queue } from 'bullmq'
 import { RedisOptions } from 'ioredis'
 
-import { Event } from '../../models/events/event'
+import { AdapterEvent } from '../../models/events/adapter-event'
 import { Trigger } from '../../models/entities/trigger'
-import { Defer } from '../../utils/defer'
 
 import { AdapterService } from '../adapter/adapter.service'
+import { Event } from "../../models/events/event"
 
 export function getQueueRedisConfig(config: RedisConfig) {
   return {
@@ -36,6 +36,7 @@ export class QueueService {
     private log: Microfleet['log'],
     private adapterService: AdapterService,
     redisOptions: RedisOptions,
+    public debugCallback?: (result) => any
   ) {
     this.triggerQueue = new Queue('triggers', {
       defaultJobOptions: {
@@ -82,8 +83,15 @@ export class QueueService {
       })
   }
 
-  async addEvent(event: Event) {
-    await this.eventQueue.add('add', { event })
+  async addEvent(adapterEvent: AdapterEvent) {
+    const jobs = []
+
+    for(const [name, value] of Object.entries(adapterEvent.options)) {
+      const event = { ...adapterEvent, name, value }
+      jobs.push({ name: 'evaluate', data: { event } })
+    }
+
+    await this.eventQueue.addBulk(jobs)
   }
 
   async onEventJob(job: Job<EventJob>) {
@@ -92,33 +100,24 @@ export class QueueService {
 
     this.log.debug({ id: job.id }, 'event job started')
 
-    if (await adapterService.hasTriggers(event)) {
-      const defer = new Defer()
+    if (await adapterService.hasTriggersForEvent(event)) {
 
-      adapterService.getTriggerStreamByEvent(event)
-        .on('data', async (triggers) => {
-          this.log.debug({ triggers }, 'trigger list from db')
-          const jobs = triggers.map((trigger) => ({ name: 'evaluate', data: { trigger, event } }))
+      await new Promise<void>((resolve, reject) => {
+        adapterService.getTriggerStreamByEvent(event)
+          .on('data', async (triggers) => {
+            this.log.debug({ triggers }, 'trigger list from db')
+            const jobs = triggers.map((trigger) => ({ name: 'evaluate', data: { trigger, event } }))
 
-          await triggerQueue.addBulk(jobs)
-        })
-        .on('error', (err) => {
-          defer.reject(err)
-        })
-        .on('close', () => {
-          defer.resolve()
-        })
-      await defer.promise
+            await triggerQueue.addBulk(jobs)
+          })
+          .on('error', (err) => {
+            reject(err)
+          })
+          .on('close', () => {
+            resolve()
+          })
+      })
     }
-
-    /*
-    TODO: this is alternative way: reading all triggers subscribed for event,
-      can block redis for a long time
-    const triggers = await adapterService.getTriggersByEvent(event)
-    const triggers = await adapterService.getTriggers(scope, scopeId, name)
-    const jobs = triggers.map((trigger: Trigger) => ({ name: "evaluate", data: { trigger, event } }))
-    await triggerQueue.addBulk(jobs)
-    */
 
     this.log.debug({ id: job.id }, 'event job completed')
   }
@@ -127,7 +126,8 @@ export class QueueService {
     const { trigger, event } = job.data
 
     this.log.debug({ id: job.id, name: job.name }, 'trigger job started')
-    await this.adapterService.evaluateTrigger(event, trigger)
+    const result = await this.adapterService.evaluateTrigger(event, trigger)
+    this.debugCallback?.(result)
     this.log.debug({ id: job.id, name: job.name }, 'trigger job completed')
   }
 

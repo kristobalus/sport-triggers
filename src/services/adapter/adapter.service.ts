@@ -7,12 +7,13 @@ import { Readable } from 'stream'
 import { Redis } from 'ioredis'
 
 import { conditionKey, TriggerConditionCollection } from '../../repositories/trigger-condition.collection'
-import { Event } from '../../models/events/event'
+import { AdapterEvent } from '../../models/events/adapter-event'
 import { ChainOp, ConditionType, TriggerCondition } from '../../models/entities/trigger-condition'
 import { TriggerSubscriptionCollection } from '../../repositories/trigger-subscription.collection'
 import { TriggerCollection } from '../../repositories/trigger.collection'
-import { toUriByEvent } from '../../models/events/uri'
+import { fromEvent } from '../../models/events/event-uri'
 import { Trigger } from '../../models/entities/trigger'
+import { Event } from "../../models/events/event"
 
 export interface CompareResult {
   activated: boolean
@@ -36,28 +37,8 @@ export class AdapterService {
     this.subscriptionCollection = new TriggerSubscriptionCollection(this.redis, options?.triggerLifetimeSeconds)
   }
 
-  async pushEvent(event: Event) {
-    const uri = toUriByEvent(event)
-
-    this.log.debug({ event, uri }, 'incoming event')
-
-    const { scope, scopeId, name } = event
-    const triggers = await this.conditionCollection.getTriggerListByScopeAndEventName(scope, scopeId, name)
-
-    this.log.debug({ triggers }, 'triggers found for pushed event')
-
-    for (const triggerId of triggers) {
-      const trigger = await this.triggerCollection.getOne(triggerId)
-
-      if (trigger.activated) {
-        continue
-      }
-      await this.evaluateTrigger(event, trigger)
-    }
-  }
-
   async evaluateTrigger(event: Event, trigger: Trigger): Promise<boolean> {
-    const uri = toUriByEvent(event)
+    const uri = fromEvent(event)
 
     this.log.debug({ event, uri }, 'incoming event')
 
@@ -100,8 +81,8 @@ export class AdapterService {
     return triggerResult
   }
 
-  async getTriggersByEvent(event: Event): Promise<Trigger[]> {
-    const uri = toUriByEvent(event)
+  async getTriggersByEvent(event: AdapterEvent): Promise<Trigger[]> {
+    const uri = fromEvent(event)
     const ids = await this.conditionCollection.getTriggerListByUri(uri)
     const result = []
 
@@ -114,16 +95,15 @@ export class AdapterService {
     return result
   }
 
-  async hasTriggers(event: Event): Promise<boolean> {
-    const uri = toUriByEvent(event)
+  async hasTriggersForEvent(event: Event): Promise<boolean> {
     const { conditionCollection } = this
+    const uri = fromEvent(event)
     const count = await conditionCollection.countTriggersByUri(uri)
-
     return count > 0
   }
 
-  getTriggerStreamByEvent(event: Event): Readable {
-    const uri = toUriByEvent(event)
+  getTriggerStreamByEvent(event: AdapterEvent): Readable {
+    const uri = fromEvent(event)
     const { triggerCollection, conditionCollection } = this
 
     const stream = conditionCollection.getTriggerStreamByUri(uri)
@@ -143,7 +123,7 @@ export class AdapterService {
           this.push(result)
           callback()
         })().catch(callback)
-      }
+      },
     }))
   }
 
@@ -153,12 +133,11 @@ export class AdapterService {
   ): Promise<CompareResult> {
     this.log.debug({ event, condition }, 'evaluating trigger condition')
 
-    if (condition.type === ConditionType.SetAndCompare) {
-      return this.setAndCompare(condition.id, event)
-    } else if (condition.type === ConditionType.SetAndCompareAsString) {
-      return this.setAndCompareAsString(condition.id, event)
+    if (condition.type === ConditionType.SetAndCompare
+      || condition.type === ConditionType.SetAndCompareAsString) {
+      return this.setAndCompare(condition, event)
     } else if (condition.type === ConditionType.IncrAndCompare) {
-      return this.incrAndCompare(condition.id, event)
+      return this.incrAndCompare(condition, event)
     } else {
       this.log.fatal({ event }, 'processing flow is not implemented')
 
@@ -166,23 +145,28 @@ export class AdapterService {
     }
   }
 
-  private async setAndCompare(conditionId: string, event: Event): Promise<CompareResult> {
-    const key = conditionKey(conditionId)
+  private async setAndCompare(condition: TriggerCondition, event: Event): Promise<CompareResult> {
+    const key = conditionKey(condition.id)
     const current = event.value
-
     const result: CompareResult = {
       activated: false,
       changed: false,
     }
 
     try {
-      const [activated, changed] = await this.redis.set_and_compare(1, key, current)
+      const options = []
+
+      for(const [name, value] of Object.entries(event.options)){
+        options.push(name, value)
+      }
+
+      const [activated, changed] = await this.redis.set_and_compare(1, key, current, ...options)
 
       result.activated = !!activated
       result.changed = !!changed
 
       if (result.changed) {
-        await this.conditionCollection.appendToEventLog(conditionId, event)
+        await this.conditionCollection.appendToEventLog(condition.id, event)
       }
 
       this.log.debug({ key, current, result }, 'evaluation result')
@@ -194,35 +178,7 @@ export class AdapterService {
     return result
   }
 
-  private async setAndCompareAsString(conditionId: string, event: Event): Promise<CompareResult> {
-    const key = conditionKey(conditionId)
-    const current = event.value
-
-    const result: CompareResult = {
-      activated: false,
-      changed: false,
-    }
-
-    try {
-      const [activated, changed] = await this.redis.set_and_compare_as_string(1, key, current)
-
-      result.activated = !!activated
-      result.changed = !!changed
-
-      if (result.changed) {
-        await this.conditionCollection.appendToEventLog(conditionId, event)
-      }
-
-      this.log.debug({ key, current, result }, 'evaluation result')
-    } catch (err) {
-      this.log.fatal({ err, key, current }, 'failed to compare')
-      result.error = err
-    }
-
-    return result
-  }
-
-  private incrAndCompare(_conditionId: string, _event: Event): Promise<CompareResult> {
+  private incrAndCompare(_condition: TriggerCondition, _event: AdapterEvent): Promise<CompareResult> {
     // run lua script
     // TODO not implemented yet
     return Promise.resolve({ activated: false, changed: false })
