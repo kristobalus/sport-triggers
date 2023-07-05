@@ -1,8 +1,4 @@
 
-import { AdapterEvent } from '../adapter-event'
-
-import { BaseballEvents } from './baseball-events'
-
 export enum GameLevel {
   Start='start',
   QuarterStart='quarter.start',
@@ -12,8 +8,4 @@ export enum GameLevel {
   End='end'
 }
 
-export interface BaseballGameLevelEvent extends AdapterEvent {
-  name: BaseballEvents.GameLevel
-  value: GameLevel
-}
 
