@@ -105,6 +105,16 @@ describe('AdapterService', function () {
   async function createTrigger(ctx: SuitContext) {
     const { amqpPrefix } = ctx
 
+    const triggerData: EssentialTriggerData = {
+      name: '...',
+      description: '..',
+      datasource,
+      scope,
+      scopeId,
+      entity,
+      entityId,
+    }
+
     const conditionData: EssentialConditionData[] = [
       {
         event: FootballEvents.GameLevel,
@@ -136,14 +146,7 @@ describe('AdapterService', function () {
 
     const response: ItemResponse<TriggerCreateResponse> =
       await ctx.service.amqp.publishAndWait(`${amqpPrefix}.studio.trigger.create`, {
-        trigger: {
-          name: '...',
-          description: '..',
-          scope,
-          scopeId,
-          entity,
-          entityId,
-        } as EssentialTriggerData,
+        trigger: triggerData,
         conditions: conditionData,
       } as TriggerCreateRequest)
 
