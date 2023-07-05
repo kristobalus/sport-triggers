@@ -226,7 +226,7 @@ describe('AdapterService', function () {
     })
 
     console.log(await getTriggerActivated())
-    // assert.equal(await getTriggerActivated(), false)
+    assert.equal(await getTriggerActivated(), false)
   })
 
   it('push home team points event', async () => {
@@ -236,7 +236,7 @@ describe('AdapterService', function () {
       } as AdapterPushRequest,
     })
 
-    // assert.equal(await getTriggerActivated(), false)
+    assert.equal(await getTriggerActivated(), false)
     console.log(await getTriggerActivated())
   })
 
@@ -247,7 +247,7 @@ describe('AdapterService', function () {
       } as AdapterPushRequest,
     })
 
-    // assert.equal(await getTriggerActivated(), false)
+    assert.equal(await getTriggerActivated(), false)
     console.log(await getTriggerActivated())
   })
 
@@ -258,7 +258,7 @@ describe('AdapterService', function () {
       } as AdapterPushRequest,
     })
     console.log(await getTriggerActivated())
-    // assert.equal(await getTriggerActivated(), true)
+    assert.equal(await getTriggerActivated(), true)
   })
 
   it('should send message to subscriber', async () => {
