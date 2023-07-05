@@ -11,6 +11,9 @@
                 "description": {
                     "type": "string"
                 },
+                "datasource": {
+                    "type": "string"
+                },
                 "scope": {
                     "type": "string"
                 },
