@@ -216,7 +216,7 @@ describe('AdapterService', function () {
     await stopContext(ctx)
   })
 
-  it.skip('push game level event', async () => {
+  it('push game level event', async () => {
     await ctx.request.post('adapter/event/push', {
       json: {
         event: events.gameLevelStart,
@@ -226,7 +226,7 @@ describe('AdapterService', function () {
     assert.equal(await getTriggerActivated(), false)
   })
 
-  it.skip('push home team points event', async () => {
+  it('push home team points event', async () => {
     await ctx.request.post('adapter/event/push', {
       json: {
         event: events.homeTeamPoints,
@@ -236,7 +236,7 @@ describe('AdapterService', function () {
     assert.equal(await getTriggerActivated(), false)
   })
 
-  it.skip('push wrong player touchdown event', async () => {
+  it('push wrong player touchdown event', async () => {
     await ctx.request.post('adapter/event/push', {
       json: {
         event: events.wrongPlayerTouchdown,
@@ -246,7 +246,7 @@ describe('AdapterService', function () {
     assert.equal(await getTriggerActivated(), false)
   })
 
-  it.skip('push correct player touchdown event', async () => {
+  it('push correct player touchdown event', async () => {
     await ctx.request.post('adapter/event/push', {
       json: {
         event: events.correctPlayerTouchdown,
@@ -256,7 +256,7 @@ describe('AdapterService', function () {
     assert.equal(await getTriggerActivated(), true)
   })
 
-  it.skip('should send message to subscriber', async () => {
+  it('should send message to subscriber', async () => {
     const message = await ctx.pendingSubscriberMessage
 
     assert.ok(message)
