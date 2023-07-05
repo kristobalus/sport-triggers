@@ -8,7 +8,7 @@ import { TriggerWithConditions } from '../../../models/dto/trigger-with-conditio
 import { TriggerListRequest } from '../../../models/dto/trigger-list-request'
 
 async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ListResponse<TriggerWithConditions>> {
-  const { entity, entityId, scope, scopeId } = request.params as TriggerListRequest
+  const { entity, entityId, scope, scopeId, datasource } = request.params as TriggerListRequest
 
   const { studioService } = this
 
@@ -17,8 +17,8 @@ async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ListRe
   if (entity && entityId) {
     list = await studioService.getTriggerListByEntity(entity, entityId, { showLog: true, trim: true })
   }
-  else if (scope && scopeId) {
-    list = await studioService.getTriggerListByScope(scope, scopeId, { showLog: true, trim: true })
+  else if (datasource && scope && scopeId) {
+    list = await studioService.getTriggerListByScope(datasource, scope, scopeId, { showLog: true, trim: true })
   } else {
     throw new ArgumentError('Either { entity, entityId } pair or { scope, scopeId } should be defined')
   }

@@ -112,7 +112,7 @@ describe('StudioService', function () {
     assert.equal(item.type, 'trigger')
   })
 
-  it('should list triggers', async () => {
+  it('should list triggers by entity', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
     const response: ListResponse = await ctx.service
       .amqp.publishAndWait(`${prefix}.studio.trigger.list`, { entity, entityId } as TriggerListRequest)

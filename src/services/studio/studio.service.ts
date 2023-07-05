@@ -97,15 +97,13 @@ export class StudioService {
   /**
    * @description returns to Studio a list of triggers attached to scope,
    *              e.g "datasource.game" + game identifier
-   * @param scope
-   * @param scopeId
-   * @param options
    */
   async getTriggerListByScope(
+    datasource: string,
     scope: string,
     scopeId: string,
     options: TriggerOptions = {}): Promise<TriggerWithConditions[]> {
-    const ids = await this.triggers.getListByScope(scope, scopeId)
+    const ids = await this.triggers.getListByScope(datasource, scope, scopeId)
     const items = []
 
     for (const id of ids) {
