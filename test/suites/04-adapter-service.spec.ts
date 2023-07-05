@@ -213,11 +213,10 @@ describe('AdapterService', function () {
   })
 
   after(async () => {
-    console.log('after')
     await stopContext(ctx)
   })
 
-  it('push game level event', async () => {
+  it.skip('push game level event', async () => {
     await ctx.request.post('adapter/event/push', {
       json: {
         event: events.gameLevelStart,

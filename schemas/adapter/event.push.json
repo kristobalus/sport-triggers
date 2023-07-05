@@ -8,28 +8,28 @@
         "id": {
           "type": "string"
         },
+        "datasource": {
+          "type": "string"
+        },
         "scope": {
           "type": "string"
         },
         "scopeId": {
           "type": "string"
         },
-        "name": {
-          "type": "string"
-        },
-        "value": {
-          "type": [
-            "string",
-            "number"
-          ]
-        },
         "timestamp": {
           "type": "number"
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       },
       "required": ["id","scope","scopeId","name","value","timestamp"]
     }
   },
-  "additionalProperties": true,
-  "required": ["event"]
+  "additionalProperties": false,
+  "required": ["id", "datasource", "scope", "scopeId", "timestamp", "options"]
 }

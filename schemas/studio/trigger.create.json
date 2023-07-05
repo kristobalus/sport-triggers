@@ -45,10 +45,15 @@
                         "type": "string",
                         "enum": ["and", "or"]
                     },
-                    "params": {
-                        "type": "object",
-                        "properties": {
-                            "player": { "type": "string" }
+                    "options": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "event": { "type": "string" },
+                                "compare": { "type": "string" },
+                                "target": { "type": "string" }
+                            }
                         }
                     }
                 },
