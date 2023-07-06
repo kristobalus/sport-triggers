@@ -11,16 +11,10 @@ declare module '@microfleet/core-types' {
 declare module 'ioredis' {
   export interface Redis {
     set_and_compare(
-      numberOfKeys: 1,
+      numberOfKeys: 2,
       conditionKey: string,
-      current: string,
-      ...options: string[]
+      eventLogKey: string,
+      eventJson: string
     ): Promise<any>
-    incr_and_compare(
-      numberOfKeys: 1,
-      conditionKey: string,
-      currentValue: string,
-      compareOp: string
-    ): Promise<[number, number]>
   }
 }

@@ -102,6 +102,10 @@ export class TriggerSubscriptionCollection {
       item.options = JSON.parse(item.options as unknown as string)
     }
 
+    if ( item.sent ) {
+      item.sent = JSON.parse(item.sent as unknown as string)
+    }
+
     return item as unknown as TriggerSubscription
   }
 
@@ -111,5 +115,9 @@ export class TriggerSubscriptionCollection {
 
   getListByEntity(entity: string, entityId: string): Promise<string[]> {
     return this.redis.smembers(subscriptionByEntityKey(entity, entityId))
+  }
+
+  updateOne(id: string, data: Partial<TriggerSubscription>) : Promise<number> {
+    return this.redis.hset(subscriptionKey(id), data as unknown as Record<string, any>)
   }
 }

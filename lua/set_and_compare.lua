@@ -1,17 +1,23 @@
-local log = {}
 
-local types = {
-    set_and_compare_as_string = "set_and_compare_as_string",
-    incr_and_compare = "incr_and_compare",
-    set_and_compare = "set_and_compare"
-}
+local function Logger()
+    local _debug = {}
 
-local function as_string(type)
-    if type == types.set_and_compare_as_string then
-        return true
+    local function debug(data, message)
+        table.insert(_debug, { data, message })
     end
-    return false
+
+    local function tostring()
+        return cjson.encode(_debug)
+    end
+
+    local ns = {
+        debug = debug,
+        tostring = tostring
+    }
+    return ns
 end
+
+local logger = Logger()
 
 local function to_unit(value)
     if value == "1" then
@@ -39,92 +45,181 @@ local function to_bool(value)
     return false
 end
 
-local conditionKey = KEYS[1];
-local condition = {
-    target = redis.call("hget", conditionKey, "target"),
-    compare = redis.call("hget", conditionKey, "compare"),
-    current = ARGV[1],
-    type = redis.call("hget", conditionKey, "type"),
-    activated = to_bool(redis.call("hget", conditionKey, "activated"))
-}
-
--- skip current from ARGV
-table.remove(ARGV, 1);
-
-if condition.activated == true then
-    -- should not append event log
-    return { to_unit(condition.activated), 0, cjson.encode(log) }
+local function setConditionCurrentValue(key, value)
+    redis.call("hset", key, "current", value)
 end
 
--- should
---   1. set current value, replacing the old one as set(conditionKey, currentValue)
-redis.call("hset", conditionKey, "current", condition.current)
-
-local function convert_argv_to_options()
-    local arr = {}
-    for i = 1, #ARGV, 2 do
-        local name = ARGV[i]
-        local value = ARGV[i + 1]
-        table.insert(arr, { name = name, value = value })
-        -- table.insert(arr, event .. "=" .. value)
-    end
-    return arr
+local function setConditionActivated(key, value)
+    redis.call("hset", key, "activated", to_unit(value))
 end
 
-local function execute_compare_op(compareOp, currentValue, targetValue, asString)
-    local result = false
-    if asString == false then
-        currentValue = tonumber(currentValue)
-        targetValue = tonumber(targetValue)
+local function getCondition(key)
+    local options = redis.call("hget", key, "options")
+    if options == nil then
+        options = {}
+    else
+        options = cjson.decode(options)
     end
-    if compareOp == "eq" then
-        result = (currentValue == targetValue)
-    end
-    if compareOp == "gt" then
-        result = (currentValue > targetValue)
-    end
-    if compareOp == "lt" then
-        result = (currentValue < targetValue)
-    end
-    if compareOp == "ge" then
-        result = (currentValue >= targetValue)
-    end
-    if compareOp == "le" then
-        result = (currentValue <= targetValue)
+
+    local condition = {
+        target = redis.call("hget", key, "target"),
+        compare = redis.call("hget", key, "compare"),
+        type = redis.call("hget", key, "type"),
+        activated = to_bool(redis.call("hget", key, "activated")),
+        options = options
+    }
+
+    return condition
+end
+
+local function appendEventLog(key, event)
+    redis.call("hset", key, event.id, cjson.encode(event))
+end
+
+local function existsInEventLog(key, eventId)
+    local result = redis.call("hexists", key, eventId)
+    return to_bool(result)
+end
+
+local function eventlog_get_one(key, eventId)
+    local result = redis.call("hget", key, eventId)
+    return cjson.decode(result)
+end
+
+local function getEventLog(key)
+    local result = {}
+    local items = redis.call("hgetall", key)
+    for _, item in ipairs(items) do
+        table.insert(result, cjson.decode(item))
     end
     return result
 end
 
-local function compare_options(events)
-    local data = redis.call("hget", conditionKey, "options")
-    if data then
-        local options = cjson.decode(data)
-        local result = true
-        for i, event in ipairs(events) do
-            for j, option in ipairs(options) do
-                -- option.compare
-                -- option.target
-                -- option.event
-                -- option.type
-                if event.name == option.event then
-                    result = result and execute_compare_op(option.compare, event.value, option.target, option.type)
-                    table.insert(log, { event = event, option = option, result = result })
-                end
-            end
-        end
-        return result
-    else
-        return true
+local function compare(operation, value, target, type)
+    local result = false
+    if type == "number" then
+        value = tonumber(value)
+        target = tonumber(target)
     end
+    if operation == "eq" then
+        result = (value == target)
+    end
+    if type == "string" then
+        return result
+    end
+    if operation == "gt" then
+        result = (value > target)
+    end
+    if operation == "lt" then
+        result = (value < target)
+    end
+    if operation == "ge" then
+        result = (value >= target)
+    end
+    if operation == "le" then
+        result = (value <= target)
+    end
+    return result
 end
 
-condition.activated = execute_compare_op(condition.compare, condition.current, condition.target, as_string(condition.type))
-table.insert(log, { condition = condition })
+local function aggregate(eventName, operation, eventLog)
+    local result = 0
+    for _, event in ipairs(eventLog) do
+        if event.name == eventName then
+            if operation == "sum" then
+                local value = tonumber(event.value)
+                if value == nil then
+                    value = 0
+                end
+                result = result + value
+            end
+            if operation == "count" then
+                result = result + 1
+            end
+        end
+    end
+    return result
+end
 
-condition.activated = condition.activated and compare_options(convert_argv_to_options())
-table.insert(log, { condition = condition })
+local function compare_options(condition, event, eventLog)
+    local result = true
+    local count = 0
+    for _, eventOption in ipairs(event.options) do
+        -- eventOption.name
+        -- eventOption.value
+        for _, conditionOption in ipairs(condition.options) do
+            -- conditionOption.compare
+            -- conditionOption.aggregate
+            -- conditionOption.target
+            -- conditionOption.event
+            -- conditionOption.type
+            if eventOption.name == conditionOption.event then
+                count = count + 1
 
-redis.call("hset", conditionKey, "activated", to_unit(condition.activated))
+                local value
+                if conditionOption.aggregate ~= nil then
+                    value = aggregate(conditionOption.event, conditionOption.aggregate, eventLog)
+                else
+                    value = eventOption.value
+                end
 
- --should append event to log
-return { to_unit(condition.activated), 1, cjson.encode(log) }
+                result = result and compare(conditionOption.compare, value, conditionOption.target, conditionOption.type)
+
+                logger.debug({
+                    result = result,
+                    eventName = eventOption.name,
+                    value = value
+                }, 'option compared')
+            end
+        end
+    end
+    if count == 0 then
+        result = false
+    end
+    return result
+end
+
+local function evaluateCondition(condition, event, eventLog)
+
+    local value
+    if condition.aggregate ~= nil then
+        value = aggregate(condition.event, condition.aggregate, eventLog)
+    else
+        value = event.value
+    end
+
+    condition.activated = compare(condition.compare, value, condition.target, condition.type)
+    logger.debug({ condition = condition, value = value }, 'condition compared')
+
+    condition.activated = condition.activated and compare_options(condition, event, eventLog)
+    logger.debug({ condition = condition, event = event, eventLog = eventLog }, 'options compared')
+end
+
+--- BEGIN
+
+local conditionKey = KEYS[1]
+local eventLogKey = KEYS[2]
+local event = cjson.decode(ARGV[1])
+local condition = getCondition(conditionKey)
+
+-- check if event has already been processed based on event id
+if existsInEventLog(eventLogKey, event.id) == true then
+    logger.debug({ event = event }, "event is already processed")
+    return { to_unit(condition.activated), logger.tostring() }
+end
+
+-- check if condition has already been activated
+if condition.activated == true then
+    logger.debug({ condition = condition }, "condition is already activated")
+    return { to_unit(condition.activated), logger.tostring() }
+end
+
+local eventLog = getEventLog(eventLogKey)
+table.insert(eventLog, event)
+
+evaluateCondition(condition, event, eventLog)
+appendEventLog(eventLogKey, event)
+setConditionActivated(conditionKey, condition.activated)
+setConditionCurrentValue(event.value)
+
+return { to_unit(condition.activated), logger.tostring() }

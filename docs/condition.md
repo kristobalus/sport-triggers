@@ -38,15 +38,32 @@ export interface AdapterEvent {
 condition set by Studio
 ```json
 {
-  "event": "baseball.pitch.speed",
   "chainOperation": "and",
+  "event": "baseball.ball",   
+  "aggregate": "sum",
   "compare": "ge",
   "target": "90",
   "options": [
     {
       "event": "baseball.inning",
-      "compare": "ge",
-      "target": "0",
+      "compare": "eq",
+      "target": "1",
+    }
+  ]
+}
+```
+
+```json
+{
+  "chainOperation": "and",
+  "event": "baseball.pitch.speed",
+  "compare": "ge",
+  "target": "90",
+  "options": [
+    {
+      "event": "baseball.inning",
+      "compare": "eq",
+      "target": "1",
     },
     {
       "event": "baseball.player",

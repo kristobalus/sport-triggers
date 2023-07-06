@@ -283,5 +283,65 @@ describe("AdapterService", function () {
     })
   })
 
+  describe('methods', function () {
+
+    before(async () => {
+      ctx.notifications = []
+      await ctx.redis.flushall()
+
+      const triggerData: EssentialTriggerData = {
+        name: "...",
+        description: "...",
+        datasource,
+        scope,
+        scopeId,
+        entity,
+        entityId
+      }
+
+      const triggerConditions: EssentialConditionData[] = [
+        {
+          event: FootballEvents.GamePointsHome,
+          compare: CompareOp.GreaterOrEqual,
+          target: "30",
+          options: []
+        },
+        {
+          event: FootballEvents.GameLevel,
+          compare: CompareOp.Equal,
+          target: GameLevel.End,
+          options: []
+        },
+      ]
+
+      await ctx.studioService.createTrigger(triggerData, triggerConditions)
+      console.log(triggerData)
+      await ctx.studioService.createTrigger(triggerData, triggerConditions)
+      const triggers = await ctx.studioService.getTriggerListByScope(datasource, scope, scopeId, { showLog: true, trim: true })
+      console.log(triggers)
+    })
+
+    it(`getTriggersSubscribedToEvent`, async () => {
+
+      const event: Event = {
+        name: FootballEvents.GameLevel,
+        value: GameLevel.End,
+        id: randomUUID(),
+        datasource,
+        scope,
+        scopeId,
+        timestamp: Date.now(),
+        options: {
+          [FootballEvents.GameLevel]: GameLevel.End
+        }
+      }
+
+      for await (const triggers of ctx.adapterService.getTriggers(event)){
+          console.log(triggers)
+      }
+
+    })
+  })
+
 
 })

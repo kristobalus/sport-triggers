@@ -1,9 +1,8 @@
 import { AdapterEvent } from '../events/adapter-event'
 
 export enum ConditionType {
-  SetAndCompare = 'set_and_compare',
-  IncrAndCompare = 'incr_and_compare',
-  SetAndCompareAsString = 'set_and_compare_as_string'
+  Number = 'number',
+  String = 'string'
 }
 
 export enum CompareOp {

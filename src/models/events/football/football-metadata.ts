@@ -9,7 +9,7 @@ export const metadata: Record<string, EventMetadata> = {
   [FootballEvents.Player]: {
     sport: 'football',
     input: false,
-    type: ConditionType.SetAndCompareAsString,
+    type: ConditionType.String,
     compare: [
       CompareOp.Equal
     ]
@@ -18,7 +18,7 @@ export const metadata: Record<string, EventMetadata> = {
   [FootballEvents.GameLevel]: {
     sport: 'football',
     input: false,
-    type: ConditionType.SetAndCompareAsString,
+    type: ConditionType.String,
     compare: [
       CompareOp.Equal
     ],
@@ -36,19 +36,19 @@ export const metadata: Record<string, EventMetadata> = {
   [FootballEvents.GamePointsHome]: {
     sport: 'football',
     input: true,
-    type: ConditionType.SetAndCompare
+    type: ConditionType.Number
   },
 
   [FootballEvents.GamePointsAway]: {
     sport: 'football',
     input: true,
-    type: ConditionType.SetAndCompare
+    type: ConditionType.Number
   },
 
   [FootballEvents.PlayerState]: {
     sport: 'football',
     input: true,
-    type: ConditionType.SetAndCompareAsString,
+    type: ConditionType.String,
     compare: [
       CompareOp.Equal
     ],
@@ -63,19 +63,19 @@ export const metadata: Record<string, EventMetadata> = {
   [FootballEvents.PlayerPassing]: {
     sport: 'football',
     input: true,
-    type: ConditionType.SetAndCompare
+    type: ConditionType.Number
   },
 
   [FootballEvents.PlayerRushing]: {
     sport: 'football',
     input: true,
-    type: ConditionType.SetAndCompare
+    type: ConditionType.Number
   },
 
   [FootballEvents.PlayerReceiving]: {
     sport: 'football',
     input: true,
-    type: ConditionType.SetAndCompare
+    type: ConditionType.Number
   },
 
 

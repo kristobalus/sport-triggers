@@ -26,11 +26,20 @@ export interface TriggerJob {
   event: Event
 }
 
+export interface NotificationJob {
+  trigger: Trigger
+}
+
 export class QueueService {
+
   eventQueue: Queue
   eventWorker: Worker
+
   triggerQueue: Queue
   triggerWorker: Worker
+
+  notificationQueue: Queue
+  notificationWorker: Worker
 
   constructor(
     private log: Microfleet['log'],
@@ -41,7 +50,7 @@ export class QueueService {
     this.triggerQueue = new Queue('triggers', {
       defaultJobOptions: {
         removeOnComplete: true,
-        removeOnFail: true,
+        removeOnFail: false,
       },
       connection: redisOptions,
     })
@@ -49,7 +58,15 @@ export class QueueService {
     this.eventQueue = new Queue('events', {
       defaultJobOptions: {
         removeOnComplete: true,
-        removeOnFail: true,
+        removeOnFail: false,
+      },
+      connection: redisOptions,
+    })
+
+    this.notificationQueue = new Queue('notifications', {
+      defaultJobOptions: {
+        removeOnComplete: true,
+        removeOnFail: false,
       },
       connection: redisOptions,
     })
@@ -81,6 +98,20 @@ export class QueueService {
         connection: redisOptions,
         concurrency: 1
       })
+
+    this.notificationWorker = new Worker('notifications',
+      async (job: Job) => {
+        try {
+          await this.onNotificationJob(job)
+        } catch (err) {
+          log.error(err)
+          throw err
+        }
+      },
+      {
+        connection: redisOptions,
+        concurrency: 1
+      })
   }
 
   async addEvent(adapterEvent: AdapterEvent) {
@@ -100,23 +131,12 @@ export class QueueService {
 
     this.log.debug({ id: job.id }, 'event job started')
 
-    if (await adapterService.hasTriggersForEvent(event)) {
-
-      await new Promise<void>((resolve, reject) => {
-        adapterService.getTriggerStreamByEvent(event)
-          .on('data', async (triggers) => {
-            this.log.debug({ triggers }, 'trigger list from db')
-            const jobs = triggers.map((trigger) => ({ name: 'evaluate', data: { trigger, event } }))
-
-            await triggerQueue.addBulk(jobs)
-          })
-          .on('error', (err) => {
-            reject(err)
-          })
-          .on('close', () => {
-            resolve()
-          })
-      })
+    if (await adapterService.hasTriggers(event)) {
+      for await (let triggers of adapterService.getTriggers(event)) {
+        this.log.debug({ triggers }, 'trigger list from db')
+        const jobs = triggers.map((trigger) => ({ name: 'evaluate', data: { trigger, event } }))
+        await triggerQueue.addBulk(jobs)
+      }
     }
 
     this.log.debug({ id: job.id }, 'event job completed')
@@ -125,16 +145,32 @@ export class QueueService {
   async onTriggerJob(job: Job<TriggerJob>) {
     const { trigger, event } = job.data
 
-    this.log.debug({ id: job.id, name: job.name }, 'trigger job started')
+    this.log.debug({ id: job.id, name: job.name, trigger }, 'trigger job started')
     const result = await this.adapterService.evaluateTrigger(event, trigger)
+    if ( result ) {
+      await this.notificationQueue.add('notify', { trigger } as NotificationJob)
+    }
+
     this.debugCallback?.(result)
-    this.log.debug({ id: job.id, name: job.name }, 'trigger job completed')
+    this.log.debug({ id: job.id, name: job.name, result }, 'trigger job completed')
+  }
+
+  async onNotificationJob(job: Job<NotificationJob>) {
+    const { trigger } = job.data
+
+    this.log.debug({ id: job.id, name: job.name, trigger }, 'notification job started')
+    await this.adapterService.notify(trigger)
+
+    this.debugCallback?.(true)
+    this.log.debug({ id: job.id, name: job.name }, 'notification job completed')
   }
 
   async close() {
     await this.eventQueue.close()
     await this.triggerQueue.close()
+    await this.notificationQueue.close()
     await this.eventWorker.close()
     await this.triggerWorker.close()
+    await this.notificationWorker.close()
   }
 }

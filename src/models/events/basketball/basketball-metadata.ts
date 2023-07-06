@@ -8,7 +8,7 @@ export const metadata: Record<string, EventMetadata> = {
   [BasketballEvents.GameLevel]: {
     sport: 'basketball',
     input: false,
-    type: ConditionType.SetAndCompareAsString,
+    type: ConditionType.String,
     compare: [
       CompareOp.Equal
     ],

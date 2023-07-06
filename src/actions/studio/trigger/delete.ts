@@ -10,6 +10,7 @@ async function DeleteHandler(this: FleetApp, request: ServiceRequest): Promise<I
 
   const { studioService } = this
 
+  // TODO prohibit deletion of activated trigger
   await studioService.deleteTrigger(id)
 
   return {

@@ -1,6 +1,6 @@
 // start local redis instance (dir helper) to start test from IDE, faster than full integration tests via mdep
 
-import { TriggerConditionCollection, triggerSetByScopeAndEvent } from "../src/repositories/trigger-condition.collection"
+import { TriggerConditionCollection, subscribedToScopeAndEvent } from "../src/repositories/trigger-condition.collection"
 import IORedis, { Redis } from "ioredis"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { Defer } from "../src/utils/defer"
@@ -77,7 +77,7 @@ describe("Test zrange stream", function () {
   it('should create stream from trigger set', async () => {
     const deferred = new Defer()
     const stream = new ZRangeStream({
-      key: triggerSetByScopeAndEvent(datasource, scope, scopeId, FootballEvents.GamePointsHome),
+      key: subscribedToScopeAndEvent(datasource, scope, scopeId, FootballEvents.GamePointsHome),
       redis: ctx.redis,
     })
     stream.on("close", () => {

@@ -7,7 +7,7 @@ export const metadata: Record<string, EventMetadata> = {
   [BaseballEvents.GamePointsHome]: {
     sport: 'baseball',
     input: true,
-    type: ConditionType.SetAndCompareAsString,
+    type: ConditionType.String,
     compare: [
       CompareOp.Equal,
       CompareOp.GreaterThan,
@@ -21,7 +21,7 @@ export const metadata: Record<string, EventMetadata> = {
   [BaseballEvents.GamePointsAway]: {
     sport: 'baseball',
     input: true,
-    type: ConditionType.SetAndCompareAsString,
+    type: ConditionType.String,
     compare: [
       CompareOp.Equal,
       CompareOp.GreaterThan,

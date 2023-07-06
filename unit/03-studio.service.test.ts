@@ -89,7 +89,7 @@ describe("StudioService", function () {
 
     const [ condition ] = await ctx.conditions.getByTriggerId(ctx.triggerId)
     assert.equal(condition.event, FootballEvents.GameLevel)
-    assert.equal(condition.type, ConditionType.SetAndCompareAsString)
+    assert.equal(condition.type, ConditionType.String)
     assert.equal(condition.compare, CompareOp.Equal)
     assert.equal(condition.target, GameLevel.Start)
   })

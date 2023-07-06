@@ -24,7 +24,10 @@ export class TriggerCollection {
     private expiresInSeconds?: number
   ) { }
 
-  async add(item: Partial<Trigger>): Promise<string> {
+  async add(data: Partial<Trigger>): Promise<string> {
+    const item = {
+      ...data
+    }
     if (!item.id) {
       item.id = randomUUID()
     }

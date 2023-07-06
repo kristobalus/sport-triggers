@@ -1,5 +1,4 @@
 import { randomUUID } from 'crypto'
-import { Readable } from 'node:stream'
 
 import { Redis } from 'ioredis'
 import { inPlaceSort } from 'fast-sort'
@@ -11,8 +10,6 @@ import { AdapterEvent } from '../models/events/adapter-event'
 import { metadata } from '../models/events/event-metadata'
 import * as EventUri from '../models/events/event-uri'
 
-import { ZRangeStream } from "./streams/zrange.stream"
-
 export function conditionSetByTriggerKey(triggerId: string) {
   return `triggers/${triggerId}/conditions`
 }
@@ -21,12 +18,18 @@ export function conditionKey(conditionId: string) {
   return `conditions/${conditionId}`
 }
 
-export function triggerSetByScopeAndEvent(datasource: string, scope: string, scopeId: string, eventName: string) {
-  return `scopes/${datasource}/${scope}/${scopeId}/events/${eventName}/triggers`
+/**
+ * @description trigger id set subscribed to scope and event
+ */
+export function subscribedToScopeAndEvent(datasource: string, scope: string, scopeId: string, eventName: string) {
+  return `subscribers/scope/${datasource}/${scope}/${scopeId}/events/${eventName}/triggers`
 }
 
-export function triggerSetByUri(uri: string) {
-  return `uri/${uri}/triggers`
+/**
+ * @description trigger id set subscribe to uri
+ */
+export function subscribedToUri(uri: string) {
+  return `subscribers/uri/${uri}/triggers`
 }
 
 export function conditionLogKey(conditionId: string) {
@@ -109,11 +112,11 @@ export class TriggerConditionCollection {
         condition.id = randomUUID()
       }
 
-      if (condition.type == ConditionType.SetAndCompare) {
+      if (condition.type == ConditionType.Number) {
         condition.current = '0'
       }
 
-      if (condition.type == ConditionType.SetAndCompareAsString) {
+      if (condition.type == ConditionType.String) {
         condition.current = ''
       }
 
@@ -138,9 +141,9 @@ export class TriggerConditionCollection {
       // should add condition into list of trigger conditions
       pipe.sadd(conditionSetByTriggerKey(condition.triggerId), condition.id)
       // should add trigger into list of event subscribers
-      pipe.zadd(triggerSetByScopeAndEvent(datasource, scope, scopeId, condition.event), Date.now(), triggerId)
+      pipe.zadd(subscribedToScopeAndEvent(datasource, scope, scopeId, condition.event), Date.now(), triggerId)
       // should add trigger into list of uri subscribers
-      pipe.zadd(triggerSetByUri(condition.uri), Date.now(), triggerId)
+      pipe.zadd(subscribedToUri(condition.uri), Date.now(), triggerId)
     }
 
     const results = await pipe.exec()
@@ -183,8 +186,8 @@ export class TriggerConditionCollection {
       pipe.del(conditionKey(condition.id))
       pipe.del(conditionLogKey(condition.id))
       pipe.srem(conditionSetByTriggerKey(triggerId), condition.id)
-      pipe.zrem(triggerSetByScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
-      pipe.zrem(triggerSetByUri(EventUri.fromCondition(condition)), triggerId)
+      pipe.zrem(subscribedToScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
+      pipe.zrem(subscribedToUri(EventUri.fromCondition(condition)), triggerId)
     }
 
     await pipe.exec()
@@ -197,22 +200,28 @@ export class TriggerConditionCollection {
     eventName: string,
     start: number = 0,
     stop: number = -1): Promise<string[]> {
-    return this.redis.zrange(triggerSetByScopeAndEvent(datasource, scope, scopeId, eventName), start, stop)
+    return this.redis.zrange(subscribedToScopeAndEvent(datasource, scope, scopeId, eventName), start, stop)
   }
 
   getTriggerListByUri(uri: string, start: number = 0, stop: number = -1): Promise<string[]> {
-    return this.redis.zrange(triggerSetByUri(uri), start, stop)
+    return this.redis.zrange(subscribedToUri(uri), start, stop)
   }
 
-  countTriggersByUri(uri: string): Promise<number> {
-    return this.redis.zcard(triggerSetByUri(uri))
+  countSubscribedToUri(uri: string): Promise<number> {
+    return this.redis.zcard(subscribedToUri(uri))
   }
 
-  getTriggerStreamByUri(uri: string): Readable {
-    return new ZRangeStream({
-      redis: this.redis,
-      key: triggerSetByUri(uri)
-    })
+  /**
+   * @description returns a generator of lists of trigger's id subscribed to uri
+   *              iterates until all subscribers will be fetched
+   */
+  async * getSubscribedToUri(uri: string, count: number = 100) : AsyncGenerator<string[], void, void>  {
+    let cursor = null
+    do {
+      const [ cur, result ]  = await this.redis.zscan(subscribedToUri(uri), cursor, "count", count)
+      cursor = cur
+      yield result.filter((_, index) => index % 2 == 0)
+    } while (cursor !== "0")
   }
 
   async appendToEventLog(conditionId: string, event: AdapterEvent): Promise<boolean> {
@@ -250,8 +259,21 @@ export class TriggerConditionCollection {
         pipe.del(conditionLogKey(condition.id))
       }
 
-      pipe.zrem(triggerSetByScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
-      pipe.zrem(triggerSetByUri(condition.uri), triggerId)
+      pipe.zrem(subscribedToScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
+      pipe.zrem(subscribedToUri(condition.uri), triggerId)
+
+      await pipe.exec()
+    }
+  }
+
+  async unsubscribeTriggerFromEvents(triggerId: string) {
+    const conditions = await this.getByTriggerId(triggerId)
+
+    for (const condition of conditions) {
+      const pipe = this.redis.pipeline()
+
+      pipe.zrem(subscribedToScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
+      pipe.zrem(subscribedToUri(condition.uri), triggerId)
 
       await pipe.exec()
     }

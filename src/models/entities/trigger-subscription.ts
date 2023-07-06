@@ -5,6 +5,7 @@ export interface TriggerSubscription {
   route: string
   entity: string
   entityId: string
+  sent: boolean
   // JSON document
   payload: Record<string, any>
   options: Record<string, any>

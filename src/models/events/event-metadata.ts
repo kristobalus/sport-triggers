@@ -12,6 +12,7 @@ export interface EventMetadata {
   type: ConditionType
 }
 
+// TODO add nomenclature data for datasources
 export const metadata: Record<string, EventMetadata> = {
   ...footballMetadata,
   ...basketballMetadata,
