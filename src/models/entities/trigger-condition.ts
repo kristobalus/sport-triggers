@@ -6,6 +6,7 @@ export enum ConditionType {
 }
 
 export enum CompareOp {
+  In = 'in',
   Equal = 'eq',
   LessThan = 'lt',
   GreaterThan = 'gt',

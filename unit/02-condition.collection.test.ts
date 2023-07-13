@@ -9,9 +9,9 @@ import { TriggerConditionCollection } from "../src/repositories/trigger-conditio
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { Scope, Trigger } from "../src/models/entities/trigger"
 import { CompareOp } from "../src/models/entities/trigger-condition"
-import { FootballEvents } from "../src/models/events/football/football-events"
+import { FootballEvents } from "../src/configs/definitions/football/football-events"
 import { EssentialConditionData, EssentialTriggerData } from "../src/models/dto/trigger-create-request"
-import { FootballPlayerStates } from "../src/models/events/football/football-player-state.event"
+import { FootballPlayerStates } from "../src/configs/definitions/football/football-player-state.event"
 
 describe("ConditionCollection", function () {
 

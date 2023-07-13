@@ -7,14 +7,14 @@ import { TestContext } from '../module'
 import { Scope } from '../../src/models/entities/trigger'
 import { ListResponse, ItemResponse } from '../../src/models/dto/response'
 import { startContext, stopContext } from '../helpers/common'
-import { FootballEvents } from '../../src/models/events/football/football-events'
+import { FootballEvents } from '../../src/configs/definitions/football/football-events'
 import { CompareOp } from '../../src/models/entities/trigger-condition'
 import {
   EssentialConditionData,
   EssentialTriggerData,
   TriggerCreateRequest,
 } from '../../src/models/dto/trigger-create-request'
-import { GameLevel } from '../../src/models/events/football/football-game-level'
+import { GameLevel } from '../../src/configs/definitions/football/football-game-level'
 import { TriggerListRequest } from '../../src/models/dto/trigger-list-request'
 import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
 import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-request'

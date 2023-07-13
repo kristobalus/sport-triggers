@@ -17,8 +17,8 @@ import { TriggerConditionCollection } from "../src/repositories/trigger-conditio
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subscription.collection"
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
-import { FootballEvents } from "../src/models/events/football/football-events"
-import { GameLevel } from "../src/models/events/football/football-game-level"
+import { FootballEvents } from "../src/configs/definitions/football/football-events"
+import { GameLevel } from "../src/configs/definitions/football/football-game-level"
 import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
 
 describe("AdapterService", function () {

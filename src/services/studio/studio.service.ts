@@ -9,7 +9,7 @@ import { EssentialConditionData, EssentialTriggerData } from '../../models/dto/t
 import { TriggerWithConditions } from '../../models/dto/trigger-with-conditions'
 import { EssentialSubscriptionData } from '../../models/dto/trigger-subscribe-request'
 import { TriggerSubscription } from '../../models/entities/trigger-subscription'
-import { metadata } from '../../models/events/event-metadata'
+import { metadata } from '../../configs/studio'
 import { ArgumentError } from "common-errors"
 
 export interface TriggerOptions {

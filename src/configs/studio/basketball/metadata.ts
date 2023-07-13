@@ -1,13 +1,16 @@
-import { CompareOp, ConditionType } from '../../entities/trigger-condition'
-import { EventMetadata } from "../event-metadata"
+import { CompareOp, ConditionType } from '../../../models/entities/trigger-condition'
+import { EventMetadata } from "../../../models/events/event-metadata"
 import { BasketballEvents } from "./basketball-events"
-import { GameLevel } from "./basketball-game-level"
+import { GameLevel } from "./game-level"
+import { StudioInputs } from "../../../services/studio/studio-inputs"
 
 export const metadata: Record<string, EventMetadata> = {
 
   [BasketballEvents.GameLevel]: {
     sport: 'basketball',
-    input: false,
+    input: StudioInputs.Select,
+    primary: true,
+    label: "Game level",
     type: ConditionType.String,
     compare: [
       CompareOp.Equal

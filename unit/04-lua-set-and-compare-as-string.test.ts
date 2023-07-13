@@ -8,8 +8,8 @@ import { conditionKey, TriggerConditionCollection } from "../src/repositories/tr
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { Scope, Trigger } from "../src/models/entities/trigger"
 import { CompareOp } from "../src/models/entities/trigger-condition"
-import { FootballEvents } from "../src/models/events/football/football-events"
-import { GameLevel } from "../src/models/events/football/football-game-level"
+import { FootballEvents } from "../src/configs/definitions/football/football-events"
+import { GameLevel } from "../src/configs/definitions/football/football-game-level"
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
 import { EssentialConditionData, EssentialTriggerData } from "../src/models/dto/trigger-create-request"
 

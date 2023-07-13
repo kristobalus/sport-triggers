@@ -6,21 +6,21 @@ import { strict as assert } from 'assert'
 import { TestContext } from '../module'
 import { Scope } from '../../src/models/entities/trigger'
 import { startContext, stopContext } from '../helpers/common'
-import { FootballEvents } from '../../src/models/events/football/football-events'
+import { FootballEvents } from '../../src/configs/definitions/football/football-events'
 import { ChainOp, CompareOp } from '../../src/models/entities/trigger-condition'
 import {
   EssentialConditionData,
   EssentialTriggerData,
   TriggerCreateRequest,
 } from '../../src/models/dto/trigger-create-request'
-import { GameLevel } from '../../src/models/events/football/football-game-level'
+import { GameLevel } from '../../src/configs/definitions/football/football-game-level'
 import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-request'
 import { ItemResponse } from '../../src/models/dto/response'
 import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
 import { AdapterPushRequest } from '../../src/models/dto/adapter-push-request'
 import {
   FootballPlayerState,
-} from '../../src/models/events/football/football-player-state'
+} from '../../src/configs/definitions/football/football-player-state'
 import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { AdapterEvent } from "../../src/models/events/adapter-event"
