@@ -9,12 +9,14 @@ import { StudioEvent } from "../../models/studio/studio.event"
 import { StudioTargetTree } from "../../models/studio/studio.target-tree"
 import { StudioTarget } from "../../models/studio/studio.target"
 import { CommonSources } from "../../configs/studio/common-sources"
+import { StudioInputs } from "../../models/studio/studio.inputs"
+import { StudioInputsProtobuf } from "../../models/studio/studio.inputs.protobuf"
 
 export class MetadataService {
 
   constructor() {}
 
-  getConditionData(gameId: string): StudioConditionData {
+  getConditionData(gameId: string, shouldMapEnum: boolean = false): StudioConditionData {
 
     const game = this.getGame(gameId)
 
@@ -32,7 +34,7 @@ export class MetadataService {
         id: id,
         sport: data.sport,
         primary: data.primary,
-        input: data.input,
+        input: shouldMapEnum ? this.getStudioInputMapped(data.input) :data.input,
         label: data.label,
         compare: data.compare,
         targetSource: data.targetSource,
@@ -80,6 +82,7 @@ export class MetadataService {
 
         const target = {
           label: targetTree[metas.targetSource][id].label,
+          description: targetTree[metas.targetSource][id].description,
           id: id,
           group: targetTree[metas.targetSource][id].group
         } as StudioTarget
@@ -151,6 +154,25 @@ export class MetadataService {
         [away.id]: away
       },
       players: players,
+    }
+  }
+
+  getStudioInputMapped(input: StudioInputs): StudioInputsProtobuf {
+    switch (input) {
+      case StudioInputs.Number:
+        return StudioInputsProtobuf.STUDIO_INPUT_NUMBER
+      case StudioInputs.SelectMulti:
+        return StudioInputsProtobuf.STUDIO_INPUT_SELECT_MULTI
+      case StudioInputs.Select:
+        return StudioInputsProtobuf.STUDIO_INPUT_SELECT
+      case StudioInputs.Points:
+        return StudioInputsProtobuf.STUDIO_INPUT_POINTS
+      case StudioInputs.String:
+        return StudioInputsProtobuf.STUDIO_INPUT_STRING
+      case StudioInputs.TimeMinutes:
+        return StudioInputsProtobuf.STUDIO_INPUT_TIME_MINUTES
+      default:
+        throw new Error("Unknown studio input type")
     }
   }
 

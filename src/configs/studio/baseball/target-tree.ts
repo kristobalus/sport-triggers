@@ -129,7 +129,7 @@ export const targetTree: StudioTargetTree = {
       label: "Game end"
     },
     [GameState.InningStart]: {
-      label: "Inning end",
+      label: "Inning start",
       description: "The start of an inning is when the first batter of the team that's up to bat steps into the batter's box and the pitcher is set to throw the first pitch. In the top half of the inning, it's the visiting team that bats, and in the bottom half of the inning, it's the home team."
     },
     [GameState.InningEnd]: {

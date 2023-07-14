@@ -1,0 +1,460 @@
+{
+  "index": [
+    "baseball.inning",
+    "baseball.player",
+    "baseball.team",
+    "baseball.ball.speed",
+    "baseball.score.differential",
+    "baseball.score.home",
+    "baseball.score.away",
+    "baseball.game.state",
+    "baseball.player.atbat",
+    "baseball.player.pitch",
+    "baseball.team.atbat",
+    "baseball.team.pitch",
+    "baseball.pitch.outcome",
+    "baseball.atbat.outcome"
+  ],
+  "events": {
+    "baseball.inning": {
+      "id": "baseball.inning",
+      "sport": "baseball",
+      "primary": true,
+      "input": 5,
+      "label": "Inning",
+      "compare": [
+        "eq",
+        "ge",
+        "gt",
+        "lt",
+        "le"
+      ]
+    },
+    "baseball.player": {
+      "id": "baseball.player",
+      "sport": "baseball",
+      "primary": true,
+      "input": 2,
+      "label": "Player",
+      "compare": [
+        "in"
+      ],
+      "targetSource": "game.players"
+    },
+    "baseball.team": {
+      "id": "baseball.team",
+      "sport": "baseball",
+      "primary": true,
+      "input": 2,
+      "label": "Team",
+      "compare": [
+        "in"
+      ],
+      "targetSource": "game.teams"
+    },
+    "baseball.ball.speed": {
+      "id": "baseball.ball.speed",
+      "sport": "baseball",
+      "primary": true,
+      "input": 5,
+      "label": "Ball speed",
+      "compare": [
+        "eq",
+        "ge",
+        "gt",
+        "le",
+        "lt"
+      ],
+      "preferredOptions": []
+    },
+    "baseball.score.differential": {
+      "id": "baseball.score.differential",
+      "sport": "baseball",
+      "primary": true,
+      "input": 5,
+      "label": "Score differential",
+      "compare": [
+        "eq",
+        "ge",
+        "gt",
+        "le",
+        "lt"
+      ],
+      "preferredOptions": []
+    },
+    "baseball.score.home": {
+      "id": "baseball.score.home",
+      "sport": "baseball",
+      "primary": true,
+      "input": 5,
+      "label": "Home score",
+      "compare": [
+        "eq",
+        "ge",
+        "gt",
+        "le",
+        "lt"
+      ],
+      "preferredOptions": []
+    },
+    "baseball.score.away": {
+      "id": "baseball.score.away",
+      "sport": "baseball",
+      "primary": true,
+      "input": 5,
+      "label": "Away score",
+      "compare": [
+        "eq",
+        "ge",
+        "gt",
+        "le",
+        "lt"
+      ],
+      "preferredOptions": []
+    },
+    "baseball.game.state": {
+      "id": "baseball.game.state",
+      "sport": "baseball",
+      "primary": true,
+      "input": 2,
+      "label": "Game state",
+      "compare": [
+        "in"
+      ],
+      "targetSource": "baseball.game.states",
+      "preferredOptions": []
+    },
+    "baseball.player.atbat": {
+      "id": "baseball.player.atbat",
+      "sport": "baseball",
+      "primary": true,
+      "input": 2,
+      "label": "Player at Bat",
+      "compare": [
+        "in"
+      ],
+      "targetSource": "game.players",
+      "preferredOptions": [
+        "baseball.atbat.outcome",
+        "baseball.pitch.outcome"
+      ]
+    },
+    "baseball.player.pitch": {
+      "id": "baseball.player.pitch",
+      "sport": "baseball",
+      "primary": true,
+      "input": 2,
+      "label": "Player pitching",
+      "compare": [
+        "in"
+      ],
+      "targetSource": "game.players",
+      "preferredOptions": [
+        "baseball.pitch.outcome",
+        "baseball.atbat.outcome"
+      ]
+    },
+    "baseball.team.atbat": {
+      "id": "baseball.team.atbat",
+      "sport": "baseball",
+      "primary": true,
+      "input": 2,
+      "label": "Team at Bat",
+      "compare": [
+        "in"
+      ],
+      "targetSource": "game.teams",
+      "preferredOptions": [
+        "baseball.atbat.outcome",
+        "baseball.pitch.outcome"
+      ]
+    },
+    "baseball.team.pitch": {
+      "id": "baseball.team.pitch",
+      "sport": "baseball",
+      "primary": true,
+      "input": 2,
+      "label": "Team pitching",
+      "compare": [
+        "in"
+      ],
+      "targetSource": "game.teams",
+      "preferredOptions": [
+        "baseball.atbat.outcome",
+        "baseball.pitch.outcome"
+      ]
+    },
+    "baseball.pitch.outcome": {
+      "id": "baseball.pitch.outcome",
+      "sport": "baseball",
+      "primary": false,
+      "input": 1,
+      "label": "Pitch outcome",
+      "compare": [
+        "eq"
+      ],
+      "targetSource": "baseball.pitch.outcome"
+    },
+    "baseball.atbat.outcome": {
+      "id": "baseball.atbat.outcome",
+      "sport": "baseball",
+      "primary": false,
+      "input": 1,
+      "label": "At Bat outcome",
+      "compare": [
+        "eq"
+      ],
+      "targetSource": "baseball.atbat.outcome"
+    }
+  },
+  "sources": {
+    "game.players": [
+      {
+        "label": "Mrs. Pamela Marvin",
+        "id": "c5abb21d-8c8c-49fa-a969-3f06c598f1a1",
+        "group": "Indiana Pacers"
+      },
+      {
+        "label": "Bennie Satterfield",
+        "id": "e026d465-5073-47e2-935e-1ffb2dbf9260",
+        "group": "Boston Red Sox"
+      },
+      {
+        "label": "Leticia Bauch",
+        "id": "47947324-8944-4986-b9c2-0af7db9f3d96",
+        "group": "Indiana Pacers"
+      },
+      {
+        "label": "Santos Howe",
+        "id": "3d55061b-e78b-420b-a619-47e82de3422a",
+        "group": "Boston Red Sox"
+      },
+      {
+        "label": "Toni Hagenes",
+        "id": "663c3f83-42e9-4454-b5be-190e40a78ee2",
+        "group": "Indiana Pacers"
+      },
+      {
+        "label": "Chelsea Stroman",
+        "id": "4a986c12-379d-4df3-81d5-d17190a95130",
+        "group": "Boston Red Sox"
+      },
+      {
+        "label": "Miss Gwendolyn Bednar",
+        "id": "e43272d4-e60e-4908-9f4a-7688516b8612",
+        "group": "Indiana Pacers"
+      },
+      {
+        "label": "Freddie Jacobs Jr.",
+        "id": "882accf2-cb3e-45a6-b0ea-84baf62b9747",
+        "group": "Boston Red Sox"
+      },
+      {
+        "label": "Amanda Yost",
+        "id": "8678ec24-d6de-4ce5-981a-8b46055b1885",
+        "group": "Indiana Pacers"
+      },
+      {
+        "label": "Annie Nikolaus",
+        "id": "0abc3ea1-4bd0-4bb0-bba4-e8ae1e1c7290",
+        "group": "Boston Red Sox"
+      },
+      {
+        "label": "Lula Kulas",
+        "id": "726ea746-4b84-4458-92e4-bfb88617b8fd",
+        "group": "Indiana Pacers"
+      },
+      {
+        "label": "Darrin Mante MD",
+        "id": "7a222f05-393f-439d-9538-9e9e64c99b12",
+        "group": "Boston Red Sox"
+      },
+      {
+        "label": "Johnny Schimmel",
+        "id": "6a20347d-81d4-4982-b9f4-d1b7b24e34bc",
+        "group": "Indiana Pacers"
+      },
+      {
+        "label": "Noel Hahn",
+        "id": "57e684cf-ff8e-44cb-8e28-85445719b737",
+        "group": "Boston Red Sox"
+      },
+      {
+        "label": "Jackie Schaden",
+        "id": "f14bc3d9-9d45-4295-88f7-03cf891cdd4c",
+        "group": "Indiana Pacers"
+      },
+      {
+        "label": "Dr. Ellis Leannon",
+        "id": "6b840d0f-b866-4097-9807-ec646338ea23",
+        "group": "Boston Red Sox"
+      },
+      {
+        "label": "Maryann Reinger",
+        "id": "7062bc95-e047-40aa-aef1-b93b79ae2c72",
+        "group": "Indiana Pacers"
+      },
+      {
+        "label": "Yvette Terry",
+        "id": "a5ad1cc5-097c-4b5e-8b8a-e83b85c8623f",
+        "group": "Boston Red Sox"
+      },
+      {
+        "label": "Marvin Abernathy",
+        "id": "d2bd3b3a-bcb5-4042-96d1-fa8328588424",
+        "group": "Indiana Pacers"
+      },
+      {
+        "label": "Jo Fadel",
+        "id": "fa3f8063-85ed-4508-b2e7-74bec1676e30",
+        "group": "Boston Red Sox"
+      }
+    ],
+    "game.teams": [
+      {
+        "label": "Indiana Pacers",
+        "id": "254983d1-1d86-41da-98ca-f257c25cb15f"
+      },
+      {
+        "label": "Boston Red Sox",
+        "id": "9d6af441-0a78-4146-a4d5-02fd2c0dd3dc"
+      }
+    ],
+    "baseball.game.states": [
+      {
+        "label": "Game start",
+        "id": "game.start"
+      },
+      {
+        "label": "Game end",
+        "id": "game.end"
+      },
+      {
+        "label": "Inning start",
+        "description": "The start of an inning is when the first batter of the team that's up to bat steps into the batter's box and the pitcher is set to throw the first pitch. In the top half of the inning, it's the visiting team that bats, and in the bottom half of the inning, it's the home team.",
+        "id": "inning.start"
+      },
+      {
+        "label": "Inning end",
+        "description": "The end of an inning occurs when three outs have been made in the bottom half. After the third out, teams switch roles -- the batting team goes into the field to play defense, and the defensive team comes in to bat.",
+        "id": "inning.end"
+      }
+    ],
+    "baseball.pitch.outcome": [
+      {
+        "label": "Ball",
+        "id": "ball"
+      },
+      {
+        "label": "Ball in Play",
+        "id": "ball_in_play"
+      },
+      {
+        "label": "Greater than 99mph",
+        "id": "gt.90"
+      },
+      {
+        "label": "Less than 80mph",
+        "id": "lt.80"
+      },
+      {
+        "label": "Foul",
+        "id": "foul"
+      },
+      {
+        "label": "Strike - Looking",
+        "id": "strike_looking"
+      },
+      {
+        "label": "Strike - Swinging",
+        "id": "strike_swinging"
+      }
+    ],
+    "baseball.atbat.outcome": [
+      {
+        "label": "GIDP",
+        "id": "GIDP"
+      },
+      {
+        "label": "BB",
+        "id": "BB"
+      },
+      {
+        "label": "BI",
+        "id": "BI"
+      },
+      {
+        "label": "ERR",
+        "id": "ERR"
+      },
+      {
+        "label": "FO",
+        "id": "FO"
+      },
+      {
+        "label": "CI",
+        "id": "CI"
+      },
+      {
+        "label": "GO",
+        "id": "GO"
+      },
+      {
+        "label": "XBH",
+        "id": "XBH"
+      },
+      {
+        "label": "X1",
+        "id": "X1"
+      },
+      {
+        "label": "X2",
+        "id": "X2"
+      },
+      {
+        "label": "X3",
+        "id": "X3"
+      },
+      {
+        "label": "REACH",
+        "id": "REACH"
+      },
+      {
+        "label": "RBI",
+        "id": "RBI"
+      },
+      {
+        "label": "OUT",
+        "id": "OUT"
+      },
+      {
+        "label": "KS",
+        "id": "KS"
+      },
+      {
+        "label": "IPO",
+        "id": "IPO"
+      },
+      {
+        "label": "KL",
+        "id": "KL"
+      },
+      {
+        "label": "K",
+        "id": "K"
+      },
+      {
+        "label": "HIT",
+        "id": "HIT"
+      },
+      {
+        "label": "HR",
+        "id": "HR"
+      },
+      {
+        "label": "HBP",
+        "id": "HBP"
+      }
+    ]
+  }
+}
