@@ -2,7 +2,7 @@ import { CompareOp, ConditionType } from '../../../models/entities/trigger-condi
 import { EventMetadata } from "../../../models/events/event-metadata"
 import { BasketballEvents } from "./basketball-events"
 import { GameLevel } from "./game-level"
-import { StudioInputs } from "../../../services/studio/studio-inputs"
+import { StudioInputs } from "../../../models/studio/studio.inputs"
 
 export const metadata: Record<string, EventMetadata> = {
 

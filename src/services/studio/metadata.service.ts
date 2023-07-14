@@ -1,113 +1,117 @@
 
-import { ConditionType } from "../../models/entities/trigger-condition"
 import { randomUUID } from "crypto"
 import { faker } from "@faker-js/faker"
 import { Game, Player, Team } from "../../models/games"
-import { metadata } from "../../configs/studio"
-import { targets as BaseballTargets } from "../../configs/studio/baseball/targets"
-import { TargetSources as BaseballTargetSources } from "../../configs/studio/baseball/target-sources"
-
-export type StudioInputType = "select" | "select.multi" | "time.minutes" | "string" | "number" | "points" | string
-
-export interface TargetMetadata {
-  label: string
-  id?: string
-  group?: string
-}
-
-export interface StudioEvent {
-  id: string
-  sport: string
-  primary: boolean
-  input: StudioInputType
-  label: string
-  targets?: TargetMetadata[]
-  secondary?: string[]
-  compare?: string[]
-  type: ConditionType
-}
-
-export interface StudioCreateCondition {
-  events: Record<string, StudioEvent>
-}
+import { metadata, targetTree } from "../../configs/studio"
+import { EventMetadata } from "../../models/events/event-metadata"
+import { StudioConditionData } from "../../models/studio/studio.condition-data"
+import { StudioEvent } from "../../models/studio/studio.event"
+import { StudioTargetTree } from "../../models/studio/studio.target-tree"
+import { StudioTarget } from "../../models/studio/studio.target"
+import { CommonSources } from "../../configs/studio/common-sources"
 
 export class MetadataService {
 
-  getMetadata(gameId: string) {
+  constructor() {}
 
-    const game = this.createGame(gameId)
-    const result: StudioCreateCondition = {
-      events: {}
+  getConditionData(gameId: string): StudioConditionData {
+
+    const game = this.getGame(gameId)
+    const result: StudioConditionData = {
+      events: {},
+      sources: {},
     }
+
     for(const [ id, data ] of Object.entries(metadata) ){
+      if ( data.disabled ) continue;
       if ( game.sport != data.sport ) continue;
-      const item = {
+
+      const item: StudioEvent = {
         id: id,
         sport: data.sport,
         primary: data.primary,
         input: data.input,
         label: data.label,
         compare: data.compare,
-        ...(data.secondary ? { secondary: data.secondary } : {})
-      } as StudioEvent
+        targetSource: data.targetSource,
+        ...(data.preferredOptions ? { preferredOptions: data.preferredOptions } : {})
+      }
 
-      if ( data.targetSource == "game.players" ) {
-        item.targets = []
-        for(const player of game.players){
-          const target = {
-            label: player.name,
-            id: player.id,
-            group: game.teams[player.team].name,
-          } as TargetMetadata
-          item.targets.push(target)
+      if ( data.targetSource ) {
+        // targets moved into separate "sources" tree
+        // if ( data.targetSource == "game.team" ) {
+        //   item.targets = this.createTeamTargets(game)
+        // }
+        // else if ( data.targetSource == "game.players" ) {
+        //   item.targets = this.createPlayerTargets(game)
+        // }
+        // else if ( targetTree[data.targetSource] ) {
+        //   item.targets = this.createTargetsBySource(data, targetTree)
+        // }
+
+        if (!result.sources[data.targetSource]) {
+          let targets
+          if ( data.targetSource == CommonSources.GameTeams ) {
+            targets = this.createTeamTargets(game)
+          }
+          else if ( data.targetSource == CommonSources.GamePlayers ) {
+            targets = this.createPlayerTargets(game)
+          }
+          else if ( targetTree[data.targetSource] ) {
+            targets = this.createTargetsBySource(data, targetTree)
+          }
+          if (targets) {
+            result.sources[data.targetSource] = targets
+          }
         }
       }
 
-      if ( data.targetSource == "game.teams" ) {
-        item.targets = []
-        for(const [_, team] of Object.entries(game.teams)){
-          const target = {
-            label: team.name,
-            id: team.id
-          } as TargetMetadata
-          item.targets.push(target)
-        }
-      }
-
-      if ( data.targetSource == BaseballTargetSources.PitchOutcome ) {
-        item.targets = []
-        for(const id of data.targets){
-
-          const target = {
-            label: BaseballTargets[data.targetSource][id].label,
-            id: id,
-            group: BaseballTargets[data.targetSource][id].group
-          } as TargetMetadata
-
-          item.targets.push(target)
-        }
-      }
-
-      if ( data.targetSource == BaseballTargetSources.AtBatOutcome ) {
-        item.targets = []
-        for(const id of data.targets){
-
-          const target = {
-            label: BaseballTargets[data.targetSource][id].label,
-            id: id,
-            group: BaseballTargets[data.targetSource][id].group
-          } as TargetMetadata
-
-          item.targets.push(target)
-        }
-      }
-
-      result.events[item.id] = item
+      result.events[item.id] = item;
     }
     return result
   }
 
-  createGame(gameId: string): Game {
+  createTargetsBySource(metas: EventMetadata, targetTree: StudioTargetTree) : StudioTarget[] {
+      const targets: StudioTarget[] = []
+      for(const id of metas.targets){
+
+        const target = {
+          label: targetTree[metas.targetSource][id].label,
+          id: id,
+          group: targetTree[metas.targetSource][id].group
+        } as StudioTarget
+
+        targets.push(target)
+      }
+      return targets
+  }
+
+  createPlayerTargets(game: Game) {
+    const targets = []
+    for(const player of game.players){
+      const target = {
+        label: player.name,
+        id: player.id,
+        group: game.teams[player.team].name,
+      } as StudioTarget
+      targets.push(target)
+    }
+    return targets;
+  }
+
+  createTeamTargets(game: Game): StudioTarget[] {
+    const targets = []
+    for(const [_, team] of Object.entries(game.teams)){
+      const target = {
+        label: team.name,
+        id: team.id
+      } as StudioTarget
+      targets.push(target)
+    }
+    return targets
+  }
+
+  getGame(gameId: string): Game {
     const home: Team = {
       id: randomUUID(),
       name: "Indiana Pacers",

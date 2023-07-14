@@ -5,7 +5,7 @@ describe('Metadata tests', function () {
 
   it('metadata service', () => {
     const service = new MetadataService()
-    const data = service.getMetadata(randomUUID())
+    const data = service.getConditionData(randomUUID())
     console.log(data)
   })
 

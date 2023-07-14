@@ -1,10 +1,10 @@
-import { AtBatOutcomeState, PitchOutcomeState } from "./baseball-events"
-import { TargetMetadata } from "../../../services/studio/metadata.service"
-import { TargetSources } from "./target-sources"
+import { AtBatOutcomeState, GameState, PitchOutcomeState } from "./baseball-events"
+import { Sources } from "./sources"
+import { StudioTargetTree } from "../../../models/studio/studio.target-tree"
 
-export const targets: Record<string, Record<string, TargetMetadata>> = {
+export const targetTree: StudioTargetTree = {
 
-  [TargetSources.PitchOutcome]: {
+  [Sources.PitchOutcome]: {
 
     [PitchOutcomeState.StrikeSwinging]: {
       label: 'Strike - Swinging',
@@ -35,7 +35,7 @@ export const targets: Record<string, Record<string, TargetMetadata>> = {
     },
   },
 
-  [TargetSources.AtBatOutcome]: {
+  [Sources.AtBatOutcome]: {
     [AtBatOutcomeState.GIDP]: {
       label: "GIDP"
     },
@@ -120,5 +120,22 @@ export const targets: Record<string, Record<string, TargetMetadata>> = {
       label: "HBP"
     },
   },
+
+  [Sources.GameStates]: {
+    [GameState.GameStart]: {
+      label: "Game start"
+    },
+    [GameState.GameEnd]: {
+      label: "Game end"
+    },
+    [GameState.InningStart]: {
+      label: "Inning end",
+      description: "The start of an inning is when the first batter of the team that's up to bat steps into the batter's box and the pitcher is set to throw the first pitch. In the top half of the inning, it's the visiting team that bats, and in the bottom half of the inning, it's the home team."
+    },
+    [GameState.InningEnd]: {
+      label: "Inning end",
+      description: "The end of an inning occurs when three outs have been made in the bottom half. After the third out, teams switch roles -- the batting team goes into the field to play defense, and the defensive team comes in to bat."
+    }
+  }
 
 }

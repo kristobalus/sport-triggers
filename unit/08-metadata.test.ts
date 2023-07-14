@@ -4,9 +4,9 @@ import { MetadataService } from "../src/services/studio/metadata.service"
 
 describe('Metadata tests', function () {
 
-  it('metadata service', () => {
+  it('condition data for screen', () => {
     const service = new MetadataService()
-    const data = service.getMetadata(randomUUID())
+    const data = service.getConditionData(randomUUID())
     console.log(JSON.stringify(data, null, 4))
   })
 

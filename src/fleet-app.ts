@@ -19,11 +19,13 @@ import { StudioService } from './services/studio/studio.service'
 import { init as initAdapterService } from './plugins/adapter-service.plugin'
 import { init as initStudioService } from './plugins/studio-service.plugin'
 import { QueueService } from './services/queue/queue.service'
+import { MetadataService } from "./services/studio/metadata.service"
 
 export class FleetApp extends Microfleet {
   public adapterService: AdapterService
   public studioService: StudioService
   public queueService: QueueService
+  public metadataService: MetadataService
 
   constructor(options: Partial<CoreOptions>) {
     super(options)

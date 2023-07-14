@@ -1,10 +1,143 @@
 import { CompareOp, ConditionType } from '../../../models/entities/trigger-condition'
 import { EventMetadata } from "../../../models/events/event-metadata"
-import { AtBatOutcomeState, BaseballEvents, PitchOutcomeState } from "./baseball-events"
-import { TargetSources } from "./target-sources"
-import { StudioInputs } from "../../../services/studio/studio-inputs"
+import { AtBatOutcomeState, BaseballEvents, GameState, PitchOutcomeState } from "./baseball-events"
+import { Sources } from "./sources"
+import { StudioInputs } from "../../../models/studio/studio.inputs"
+import { CommonSources } from "../common-sources"
 
 export const metadata: Record<string, EventMetadata> = {
+
+  [BaseballEvents.Inning]: {
+    sport: 'baseball',
+    label: 'Inning',
+    input: StudioInputs.Number,
+    type: ConditionType.Number,
+    primary: true,
+    compare: [
+      CompareOp.Equal,
+      CompareOp.GreaterOrEqual,
+      CompareOp.GreaterThan,
+      CompareOp.LessThan,
+      CompareOp.LessOrEqual
+    ],
+    targets: []
+  },
+
+  // expects player-id in targets
+  [BaseballEvents.Player]: {
+    sport: 'baseball',
+    label: 'Player',
+    input: StudioInputs.SelectMulti,
+    type: ConditionType.String,
+    primary: true,
+    compare: [
+      CompareOp.In
+    ],
+    targets: [],
+    targetSource: CommonSources.GamePlayers
+  },
+
+  // expects team-id in targets
+  [BaseballEvents.Team]: {
+    sport: 'baseball',
+    label: 'Team',
+    input: StudioInputs.SelectMulti,
+    type: ConditionType.String,
+    primary: true,
+    compare: [
+      CompareOp.In
+    ],
+    targets: [],
+    targetSource: CommonSources.GameTeams
+  },
+
+  [BaseballEvents.BallSpeed]: {
+    sport: 'baseball',
+    label: 'Ball speed',
+    disabled: false,
+    input: StudioInputs.Number,
+    type: ConditionType.Number,
+    primary: true,
+    compare: [
+      CompareOp.Equal,
+      CompareOp.GreaterOrEqual,
+      CompareOp.GreaterThan,
+      CompareOp.LessOrEqual,
+      CompareOp.LessThan
+    ],
+    preferredOptions: []
+  },
+
+  [BaseballEvents.ScoreDifferential]: {
+    sport: 'baseball',
+    label: 'Score differential',
+    disabled: false,
+    input: StudioInputs.Number,
+    type: ConditionType.Number,
+    primary: true,
+    compare: [
+      CompareOp.Equal,
+      CompareOp.GreaterOrEqual,
+      CompareOp.GreaterThan,
+      CompareOp.LessOrEqual,
+      CompareOp.LessThan
+    ],
+    preferredOptions: []
+  },
+
+  [BaseballEvents.HomeScore]: {
+    sport: 'baseball',
+    label: 'Home score',
+    disabled: false,
+    input: StudioInputs.Number,
+    type: ConditionType.Number,
+    primary: true,
+    compare: [
+      CompareOp.Equal,
+      CompareOp.GreaterOrEqual,
+      CompareOp.GreaterThan,
+      CompareOp.LessOrEqual,
+      CompareOp.LessThan
+    ],
+    preferredOptions: []
+  },
+
+  [BaseballEvents.AwayScore]: {
+    sport: 'baseball',
+    label: 'Away score',
+    disabled: false,
+    input: StudioInputs.Number,
+    type: ConditionType.Number,
+    primary: true,
+    compare: [
+      CompareOp.Equal,
+      CompareOp.GreaterOrEqual,
+      CompareOp.GreaterThan,
+      CompareOp.LessOrEqual,
+      CompareOp.LessThan
+    ],
+    preferredOptions: []
+  },
+
+  [BaseballEvents.GameState]: {
+    sport: 'baseball',
+    label: 'Game state',
+    disabled: false,
+    input: StudioInputs.SelectMulti,
+    type: ConditionType.String,
+    primary: true,
+    compare: [
+      CompareOp.In
+    ],
+    targets: [
+      GameState.GameStart,
+      GameState.GameEnd,
+      GameState.InningStart,
+      GameState.InningEnd,
+    ],
+    targetSource: Sources.GameStates,
+    preferredOptions: []
+  },
 
   // expects player-id in targets
   [BaseballEvents.PlayerAtBat]: {
@@ -17,15 +150,15 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.In
     ],
     targets: [],
-    targetSource: "game.players",
-    secondary: [
+    targetSource: CommonSources.GamePlayers,
+    preferredOptions: [
       BaseballEvents.AtBatOutcome,
       BaseballEvents.PitchOutcome,
     ]
   },
 
   // expects player-id in targets
-  [BaseballEvents.PlayerPitching]: {
+  [BaseballEvents.PlayerPitch]: {
     sport: 'baseball',
     label: 'Player pitching',
     input: StudioInputs.SelectMulti,
@@ -35,8 +168,8 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.In
     ],
     targets: [],
-    targetSource: "game.players",
-    secondary: [
+    targetSource: CommonSources.GamePlayers,
+    preferredOptions: [
       BaseballEvents.PitchOutcome,
       BaseballEvents.AtBatOutcome,
     ],
@@ -53,15 +186,15 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.In
     ],
     targets: [],
-    targetSource: "game.teams",
-    secondary: [
+    targetSource: CommonSources.GameTeams,
+    preferredOptions: [
       BaseballEvents.AtBatOutcome,
       BaseballEvents.PitchOutcome,
     ],
   },
 
   // expects team-id in targets
-  [BaseballEvents.TeamPitching]: {
+  [BaseballEvents.TeamPitch]: {
     sport: 'baseball',
     label: 'Team pitching',
     input: StudioInputs.SelectMulti,
@@ -71,14 +204,13 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.In
     ],
     targets: [],
-    targetSource: "game.teams",
-    secondary: [
+    targetSource: CommonSources.GameTeams,
+    preferredOptions: [
       BaseballEvents.AtBatOutcome,
       BaseballEvents.PitchOutcome,
     ]
   },
 
-  // expects team-id in targets
   [BaseballEvents.PitchOutcome]: {
     sport: 'baseball',
     label: 'Pitch outcome',
@@ -88,7 +220,7 @@ export const metadata: Record<string, EventMetadata> = {
     compare: [
       CompareOp.Equal
     ],
-    targetSource: TargetSources.PitchOutcome,
+    targetSource: Sources.PitchOutcome,
     targets: [
       PitchOutcomeState.Ball,
       PitchOutcomeState.BallInPlay,
@@ -100,7 +232,6 @@ export const metadata: Record<string, EventMetadata> = {
     ]
   },
 
-  // expects team-id in targets
   [BaseballEvents.AtBatOutcome]: {
     sport: 'baseball',
     label: 'At Bat outcome',
@@ -133,7 +264,7 @@ export const metadata: Record<string, EventMetadata> = {
       AtBatOutcomeState.HR,
       AtBatOutcomeState.HBP
     ],
-    targetSource: TargetSources.AtBatOutcome
+    targetSource: Sources.AtBatOutcome
   },
 
 

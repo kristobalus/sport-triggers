@@ -18,7 +18,7 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.Equal
     ],
     targets: [],
-    targetSource: "players"
+    targetSource: "game.players"
   },
 
   [FootballEvents.GameLevel]: {
@@ -39,7 +39,7 @@ export const metadata: Record<string, EventMetadata> = {
       GameLevel.QuarterEnd,
       GameLevel.UnderReview,
     ],
-    targetSource: "football.gamelevel"
+    targetSource: "football.game.level"
   },
 
   [FootballEvents.GamePointsHome]: {
@@ -96,7 +96,7 @@ export const metadata: Record<string, EventMetadata> = {
     input: "number",
     type: ConditionType.Number,
     targets: [],
-    targetSource: "football.game.players"
+    targetSource: "game.players"
   },
 
   [FootballEvents.PlayerRushing]: {
@@ -106,7 +106,7 @@ export const metadata: Record<string, EventMetadata> = {
     label: "Player rushing",
     type: ConditionType.Number,
     targets: [],
-    targetSource: "football.game.players"
+    targetSource: "game.players"
   },
 
   [FootballEvents.PlayerReceiving]: {
@@ -116,7 +116,7 @@ export const metadata: Record<string, EventMetadata> = {
     primary: true,
     label: "Player receiving",
     targets: [],
-    targetSource: "football.game.players"
+    targetSource: "game.players"
   },
 
 
