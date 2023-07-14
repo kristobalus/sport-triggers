@@ -17,6 +17,7 @@ export class MetadataService {
   getConditionData(gameId: string): StudioConditionData {
 
     const game = this.getGame(gameId)
+
     const result: StudioConditionData = {
       events: {},
       sources: {},
