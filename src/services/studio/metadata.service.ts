@@ -19,6 +19,7 @@ export class MetadataService {
     const game = this.getGame(gameId)
 
     const result: StudioConditionData = {
+      index: [],
       events: {},
       sources: {},
     }
@@ -68,6 +69,7 @@ export class MetadataService {
       }
 
       result.events[item.id] = item;
+      result.index.push(item.id);
     }
     return result
   }

@@ -1,0 +1,442 @@
+{
+    "events": {
+        "baseball.inning": {
+            "id": "baseball.inning",
+            "sport": "baseball",
+            "primary": true,
+            "input": "number",
+            "label": "Inning",
+            "compare": [
+                "eq",
+                "ge",
+                "gt",
+                "lt",
+                "le"
+            ]
+        },
+        "baseball.player": {
+            "id": "baseball.player",
+            "sport": "baseball",
+            "primary": true,
+            "input": "select.multi",
+            "label": "Player",
+            "compare": [
+                "in"
+            ],
+            "targetSource": "game.players"
+        },
+        "baseball.team": {
+            "id": "baseball.team",
+            "sport": "baseball",
+            "primary": true,
+            "input": "select.multi",
+            "label": "Team",
+            "compare": [
+                "in"
+            ],
+            "targetSource": "game.teams"
+        },
+        "baseball.ball.speed": {
+            "id": "baseball.ball.speed",
+            "sport": "baseball",
+            "primary": true,
+            "input": "number",
+            "label": "Ball speed",
+            "compare": [
+                "eq",
+                "ge",
+                "gt",
+                "le",
+                "lt"
+            ],
+            "preferredOptions": []
+        },
+        "baseball.score.differential": {
+            "id": "baseball.score.differential",
+            "sport": "baseball",
+            "primary": true,
+            "input": "number",
+            "label": "Score differential",
+            "compare": [
+                "eq",
+                "ge",
+                "gt",
+                "le",
+                "lt"
+            ],
+            "preferredOptions": []
+        },
+        "baseball.score.home": {
+            "id": "baseball.score.home",
+            "sport": "baseball",
+            "primary": true,
+            "input": "number",
+            "label": "Home score",
+            "compare": [
+                "eq",
+                "ge",
+                "gt",
+                "le",
+                "lt"
+            ],
+            "preferredOptions": []
+        },
+        "baseball.score.away": {
+            "id": "baseball.score.away",
+            "sport": "baseball",
+            "primary": true,
+            "input": "number",
+            "label": "Away score",
+            "compare": [
+                "eq",
+                "ge",
+                "gt",
+                "le",
+                "lt"
+            ],
+            "preferredOptions": []
+        },
+        "baseball.game.state": {
+            "id": "baseball.game.state",
+            "sport": "baseball",
+            "primary": true,
+            "input": "select.multi",
+            "label": "Game state",
+            "compare": [
+                "in"
+            ],
+            "targetSource": "baseball.game.states",
+            "preferredOptions": []
+        },
+        "baseball.player.atbat": {
+            "id": "baseball.player.atbat",
+            "sport": "baseball",
+            "primary": true,
+            "input": "select.multi",
+            "label": "Player at Bat",
+            "compare": [
+                "in"
+            ],
+            "targetSource": "game.players",
+            "preferredOptions": [
+                "baseball.atbat.outcome",
+                "baseball.pitch.outcome"
+            ]
+        },
+        "baseball.player.pitch": {
+            "id": "baseball.player.pitch",
+            "sport": "baseball",
+            "primary": true,
+            "input": "select.multi",
+            "label": "Player pitching",
+            "compare": [
+                "in"
+            ],
+            "targetSource": "game.players",
+            "preferredOptions": [
+                "baseball.pitch.outcome",
+                "baseball.atbat.outcome"
+            ]
+        },
+        "baseball.team.atbat": {
+            "id": "baseball.team.atbat",
+            "sport": "baseball",
+            "primary": true,
+            "input": "select.multi",
+            "label": "Team at Bat",
+            "compare": [
+                "in"
+            ],
+            "targetSource": "game.teams",
+            "preferredOptions": [
+                "baseball.atbat.outcome",
+                "baseball.pitch.outcome"
+            ]
+        },
+        "baseball.team.pitch": {
+            "id": "baseball.team.pitch",
+            "sport": "baseball",
+            "primary": true,
+            "input": "select.multi",
+            "label": "Team pitching",
+            "compare": [
+                "in"
+            ],
+            "targetSource": "game.teams",
+            "preferredOptions": [
+                "baseball.atbat.outcome",
+                "baseball.pitch.outcome"
+            ]
+        },
+        "baseball.pitch.outcome": {
+            "id": "baseball.pitch.outcome",
+            "sport": "baseball",
+            "primary": false,
+            "input": "select",
+            "label": "Pitch outcome",
+            "compare": [
+                "eq"
+            ],
+            "targetSource": "baseball.pitch.outcome"
+        },
+        "baseball.atbat.outcome": {
+            "id": "baseball.atbat.outcome",
+            "sport": "baseball",
+            "primary": false,
+            "input": "select",
+            "label": "At Bat outcome",
+            "compare": [
+                "eq"
+            ],
+            "targetSource": "baseball.atbat.outcome"
+        }
+    },
+    "sources": {
+        "game.players": [
+            {
+                "label": "Joseph Doyle III",
+                "id": "b21922a1-5c78-4f52-9965-67685036b1ab",
+                "group": "Indiana Pacers"
+            },
+            {
+                "label": "Latoya Turner",
+                "id": "a12d498d-33bc-49c4-af72-f7b8e5c676b7",
+                "group": "Boston Red Sox"
+            },
+            {
+                "label": "Adrienne Schumm",
+                "id": "bdb88739-2331-4dd1-844a-c2b5de6e4c09",
+                "group": "Indiana Pacers"
+            },
+            {
+                "label": "Nathan Pouros",
+                "id": "83680a99-c9b6-4df5-94b6-66de5f4ab756",
+                "group": "Boston Red Sox"
+            },
+            {
+                "label": "Dr. Wilbur Runolfsdottir",
+                "id": "757a7326-400a-4497-a6e3-052e4e32d638",
+                "group": "Indiana Pacers"
+            },
+            {
+                "label": "Miss Carol Kris",
+                "id": "c4b6a42f-3630-4155-bd49-d07431c48db0",
+                "group": "Boston Red Sox"
+            },
+            {
+                "label": "Bessie Schaefer PhD",
+                "id": "1523b4b0-9b0d-4a2c-ad9a-0db5ab0c0c79",
+                "group": "Indiana Pacers"
+            },
+            {
+                "label": "Ray Emmerich DDS",
+                "id": "1e9142ac-acf9-458d-974a-3d9a54e9d271",
+                "group": "Boston Red Sox"
+            },
+            {
+                "label": "Mr. Arthur Ryan",
+                "id": "78b55b7c-f480-4599-b457-526211ef4aae",
+                "group": "Indiana Pacers"
+            },
+            {
+                "label": "Frederick Dach",
+                "id": "9dad3928-d492-4ba5-b5d8-aedc16b35cdc",
+                "group": "Boston Red Sox"
+            },
+            {
+                "label": "Bill Bode",
+                "id": "bd714f59-c07e-4758-9b61-4ee94f56b047",
+                "group": "Indiana Pacers"
+            },
+            {
+                "label": "Leland Zieme",
+                "id": "63bf29aa-f791-4a1d-a6e9-40de8fb42071",
+                "group": "Boston Red Sox"
+            },
+            {
+                "label": "Kyle Fadel",
+                "id": "69281552-5e50-4c5a-941c-d976ec87a935",
+                "group": "Indiana Pacers"
+            },
+            {
+                "label": "Mrs. Kathryn Sanford",
+                "id": "183b1608-39b5-43c9-9fef-f4a8c5faf639",
+                "group": "Boston Red Sox"
+            },
+            {
+                "label": "Mr. Jean Adams",
+                "id": "296ed1a2-51fe-4274-beb3-309854310a29",
+                "group": "Indiana Pacers"
+            },
+            {
+                "label": "Guillermo Leffler",
+                "id": "a2690498-7a07-4444-8dfa-8510d4f40645",
+                "group": "Boston Red Sox"
+            },
+            {
+                "label": "Miss Leslie Barton",
+                "id": "5b8b7706-10bc-4fa4-ba02-838f7e632c68",
+                "group": "Indiana Pacers"
+            },
+            {
+                "label": "Jeannette Olson",
+                "id": "b72bcbb6-c28c-457c-a4df-dbf013d18d67",
+                "group": "Boston Red Sox"
+            },
+            {
+                "label": "Tyler Runolfsdottir",
+                "id": "f16cb89d-e5ac-41ab-b196-7d791a7bc261",
+                "group": "Indiana Pacers"
+            },
+            {
+                "label": "Kelley Gibson",
+                "id": "e99c721a-8fbf-47a0-baf1-bb5ee421109a",
+                "group": "Boston Red Sox"
+            }
+        ],
+        "game.teams": [
+            {
+                "label": "Indiana Pacers",
+                "id": "6b4d56a6-306f-4978-9d99-443dff8f0e15"
+            },
+            {
+                "label": "Boston Red Sox",
+                "id": "9f4695db-b120-4e60-96af-0f09724c5f87"
+            }
+        ],
+        "baseball.game.states": [
+            {
+                "label": "Game start",
+                "id": "game.start"
+            },
+            {
+                "label": "Game end",
+                "id": "game.end"
+            },
+            {
+                "label": "Inning end",
+                "id": "inning.start"
+            },
+            {
+                "label": "Inning end",
+                "id": "inning.end"
+            }
+        ],
+        "baseball.pitch.outcome": [
+            {
+                "label": "Ball",
+                "id": "ball"
+            },
+            {
+                "label": "Ball in Play",
+                "id": "ball_in_play"
+            },
+            {
+                "label": "Greater than 99mph",
+                "id": "gt.90"
+            },
+            {
+                "label": "Less than 80mph",
+                "id": "lt.80"
+            },
+            {
+                "label": "Foul",
+                "id": "foul"
+            },
+            {
+                "label": "Strike - Looking",
+                "id": "strike_looking"
+            },
+            {
+                "label": "Strike - Swinging",
+                "id": "strike_swinging"
+            }
+        ],
+        "baseball.atbat.outcome": [
+            {
+                "label": "GIDP",
+                "id": "GIDP"
+            },
+            {
+                "label": "BB",
+                "id": "BB"
+            },
+            {
+                "label": "BI",
+                "id": "BI"
+            },
+            {
+                "label": "ERR",
+                "id": "ERR"
+            },
+            {
+                "label": "FO",
+                "id": "FO"
+            },
+            {
+                "label": "CI",
+                "id": "CI"
+            },
+            {
+                "label": "GO",
+                "id": "GO"
+            },
+            {
+                "label": "XBH",
+                "id": "XBH"
+            },
+            {
+                "label": "X1",
+                "id": "X1"
+            },
+            {
+                "label": "X2",
+                "id": "X2"
+            },
+            {
+                "label": "X3",
+                "id": "X3"
+            },
+            {
+                "label": "REACH",
+                "id": "REACH"
+            },
+            {
+                "label": "RBI",
+                "id": "RBI"
+            },
+            {
+                "label": "OUT",
+                "id": "OUT"
+            },
+            {
+                "label": "KS",
+                "id": "KS"
+            },
+            {
+                "label": "IPO",
+                "id": "IPO"
+            },
+            {
+                "label": "KL",
+                "id": "KL"
+            },
+            {
+                "label": "K",
+                "id": "K"
+            },
+            {
+                "label": "HIT",
+                "id": "HIT"
+            },
+            {
+                "label": "HR",
+                "id": "HR"
+            },
+            {
+                "label": "HBP",
+                "id": "HBP"
+            }
+        ]
+    }
+}
