@@ -51,12 +51,12 @@ describe("set_and_compare.lua", function () {
       {
         event: FootballEvents.PlayerRushing,
         compare: CompareOp.Equal,
-        target: "30",
+        targets: "30",
         options: [
           {
             event: FootballEvents.Player,
             compare: CompareOp.Equal,
-            target: playerId
+            targets: playerId
           }
         ]
       }

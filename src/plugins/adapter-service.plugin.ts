@@ -11,7 +11,11 @@ export function init(parent: FleetApp) {
     const { triggerLifetimeSeconds } = config.triggers
 
     parent.adapterService = new AdapterService(log, redis, amqp, { triggerLifetimeSeconds })
-    parent.queueService = new QueueService(log, parent.adapterService, getQueueRedisConfig(config.redis))
+    parent.queueService = new QueueService(
+      log,
+      parent.redis,
+      parent.adapterService,
+      getQueueRedisConfig(config.redis))
   })
 
   // eslint-disable-next-line require-await

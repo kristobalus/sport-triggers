@@ -92,7 +92,7 @@ describe("AdapterService", function () {
         {
           event: FootballEvents.GamePointsHome,
           compare: CompareOp.GreaterOrEqual,
-          target: "30",
+          targets: "30",
           options: []
         },
       ]
@@ -171,13 +171,13 @@ describe("AdapterService", function () {
         {
           event: FootballEvents.GamePointsHome,
           compare: CompareOp.GreaterOrEqual,
-          target: "30",
+          targets: "30",
           options: []
         },
         {
           event: FootballEvents.GameLevel,
           compare: CompareOp.Equal,
-          target: GameLevel.End,
+          targets: GameLevel.End,
           options: []
         },
       ]
@@ -303,13 +303,13 @@ describe("AdapterService", function () {
         {
           event: FootballEvents.GamePointsHome,
           compare: CompareOp.GreaterOrEqual,
-          target: "30",
+          targets: "30",
           options: []
         },
         {
           event: FootballEvents.GameLevel,
           compare: CompareOp.Equal,
-          target: GameLevel.End,
+          targets: GameLevel.End,
           options: []
         },
       ]

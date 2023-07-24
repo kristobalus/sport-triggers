@@ -7,8 +7,16 @@ import { ArgumentError } from 'common-errors'
 import { ChainOp, ConditionType, TriggerCondition, TriggerConditionOption } from '../models/entities/trigger-condition'
 import { assertNoError, createArrayFromHGetAll } from '../utils/pipeline-utils'
 import { AdapterEvent } from '../models/events/adapter-event'
-import { metadata } from '../models/events/event-metadata'
+import { metadata as basketballMeta } from '../configs/studio/basketball/metadata'
+import { metadata as baseballMeta } from '../configs/studio/baseball/metadata'
+import { metadata as footballMeta } from '../configs/studio/football/metadata'
 import * as EventUri from '../models/events/event-uri'
+
+const metadata = {
+  ...basketballMeta,
+  ...baseballMeta,
+  ...footballMeta
+}
 
 export function conditionSetByTriggerKey(triggerId: string) {
   return `triggers/${triggerId}/conditions`
@@ -36,10 +44,21 @@ export function conditionLogKey(conditionId: string) {
   return `conditions/${conditionId}/logs`
 }
 
+function intersection(array1: string[], array2: string[]) : string[] {
+  const result = []
+  for(const e1 of array1) {
+    if (array2.indexOf(e1) > -1) {
+      result.push(e1)
+    }
+  }
+  return result
+}
+
 export function validateConditionByMetadata(condition: Partial<TriggerCondition>) {
   // checking allowed targets, if any restricted
   if (metadata[condition.event].targets?.length > 0) {
-    if (!metadata[condition.event].targets.includes(condition.target)) {
+    const mutual = intersection(condition.targets, metadata[condition.event].targets)
+    if (mutual.length == 0) {
       throw new ArgumentError(`Condition for event ${condition.event} should `
         + `have target one of ${JSON.stringify(metadata[condition.event].targets)}.`)
     }
@@ -57,7 +76,8 @@ export function validateConditionByMetadata(condition: Partial<TriggerCondition>
 export function validateOptionByMetadata(option: TriggerConditionOption) {
   // checking allowed targets, if any restricted
   if (metadata[option.event].targets?.length > 0) {
-    if (!metadata[option.event].targets.includes(option.target)) {
+    const mutual = intersection(option.targets, metadata[option.event].targets)
+    if (mutual.length == 0) {
       throw new ArgumentError(`Option for event ${option.event} should `
         + `have target one of ${JSON.stringify(metadata[option.event].targets)}.`)
     }

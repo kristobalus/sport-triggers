@@ -22,7 +22,7 @@ export enum ChainOp {
 export interface TriggerConditionOption {
   event: string
   compare: CompareOp
-  target: string
+  targets: string[]
   type?: string
 }
 
@@ -45,7 +45,7 @@ export interface TriggerCondition {
   type: ConditionType
   uri: string
   // target value of the event, threshold value to compare with
-  target: string
+  targets: string[]
   // current value read from event
   current?: string
   // true when compare(target, current) == true

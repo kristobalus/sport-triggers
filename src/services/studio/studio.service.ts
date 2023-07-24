@@ -33,10 +33,13 @@ export class StudioService {
   }
 
   /**
-   * @description Studio creates trigger specifying entity data to be attached to.
-   *              Studio supplies conditions for the trigger to be activated upon matching.
-   *              When building conditions Studio should use metadata information
+   *
+   * @description
+   *              - Studio creates trigger specifying entity data to be attached to.
+   *              - Studio supplies conditions for the trigger to be activated upon matching.
+   *              - When building conditions Studio should use metadata information
    *              to provide allowed compare operations and targets for the event.
+   *
    * @param triggerData
    * @param conditionData
    */

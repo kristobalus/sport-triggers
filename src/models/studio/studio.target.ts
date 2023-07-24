@@ -1,8 +1,9 @@
 
 
 export interface StudioTarget {
+  id?: string
   label: string
   description?: string
-  id?: string
   group?: string
+  meta?: Record<string, string>
 }

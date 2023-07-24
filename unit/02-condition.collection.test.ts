@@ -63,7 +63,7 @@ describe("ConditionCollection", function () {
       {
         event: FootballEvents.GamePointsHome,
         compare: CompareOp.GreaterOrEqual,
-        target: "30",
+        targets: "30",
         options: [],
       },
     ]
@@ -75,12 +75,12 @@ describe("ConditionCollection", function () {
       {
         event: FootballEvents.PlayerState,
         compare: CompareOp.Equal,
-        target: FootballPlayerStates.Touchdown,
+        targets: FootballPlayerStates.Touchdown,
         options: [
           {
             event: FootballEvents.Player,
             compare: CompareOp.Equal,
-            target: randomUUID(),
+            targets: randomUUID(),
           },
         ],
       },
@@ -93,10 +93,10 @@ describe("ConditionCollection", function () {
       {
         event: FootballEvents.PlayerState,
         compare: CompareOp.Equal,
-        target: "wrong",
+        targets: "wrong",
         options: [
           {
-            target: randomUUID(),
+            targets: randomUUID(),
             compare: CompareOp.Equal,
             event: FootballEvents.Player,
           },

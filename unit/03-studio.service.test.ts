@@ -79,7 +79,7 @@ describe("StudioService", function () {
       {
         event: FootballEvents.GameLevel,
         compare: CompareOp.Equal,
-        target: GameLevel.Start,
+        targets: GameLevel.Start,
         options: []
       }
     ]
@@ -91,7 +91,7 @@ describe("StudioService", function () {
     assert.equal(condition.event, FootballEvents.GameLevel)
     assert.equal(condition.type, ConditionType.String)
     assert.equal(condition.compare, CompareOp.Equal)
-    assert.equal(condition.target, GameLevel.Start)
+    assert.equal(condition.targets, GameLevel.Start)
   })
 
   it(`should find list of triggers by scope`, async () => {

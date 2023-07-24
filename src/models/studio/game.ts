@@ -1,16 +1,5 @@
-
-export interface Player {
-  id: string
-  name: string
-  team: string
-  position: number
-}
-
-export interface Team {
-  id: string
-  name: string
-  home: boolean
-}
+import { Player } from "./player"
+import { Team } from "./team"
 
 export interface Game {
   datasource: string
@@ -22,5 +11,3 @@ export interface Game {
   home: string
   away: string
 }
-
-

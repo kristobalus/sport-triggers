@@ -1,0 +1,19 @@
+{
+  "name": "76ers",
+  "alias": "PHI",
+  "market": "Philadelphia",
+  "id": "583ec87d-fb46-11e1-82cb-f4ce4684ea4c",
+  "points": 121,
+  "bonus": false,
+  "sr_id": "sr:team:3420",
+  "remaining_timeouts": 2,
+  "reference": "1610612755",
+  "record": {
+    "wins": 54,
+    "losses": 28
+  },
+  "scoring": [],
+  "statistics": {},
+  "coaches": [],
+  "players": []
+}

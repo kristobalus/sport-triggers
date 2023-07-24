@@ -6,21 +6,21 @@ import { strict as assert } from 'assert'
 import { TestContext } from '../module'
 import { Scope } from '../../src/models/entities/trigger'
 import { startContext, stopContext } from '../helpers/common'
-import { FootballEvents } from '../../src/configs/definitions/football/football-events'
+import { FootballEvents } from '../../src/configs/studio/football/football-events'
 import { ChainOp, CompareOp } from '../../src/models/entities/trigger-condition'
 import {
   EssentialConditionData,
   EssentialTriggerData,
   TriggerCreateRequest,
 } from '../../src/models/dto/trigger-create-request'
-import { GameLevel } from '../../src/configs/definitions/football/football-game-level'
+import { GameLevel } from '../../src/configs/studio/football/game-level'
 import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-request'
 import { ItemResponse } from '../../src/models/dto/response'
 import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
 import { AdapterPushRequest } from '../../src/models/dto/adapter-push-request'
 import {
-  FootballPlayerState,
-} from '../../src/configs/definitions/football/football-player-state'
+  PlayerState
+} from '../../src/configs/studio/football/player-state'
 import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { AdapterEvent } from "../../src/models/events/adapter-event"
@@ -76,7 +76,7 @@ describe('AdapterService', function () {
       scopeId,
       timestamp: Date.now() + 2,
       options: {
-        [FootballEvents.PlayerState]: FootballPlayerState.Touchdown,
+        [FootballEvents.PlayerState]: PlayerState.Touchdown,
         [FootballEvents.Player]: randomUUID()
       }
     },
@@ -87,7 +87,7 @@ describe('AdapterService', function () {
       scopeId,
       timestamp: Date.now() + 3,
       options: {
-        [FootballEvents.PlayerState]: FootballPlayerState.Touchdown,
+        [FootballEvents.PlayerState]: PlayerState.Touchdown,
         [FootballEvents.Player]: randomUUID()
       }
     }
@@ -119,26 +119,26 @@ describe('AdapterService', function () {
       {
         event: FootballEvents.GameLevel,
         compare: CompareOp.Equal,
-        target: events.gameLevelStart.options[FootballEvents.GameLevel],
+        targets: events.gameLevelStart.options[FootballEvents.GameLevel],
         options: []
       },
       {
         event: FootballEvents.GamePointsHome,
         compare: CompareOp.GreaterOrEqual,
-        target: events.homeTeamPoints.options[FootballEvents.GamePointsHome],
+        targets: events.homeTeamPoints.options[FootballEvents.GamePointsHome],
         chainOperation: ChainOp.AND,
         options: []
       },
       {
         event: FootballEvents.PlayerState,
         compare: CompareOp.Equal,
-        target: FootballPlayerState.Touchdown,
+        targets: PlayerState.Touchdown,
         chainOperation: ChainOp.AND,
         options: [
           {
             event: FootballEvents.Player,
             compare: CompareOp.Equal,
-            target: events.correctPlayerTouchdown.options[FootballEvents.Player]
+            targets: events.correctPlayerTouchdown.options[FootballEvents.Player]
           }
         ]
       }

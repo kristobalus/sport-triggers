@@ -53,7 +53,7 @@ describe("set_and_compare_as_string.lua", function () {
         {
           event: FootballEvents.GameLevel,
           compare: CompareOp.Equal,
-          target: GameLevel.QuarterStart,
+          targets: GameLevel.QuarterStart,
           options: []
         },
     ]

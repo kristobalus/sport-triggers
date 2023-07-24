@@ -2,13 +2,14 @@ import { Config as RedisConfig } from '@microfleet/plugin-redis-sentinel'
 import { Microfleet } from '@microfleet/core-types'
 
 import { Worker, Job, Queue } from 'bullmq'
-import { RedisOptions } from 'ioredis'
+import { Redis, RedisOptions } from 'ioredis'
 
 import { AdapterEvent } from '../../models/events/adapter-event'
 import { Trigger } from '../../models/entities/trigger'
 
 import { AdapterService } from '../adapter/adapter.service'
 import { Event } from "../../models/events/event"
+import { EventCollection } from "../../repositories/event.collection"
 
 export function getQueueRedisConfig(config: RedisConfig) {
   return {
@@ -32,21 +33,25 @@ export interface NotificationJob {
 
 export class QueueService {
 
-  eventQueue: Queue
-  eventWorker: Worker
+  private eventQueue: Queue
+  private eventWorker: Worker
 
-  triggerQueue: Queue
-  triggerWorker: Worker
+  private triggerQueue: Queue
+  private triggerWorker: Worker
 
-  notificationQueue: Queue
-  notificationWorker: Worker
+  private notificationQueue: Queue
+  private notificationWorker: Worker
+  private eventCollection: EventCollection
 
   constructor(
     private log: Microfleet['log'],
+    private redis: Redis,
     private adapterService: AdapterService,
     redisOptions: RedisOptions,
     public debugCallback?: (result) => any
   ) {
+    this.eventCollection = new EventCollection(this.redis)
+
     this.triggerQueue = new Queue('triggers', {
       defaultJobOptions: {
         removeOnComplete: true,
@@ -116,6 +121,8 @@ export class QueueService {
 
   async addEvent(adapterEvent: AdapterEvent) {
     const jobs = []
+
+    await this.eventCollection.append(adapterEvent)
 
     for(const [name, value] of Object.entries(adapterEvent.options)) {
       const event = { ...adapterEvent, name, value }

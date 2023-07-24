@@ -1,14 +1,16 @@
 import { ConnectorsTypes } from '@microfleet/core'
 
 import { FleetApp } from '../fleet-app'
-import { StudioService } from '../services/studio/studio.service'
+import { MetadataService } from "../services/studio/metadata.service"
+
+import path = require('path')
 
 export function init(parent: FleetApp) {
   // eslint-disable-next-line require-await
   parent.addConnector(ConnectorsTypes.application, async () => {
-    const { log, redis, config } = parent
-    const { triggerLifetimeSeconds } = config.triggers
-    parent.studioService = new StudioService(log, redis, { triggerLifetimeSeconds })
+    parent.metadataService = new MetadataService()
+    const dir = path.resolve(__dirname, "../configs/studio/basketball/games")
+    parent.metadataService.loadGames(dir)
   })
 
   // eslint-disable-next-line require-await

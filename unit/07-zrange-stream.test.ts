@@ -55,13 +55,13 @@ describe("Test zrange stream", function () {
       {
         event: FootballEvents.GamePointsHome,
         compare: CompareOp.GreaterOrEqual,
-        target: "30",
+        targets: "30",
         options: []
       },
       {
         event: FootballEvents.GameLevel,
         compare: CompareOp.Equal,
-        target: GameLevel.End,
+        targets: GameLevel.End,
         options: []
       },
     ]

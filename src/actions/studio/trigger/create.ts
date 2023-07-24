@@ -12,8 +12,7 @@ async function CreateHandler(this: FleetApp, request: ServiceRequest): Promise<R
   const { studioService } = this
 
   // TODO create trigger inside on-going game
-  //    trigger open time
-  //
+  //    check trigger open time
   const id = await studioService.createTrigger(trigger, conditions)
 
   return {

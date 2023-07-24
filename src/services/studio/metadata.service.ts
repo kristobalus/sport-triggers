@@ -1,7 +1,5 @@
 
-import { randomUUID } from "crypto"
-import { faker } from "@faker-js/faker"
-import { Game, Player, Team } from "../../models/games"
+import { Game } from "../../models/studio/game"
 import { metadata, targetTree } from "../../configs/studio"
 import { EventMetadata } from "../../models/events/event-metadata"
 import { StudioConditionData } from "../../models/studio/studio.condition-data"
@@ -11,8 +9,11 @@ import { StudioTarget } from "../../models/studio/studio.target"
 import { CommonSources } from "../../configs/studio/common-sources"
 import { StudioInputs } from "../../models/studio/studio.inputs"
 import { StudioInputsProtobuf } from "../../models/studio/studio.inputs.protobuf"
+import fs = require("fs");
 
 export class MetadataService {
+
+  private games: Map<string, Game> = new Map()
 
   constructor() {}
 
@@ -118,43 +119,7 @@ export class MetadataService {
   }
 
   getGame(gameId: string): Game {
-    const home: Team = {
-      id: randomUUID(),
-      name: "Indiana Pacers",
-      home: true
-    }
-    const away: Team = {
-      id: randomUUID(),
-      name: "Boston Red Sox",
-      home: false
-    }
-
-    const teams = [home, away]
-    const players = []
-    for(let i = 0; i < 20; i++) {
-      const team: Team = teams[i % 2]
-      const player: Player = {
-        id: randomUUID(),
-        team: team.id,
-        name: faker.person.fullName(),
-        position: i
-      }
-      players.push(player)
-    }
-
-    return {
-      datasource: "sportradar",
-      sport: "baseball",
-      scope: "game",
-      id: gameId,
-      home: home.id,
-      away: away.id,
-      teams: {
-        [home.id]: home,
-        [away.id]: away
-      },
-      players: players,
-    }
+    return this.games.get(gameId)
   }
 
   getStudioInputMapped(input: StudioInputs): StudioInputsProtobuf {
@@ -173,6 +138,24 @@ export class MetadataService {
         return StudioInputsProtobuf.STUDIO_INPUT_TIME_MINUTES
       default:
         throw new Error("Unknown studio input type")
+    }
+  }
+
+  loadGames(dir: string) {
+    if (!fs.existsSync(dir)) {
+      throw new Error("Games dir not found")
+    }
+
+    const stats = fs.statSync(dir)
+    if (stats.isFile()) {
+      throw new Error("Provided path is not a folder")
+    }
+
+    const files = fs.readdirSync(dir)
+    for (const file of files) {
+      const filePath = `${dir}/${file}`
+      const game = require(filePath) as Game
+      this.games.set(game.id, game)
     }
   }
 

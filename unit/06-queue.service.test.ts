@@ -103,24 +103,24 @@ describe("QueueService", function () {
       {
         event: FootballEvents.GamePointsHome,
         compare: CompareOp.GreaterOrEqual,
-        target: "30",
+        targets: "30",
         options: []
       },
       {
         event: FootballEvents.GameLevel,
         compare: CompareOp.Equal,
-        target: GameLevel.End,
+        targets: GameLevel.End,
         options: []
       },
       {
         event: FootballEvents.PlayerState,
         compare: CompareOp.Equal,
-        target: FootballPlayerState.Touchdown,
+        targets: FootballPlayerState.Touchdown,
         options: [
           {
             event: FootballEvents.Player,
             compare: CompareOp.Equal,
-            target: playerId
+            targets: playerId
           }
         ]
       },
