@@ -1,54 +1,4 @@
 
----- SETS DEFINITION -----
-Set = {}
-
-function Set.new (t)
-    local set = {}
-    for _, l in ipairs(t) do set[l] = true end
-    return set
-end
-
-function Set.union (a,b)
-    local res = Set.new{}
-    for k in pairs(a) do res[k] = true end
-    for k in pairs(b) do res[k] = true end
-    return res
-end
-
-function Set.intersection (a,b)
-    local res = Set.new{}
-    for k in pairs(a) do
-        res[k] = b[k]
-    end
-    return res
-end
-
-function Set.tostring (set)
-    local s = "{"
-    local sep = ""
-    for e in pairs(set) do
-        s = s .. sep .. e
-        sep = ", "
-    end
-    return s .. "}"
-end
-
-function Set.print (s)
-    print(Set.tostring(s))
-end
-
-Set.mt = {}    -- metatable for sets
-function Set.new (t)   -- 2nd version
-    local set = {}
-    setmetatable(set, Set.mt)
-    for _, l in ipairs(t) do set[l] = true end
-    return set
-end
-Set.mt.__add = Set.union
-Set.mt.__mul = Set.intersection
-
------ END OF SETS DEFINITION ------
-
 local function Logger()
     local _debug = {}
 
@@ -131,11 +81,6 @@ local function existsInEventLog(key, eventId)
     return to_bool(result)
 end
 
-local function eventlog_get_one(key, eventId)
-    local result = redis.call("hget", key, eventId)
-    return cjson.decode(result)
-end
-
 local function getEventLog(key)
     local result = {}
     local items = redis.call("hgetall", key)
@@ -145,30 +90,71 @@ local function getEventLog(key)
     return result
 end
 
-local function compare(operation, value, target, type)
+-- operation: operation on value and targets, one of [ eq, lt, gt, ge, le, in ]
+-- value:  value from event to be compared with targets
+-- targets: JSON array of strings
+-- type: type of data in targets and value, "number" or "string"
+local function compare(operation, value, targets, type)
     local result = false
+    local arr = cjson.decode(targets)
+
+    -- do typecasting
     if type == "number" then
         value = tonumber(value)
-        target = tonumber(target)
+        for i in ipairs(arr) do
+            arr[i] = tonumber(arr[i])
+        end
     end
+    if type == "string" then
+        value = tostring(value)
+        for i in ipairs(arr) do
+            arr[i] = tostring(arr[i])
+        end
+    end
+
+    if operation == "in" then
+        -- search value in target set
+        local function has(arr, value)
+            for _, el in ipairs(arr) do
+                if el == value then
+                    return true
+                end
+            end
+            return false
+        end
+        -- equivalent of OR condition, checks if value is one of several targets
+        return has(arr, value)
+    end
+
+    -- single target for non-"in" ops
+    local target = arr[1]
+
     if operation == "eq" then
-        result = (value == target)
+        return (value == target)
     end
+
+    -- only above-mentioned operations are allowed for type "string"
     if type == "string" then
         return result
     end
+
+    -- operations below are intended for type "number"
     if operation == "gt" then
-        result = (value > target)
+        return (value > target)
     end
+
     if operation == "lt" then
-        result = (value < target)
+        return (value < target)
     end
+
     if operation == "ge" then
-        result = (value >= target)
+        return (value >= target)
     end
+
     if operation == "le" then
-        result = (value <= target)
+        return (value <= target)
     end
+
     return result
 end
 
@@ -176,6 +162,7 @@ local function aggregate(eventName, operation, eventLog)
     local result = 0
     for _, event in ipairs(eventLog) do
         if event.name == eventName then
+
             if operation == "sum" then
                 local value = tonumber(event.value)
                 if value == nil then
@@ -183,6 +170,7 @@ local function aggregate(eventName, operation, eventLog)
                 end
                 result = result + value
             end
+
             if operation == "count" then
                 result = result + 1
             end
@@ -191,7 +179,7 @@ local function aggregate(eventName, operation, eventLog)
     return result
 end
 
-local function compare_options(condition, event, eventLog)
+local function evaluateOptions(condition, event, eventLog)
     local result = true
     local count = 0
     for _, eventOption in ipairs(event.options) do
@@ -213,7 +201,7 @@ local function compare_options(condition, event, eventLog)
                     value = eventOption.value
                 end
 
-                result = result and compare(conditionOption.compare, value, conditionOption.target, conditionOption.type)
+                result = result and compare(conditionOption.compare, value, conditionOption.targets, conditionOption.type)
 
                 logger.debug({
                     result = result,
@@ -238,10 +226,10 @@ local function evaluateCondition(condition, event, eventLog)
         value = event.value
     end
 
-    condition.activated = compare(condition.compare, value, condition.target, condition.type)
+    condition.activated = compare(condition.compare, value, condition.targets, condition.type)
     logger.debug({ condition = condition, value = value }, 'condition compared')
 
-    condition.activated = condition.activated and compare_options(condition, event, eventLog)
+    condition.activated = condition.activated and evaluateOptions(condition, event, eventLog)
     logger.debug({ condition = condition, event = event, eventLog = eventLog }, 'options compared')
 end
 
@@ -252,7 +240,7 @@ local eventLogKey = KEYS[2]
 local event = cjson.decode(ARGV[1])
 local condition = getCondition(conditionKey)
 
--- check if event has already been processed based on event id
+-- check if event has already been processed within condition based on event id
 if existsInEventLog(eventLogKey, event.id) == true then
     logger.debug({ event = event }, "event is already processed")
     return { to_unit(condition.activated), logger.tostring() }
@@ -268,8 +256,8 @@ local eventLog = getEventLog(eventLogKey)
 table.insert(eventLog, event)
 
 evaluateCondition(condition, event, eventLog)
-appendEventLog(eventLogKey, event)
 setConditionActivated(conditionKey, condition.activated)
 setConditionCurrentValue(event.value)
+appendEventLog(eventLogKey, event)
 
 return { to_unit(condition.activated), logger.tostring() }

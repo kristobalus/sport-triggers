@@ -151,6 +151,7 @@ export class TriggerConditionCollection {
       condition.chainOrder = i
       condition.uri = EventUri.fromCondition(condition)
       condition.options = JSON.stringify(condition.options) as any
+      condition.targets = JSON.stringify(condition.targets) as any
       items.push(condition)
     }
 
@@ -185,9 +186,15 @@ export class TriggerConditionCollection {
     for (const condition of conditions) {
       condition.chainOrder = parseInt(condition.chainOrder as unknown as string)
       condition.activated = (condition.activated as unknown as string) == '1'
+
       if (condition.options) {
         condition.options = JSON.parse(condition.options as any)
       }
+
+      if (condition.targets) {
+        condition.targets = JSON.parse(condition.targets as any)
+      }
+
       if (options.showLog) {
         condition.log = await this.getEventLog(condition.id)
       }
