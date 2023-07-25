@@ -1,6 +1,7 @@
 import { ActionTransport, ServiceRequest } from '@microfleet/plugin-router'
 
 import { FleetApp } from '../../../fleet-app'
+import { StudioConditionData } from "../../../models/studio/studio.condition-data"
 
 async function Handler(this: FleetApp, request: ServiceRequest) {
   const { amqp, metadataService } = this
@@ -14,7 +15,7 @@ async function Handler(this: FleetApp, request: ServiceRequest) {
   const { providerId: gameId } = response
 
   // create metadata
-  const data = metadataService.getConditionData(gameId, sport)
+  const data: StudioConditionData = metadataService.getConditionData(gameId, sport)
 
   return { data }
 }
