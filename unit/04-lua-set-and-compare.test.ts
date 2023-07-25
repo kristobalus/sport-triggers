@@ -13,7 +13,7 @@ import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { Scope, Trigger } from "../src/models/entities/trigger"
 import { Event } from "../src/models/events/event"
 import { CompareOp } from "../src/models/entities/trigger-condition"
-import { FootballEvents } from "../src/configs/studio/football/football-events"
+import { FootballEvents } from "../src/studio/football/football-events"
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
 import { EssentialConditionData, EssentialTriggerData } from "../src/models/dto/trigger-create-request"
 

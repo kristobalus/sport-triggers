@@ -17,10 +17,10 @@ import { TriggerConditionCollection } from "../src/repositories/trigger-conditio
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subscription.collection"
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
-import { FootballEvents } from "../src/configs/studio/football/football-events"
-import { GameLevel } from "../src/configs/studio/football/game-level"
+import { FootballEvents } from "../src/studio/football/football-events"
+import { GameLevel } from "../src/studio/football/game-level"
 import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
-import { BasketballEvents } from "../src/configs/studio/basketball/basketball-events"
+import { BasketballEvents } from "../src/studio/basketball/basketball-events"
 
 describe("AdapterService", function () {
 

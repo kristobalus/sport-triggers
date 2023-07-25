@@ -13,7 +13,7 @@ import {
   EssentialTriggerData,
   TriggerCreateRequest,
 } from '../../src/models/dto/trigger-create-request'
-import { GameLevel } from '../../src/configs/studio/basketball/game-level'
+import { GameLevel } from '../../src/studio/basketball/game-level'
 import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-request'
 import { ItemResponse } from '../../src/models/dto/response'
 import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
@@ -21,7 +21,7 @@ import { AdapterPushRequest } from '../../src/models/dto/adapter-push-request'
 import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { Defer } from "../../src/utils/defer"
-import { BasketballEvents } from "../../src/configs/studio/basketball/basketball-events"
+import { BasketballEvents } from "../../src/studio/basketball/basketball-events"
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string

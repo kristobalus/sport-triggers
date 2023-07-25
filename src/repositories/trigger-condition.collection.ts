@@ -7,9 +7,9 @@ import { ArgumentError } from 'common-errors'
 import { ChainOp, ConditionType, TriggerCondition, TriggerConditionOption } from '../models/entities/trigger-condition'
 import { assertNoError, createArrayFromHGetAll } from '../utils/pipeline-utils'
 import { AdapterEvent } from '../models/events/adapter-event'
-import { metadata as basketballMeta } from '../configs/studio/basketball/metadata'
-import { metadata as baseballMeta } from '../configs/studio/baseball/metadata'
-import { metadata as footballMeta } from '../configs/studio/football/metadata'
+import { metadata as basketballMeta } from '../studio/basketball/metadata'
+import { metadata as baseballMeta } from '../studio/baseball/metadata'
+import { metadata as footballMeta } from '../studio/football/metadata'
 
 import * as EventUri from '../models/events/event-uri'
 import assert = require("assert");
