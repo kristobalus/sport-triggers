@@ -1,5 +1,10 @@
 
+import fs = require("fs");
+import _ = require("lodash");
+import assert = require("assert");
+
 import { Game } from "../../models/studio/game"
+import { Game as SportradarGame } from "../../models/sportradar/game"
 import { metadata, targetTree } from "../../configs/studio"
 import { EventMetadata } from "../../models/events/event-metadata"
 import { StudioConditionData } from "../../models/studio/studio.condition-data"
@@ -9,17 +14,26 @@ import { StudioTarget } from "../../models/studio/studio.target"
 import { CommonSources } from "../../configs/studio/common-sources"
 import { StudioInputs } from "../../models/studio/studio.inputs"
 import { StudioInputsProtobuf } from "../../models/studio/studio.inputs.protobuf"
-import fs = require("fs");
+import { Team } from "../../models/studio/team"
+import { Player } from "../../models/studio/player"
+
+
+export type Sport = "basketball"
 
 export class MetadataService {
 
-  private games: Map<string, Game> = new Map()
+  private games: Record<string, Map<string, Game>> = {
+    basketball: new Map(),
+  }
 
   constructor() {}
 
-  getConditionData(gameId: string, shouldMapEnum: boolean = false): StudioConditionData {
+  getConditionData(
+    gameId: string,
+    sport: string,
+    shouldMapEnum: boolean = false): StudioConditionData {
 
-    const game = this.getGame(gameId)
+    const game = this.getGame(gameId, sport)
 
     const result: StudioConditionData = {
       index: [],
@@ -43,17 +57,6 @@ export class MetadataService {
       }
 
       if ( data.targetSource ) {
-        // targets moved into separate "sources" tree
-        // if ( data.targetSource == "game.team" ) {
-        //   item.targets = this.createTeamTargets(game)
-        // }
-        // else if ( data.targetSource == "game.players" ) {
-        //   item.targets = this.createPlayerTargets(game)
-        // }
-        // else if ( targetTree[data.targetSource] ) {
-        //   item.targets = this.createTargetsBySource(data, targetTree)
-        // }
-
         if (!result.sources[data.targetSource]) {
           let targets
           if ( data.targetSource == CommonSources.GameTeams ) {
@@ -96,10 +99,11 @@ export class MetadataService {
   createPlayerTargets(game: Game) {
     const targets = []
     for(const player of game.players){
+      const team = game.teams[player.team]
       const target = {
         label: player.name,
         id: player.id,
-        group: game.teams[player.team].name,
+        group: team?.name,
       } as StudioTarget
       targets.push(target)
     }
@@ -118,8 +122,9 @@ export class MetadataService {
     return targets
   }
 
-  getGame(gameId: string): Game {
-    return this.games.get(gameId)
+  getGame(gameId: string, sport: string): Game {
+    assert(this.games[sport], `games for sport ${sport} not found`)
+    return this.games[sport].get(gameId)
   }
 
   getStudioInputMapped(input: StudioInputs): StudioInputsProtobuf {
@@ -141,7 +146,7 @@ export class MetadataService {
     }
   }
 
-  loadGames(dir: string) {
+  loadGames(dir: string, sport: Sport) {
     if (!fs.existsSync(dir)) {
       throw new Error("Games dir not found")
     }
@@ -154,8 +159,67 @@ export class MetadataService {
     const files = fs.readdirSync(dir)
     for (const file of files) {
       const filePath = `${dir}/${file}`
-      const game = require(filePath) as Game
-      this.games.set(game.id, game)
+      const data = require(filePath) as SportradarGame
+
+      const players: Player[] = []
+      for(const period of data.periods){
+        for(const event of period.events) {
+          if ( event.on_court ) {
+            const { home, away } = event.on_court
+
+            for(const player of away.players){
+              players.push({
+                id: player.id,
+                name: player.full_name,
+                team: away.id,
+                position: player.position,
+                primary_position: player.primary_position,
+                jersey_number: player.jersey_number
+              } as Player)
+            }
+
+            for(const player of home.players){
+              players.push({
+                id: player.id,
+                name: player.full_name,
+                team: home.id,
+                position: player.position,
+                primary_position: player.primary_position,
+                jersey_number: player.jersey_number
+              } as Player)
+            }
+          }
+
+        }
+      }
+
+      const homeTeam: Team = {
+        id: data.home.id,
+        name: data.home.name,
+        home: true
+      }
+
+      const awayTeam: Team = {
+        id: data.away.id,
+        name: data.away.name,
+        home: false
+      }
+
+      const game: Game = {
+        datasource: "sportradar",
+        scope: "game",
+        sport: sport,
+        id: data.id,
+        players: _.uniqBy(players, player => player.id),
+        teams: {},
+        home: homeTeam.id,
+        away: awayTeam.id
+      }
+
+      game.teams[homeTeam.id] = homeTeam
+      game.teams[awayTeam.id] = awayTeam
+
+      this.games[sport].set(game.id, game)
     }
   }
 

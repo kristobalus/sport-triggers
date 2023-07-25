@@ -41,8 +41,11 @@
                     "compare": {
                         "type": "string"
                     },
-                    "target": {
-                        "type": "string"
+                    "targets": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     },
                     "chainOperation": {
                         "type": "string",
@@ -61,7 +64,7 @@
                     }
                 },
                 "additionalProperties": false,
-                "required": ["event", "compare","target"]
+                "required": ["event", "compare","targets"]
             }
         }
     },

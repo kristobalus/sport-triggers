@@ -40,7 +40,8 @@ export class AdapterService {
   /**
    * executed in queue "triggers"
    */
-  async evaluateTrigger(event: Event, trigger: Trigger): Promise<boolean> {
+  async evaluateTrigger(event: Event, triggerId: string): Promise<boolean> {
+    const trigger = await this.triggerCollection.getOne(triggerId)
     const uri = fromEvent(event)
     const conditions = await this.conditionCollection.getByTriggerId(trigger.id)
 
@@ -57,34 +58,40 @@ export class AdapterService {
       }
     }
 
-    let triggerResult = conditions.length > 0
+    let result = conditions.length > 0
 
     for (const condition of conditions) {
       // combine a chain of conditions into single result
       // each condition is preset by Studio with chaining operator (AND, OR)
       // for sake of simplicity assume no grouping and just apply logical operators in sequence
       if (condition.chainOperation == ChainOp.AND) {
-        triggerResult = (triggerResult && condition.activated)
+        result = (result && condition.activated)
       } else if (condition.chainOperation == ChainOp.OR) {
-        triggerResult = (triggerResult || condition.activated)
+        result = (result || condition.activated)
       }
     }
 
-    await this.triggerCollection.updateOne(trigger.id, { activated: triggerResult })
+    if ( result ) {
+      await this.conditionCollection.unsubscribeTriggerFromEvents(trigger.id)
+    }
 
-    return triggerResult
+    // store trigger status
+    await this.triggerCollection.updateOne(trigger.id, { activated: result })
+
+    return result
   }
 
   /**
    * executed in queue "notifications"
    * separate queue for notifications (with retries)
    */
-  async notify(trigger: Trigger) {
-    // trigger = await this.triggerCollection.getOne(trigger.id)
+  async notify(triggerId: string) {
+    const trigger = await this.triggerCollection.getOne(triggerId)
     if (trigger.activated) {
-      this.log.debug({ trigger }, 'sending subscriptions')
+      this.log.debug({ triggerId }, 'sending subscriptions')
 
-      // TODO add limitations on notification routes [whitelist] and payloads [json schema], exclude options?
+      // TODO
+      //  add limitations on notification routes [whitelist] and payloads [json schema] and exclude options?
       const ids = await this.subscriptionCollection.getListByTrigger(trigger.id)
 
       for (const id of ids) {
@@ -102,12 +109,11 @@ export class AdapterService {
           this.log.debug({ trigger, subscription }, 'message sent')
         }
       }
+    } else {
+      this.log.warn({ trigger }, 'trying to send notification on trigger w/o activation')
     }
   }
 
-  async afterTriggerActivation(trigger: Trigger) {
-    await this.conditionCollection.unsubscribeTriggerFromEvents(trigger.id)
-  }
 
   /**
    * @description shows if any trigger is interested in this event
@@ -152,7 +158,7 @@ export class AdapterService {
 
     const [activated, debug] = await this.redis.set_and_compare(2, key, logKey, JSON.stringify(event))
     result.activated = !!activated
-    this.log.debug({ key, debug }, 'evaluation result')
+    this.log.debug({ key, debug, result }, 'evaluation result')
 
     return result
   }

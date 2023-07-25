@@ -11,8 +11,8 @@ import { ConditionType, CompareOp } from "../src/models/entities/trigger-conditi
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { randomUUID } from "crypto"
-import { FootballEvents } from "../src/configs/definitions/football/football-events"
-import { GameLevel } from "../src/configs/definitions/football/football-game-level"
+import { FootballEvents } from "../src/configs/studio/football/football-events"
+import { GameLevel } from "../src/configs/studio/football/game-level"
 import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subscription.collection"
 import { Scope } from "../src/models/entities/trigger"
 import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
@@ -58,7 +58,7 @@ describe("StudioService", function () {
   })
 
   it(`should get metadata`, async () => {
-    const metadata = await ctx.service.getMetadata()
+    const metadata = ctx.service.getMetadata()
     assert.ok(metadata)
     assert.ok(metadata[FootballEvents.PlayerState])
   })
@@ -79,7 +79,7 @@ describe("StudioService", function () {
       {
         event: FootballEvents.GameLevel,
         compare: CompareOp.Equal,
-        targets: GameLevel.Start,
+        targets: [ GameLevel.Start ],
         options: []
       }
     ]
@@ -88,6 +88,7 @@ describe("StudioService", function () {
     assert.ok(ctx.triggerId)
 
     const [ condition ] = await ctx.conditions.getByTriggerId(ctx.triggerId)
+    console.log(condition)
     assert.equal(condition.event, FootballEvents.GameLevel)
     assert.equal(condition.type, ConditionType.String)
     assert.equal(condition.compare, CompareOp.Equal)

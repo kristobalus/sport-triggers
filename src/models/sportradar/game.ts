@@ -1,4 +1,5 @@
 import { Team } from "./team"
+import { Period } from "./event"
 
 export interface Game {
   id: string
@@ -7,5 +8,6 @@ export interface Game {
   reference: string
   scheduled: string
   home: Team,
-  away: Team
+  away: Team,
+  periods?: Period[]
 }

@@ -11,11 +11,19 @@ export interface Attribution {
   sr_id: string
 }
 
+export interface Scoring {
+  lead_changes: number
+  home: Pick<Team, "id" | "name" | "market" | "points" | "reference">
+  away: Pick<Team, "id" | "name" | "market" | "points" | "reference">
+}
+
 export interface Period {
   id: string
   number: number
   sequence: number
   type: string
+  events: Event[]
+  scoring: Scoring
 }
 
 export type EventPlayer = Pick<Player, "full_name" | "jersey_number" | "reference" | "id" | "sr_id">

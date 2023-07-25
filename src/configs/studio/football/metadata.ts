@@ -93,18 +93,20 @@ export const metadata: Record<string, EventMetadata> = {
     sport: 'football',
     primary: true,
     label: 'Player passing',
-    input: StudioInputs.Number,
-    type: ConditionType.Number,
+    input: StudioInputs.Select,
+    type: ConditionType.String,
+    description: "expects player-id (string) in targets",
     targets: [],
     targetSource: "game.players"
   },
 
   [FootballEvents.PlayerRushing]: {
     sport: 'football',
-    input: StudioInputs.Number,
+    input: StudioInputs.Select,
     primary: true,
     label: "Player rushing",
-    type: ConditionType.Number,
+    description: "expects player-id (string) in targets",
+    type: ConditionType.String,
     targets: [],
     targetSource: "game.players"
   },
@@ -112,7 +114,8 @@ export const metadata: Record<string, EventMetadata> = {
   [FootballEvents.PlayerReceiving]: {
     sport: 'football',
     input: StudioInputs.Number,
-    type: ConditionType.Number,
+    type: ConditionType.String,
+    description: "expects player-id (string) in targets",
     primary: true,
     label: "Player receiving",
     targets: [],

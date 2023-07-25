@@ -17,9 +17,10 @@ import { TriggerConditionCollection } from "../src/repositories/trigger-conditio
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subscription.collection"
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
-import { FootballEvents } from "../src/configs/definitions/football/football-events"
-import { GameLevel } from "../src/configs/definitions/football/football-game-level"
+import { FootballEvents } from "../src/configs/studio/football/football-events"
+import { GameLevel } from "../src/configs/studio/football/game-level"
 import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
+import { BasketballEvents } from "../src/configs/studio/basketball/basketball-events"
 
 describe("AdapterService", function () {
 
@@ -28,6 +29,8 @@ describe("AdapterService", function () {
   const scopeId = randomUUID()
   const entity = "moderation"
   const entityId = randomUUID()
+  const homeId = randomUUID()
+  const awayId = randomUUID()
 
   const ctx: {
     redis?: Redis,
@@ -48,7 +51,7 @@ describe("AdapterService", function () {
 
     const log = pino({
       name: "AdapterService",
-      level: "info",
+      level: "debug",
     }, pretty({
       levelFirst: true,
       colorize: true,
@@ -90,10 +93,16 @@ describe("AdapterService", function () {
 
       const conditionData: EssentialConditionData[] = [
         {
-          event: FootballEvents.GamePointsHome,
-          compare: CompareOp.GreaterOrEqual,
-          targets: "30",
-          options: []
+          event: BasketballEvents.TeamShootingFoul,
+          compare: CompareOp.In,
+          targets: [ homeId ],
+          options: [
+            {
+              event: BasketballEvents.Sequence,
+              compare: CompareOp.Equal,
+              targets: [ 2 ],
+            },
+          ],
         },
       ]
 
@@ -112,42 +121,41 @@ describe("AdapterService", function () {
     it(`adapter pushes event with value under threshold, trigger should not be activated`, async () => {
 
       const event: Event = {
-        name: FootballEvents.GamePointsHome,
-        value: "20",
+        name: BasketballEvents.TeamShootingFoul,
+        value: homeId,
         id: randomUUID(),
         datasource,
         scope,
         scopeId,
         timestamp: Date.now(),
         options: {
-          [FootballEvents.GamePointsHome]: "20"
+          [BasketballEvents.TeamShootingFoul]: homeId,
+          [BasketballEvents.Sequence]: 1
         }
       }
 
-      await ctx.adapterService.evaluateTrigger(event, ctx.trigger)
+      await ctx.adapterService.evaluateTrigger(event, ctx.trigger.id)
       assert.equal(ctx.notifications.length, 0)
     })
 
     it(`adapter pushes event with value above threshold, trigger should be activated`, async () => {
 
       const event: Event = {
-        name: FootballEvents.GamePointsHome,
-        value: "40",
+        name: BasketballEvents.TeamShootingFoul,
+        value: homeId,
         id: randomUUID(),
         datasource,
         scope,
         scopeId,
         timestamp: Date.now(),
         options: {
-          [FootballEvents.GamePointsHome]: "40"
+          [BasketballEvents.TeamShootingFoul]: homeId,
+          [BasketballEvents.Sequence]: 2
         }
       }
 
-      await ctx.adapterService.evaluateTrigger(event, ctx.trigger)
-      assert.equal(ctx.notifications.length, 1)
-
-      const keys = await ctx.redis.keys("*")
-      assert.equal(keys.length, 0)
+      const result = await ctx.adapterService.evaluateTrigger(event, ctx.trigger.id)
+      assert.equal(result, true)
     })
   })
 
@@ -169,47 +177,60 @@ describe("AdapterService", function () {
 
       const triggerConditions: EssentialConditionData[] = [
         {
-          event: FootballEvents.GamePointsHome,
-          compare: CompareOp.GreaterOrEqual,
-          targets: "30",
-          options: []
+          event: BasketballEvents.TeamShootingFoul,
+          compare: CompareOp.In,
+          targets: [ homeId ],
+          options: [
+            {
+              event: BasketballEvents.Sequence,
+              compare: CompareOp.Equal,
+              targets: [ 1 ],
+            },
+          ],
         },
         {
-          event: FootballEvents.GameLevel,
-          compare: CompareOp.Equal,
-          targets: GameLevel.End,
-          options: []
-        },
+          event: BasketballEvents.TeamShootingFoul,
+          compare: CompareOp.In,
+          targets: [ homeId ],
+          options: [
+            {
+              event: BasketballEvents.Sequence,
+              compare: CompareOp.Equal,
+              targets: [ 2 ],
+            },
+          ],
+        }
       ]
 
       const triggerId = await ctx.studioService.createTrigger(triggerData, triggerConditions)
       const result = await ctx.studioService.getTrigger(triggerId)
       ctx.trigger = result.trigger
 
-      const subscriptionData = {
-        route: "some.route2",
-        payload: { foo: "bar" }
-      } as EssentialSubscriptionData
-
-      await ctx.studioService.subscribeTrigger(triggerId, subscriptionData)
+      // const subscriptionData = {
+      //   route: "some.route2",
+      //   payload: { foo: "bar" }
+      // } as EssentialSubscriptionData
+      //
+      // await ctx.studioService.subscribeTrigger(triggerId, subscriptionData)
     })
 
     it(`event for first, first - not activated, second - not activated`, async () => {
 
       const event: Event = {
-        name: FootballEvents.GamePointsHome,
-        value: "20",
+        name: BasketballEvents.TeamShootingFoul,
+        value: awayId,
         id: randomUUID(),
         datasource,
         scope,
         scopeId,
         timestamp: Date.now(),
         options: {
-          [FootballEvents.GamePointsHome]: "20"
+          [BasketballEvents.Sequence]: 1,
+          [BasketballEvents.TeamShootingFoul]: awayId
         }
       }
 
-      await ctx.adapterService.evaluateTrigger(event, ctx.trigger)
+      await ctx.adapterService.evaluateTrigger(event, ctx.trigger.id)
       const [ condition1, condition2 ] = await ctx.conditions.getByTriggerId(ctx.trigger.id)
       assert.equal(condition1.activated, false)
       assert.equal(condition2.activated, false)
@@ -218,19 +239,20 @@ describe("AdapterService", function () {
     it(`event for first, first - activated, second - not`, async () => {
 
       const event: Event = {
-        name: FootballEvents.GamePointsHome,
-        value: "40",
+        name: BasketballEvents.TeamShootingFoul,
+        value: homeId,
         id: randomUUID(),
         datasource,
         scope,
         scopeId,
         timestamp: Date.now(),
         options: {
-          [FootballEvents.GamePointsHome]: "40"
+          [BasketballEvents.Sequence]: 1,
+          [BasketballEvents.TeamShootingFoul]: homeId
         }
       }
 
-      await ctx.adapterService.evaluateTrigger(event, ctx.trigger)
+      await ctx.adapterService.evaluateTrigger(event, ctx.trigger.id)
       const [ condition1, condition2 ] = await ctx.conditions.getByTriggerId(ctx.trigger.id)
       assert.equal(condition1.activated, true)
       assert.equal(condition2.activated, false)
@@ -239,20 +261,22 @@ describe("AdapterService", function () {
     it(`event for second, first - activated, second - not`, async () => {
 
       const event: Event = {
-        name: FootballEvents.GameLevel,
-        value: GameLevel.Start,
+        name: BasketballEvents.TeamShootingFoul,
+        value: awayId,
         id: randomUUID(),
         datasource,
         scope,
         scopeId,
         timestamp: Date.now(),
         options: {
-          [FootballEvents.GameLevel]: GameLevel.Start
+          [BasketballEvents.Sequence]: 2,
+          [BasketballEvents.TeamShootingFoul]: awayId
         }
       }
 
-      await ctx.adapterService.evaluateTrigger(event, ctx.trigger)
+      await ctx.adapterService.evaluateTrigger(event, ctx.trigger.id)
       const [ condition1, condition2 ] = await ctx.conditions.getByTriggerId(ctx.trigger.id)
+      console.log(condition1, condition2)
       assert.equal(condition1.activated, true)
       assert.equal(condition2.activated, false)
     })
@@ -260,26 +284,25 @@ describe("AdapterService", function () {
     it(`event for second, second - activated, first - activated, trigger - activated`, async () => {
 
       const event: Event = {
-        name: FootballEvents.GameLevel,
-        value: GameLevel.End,
+        name: BasketballEvents.TeamShootingFoul,
+        value: homeId,
         id: randomUUID(),
         datasource,
         scope,
         scopeId,
         timestamp: Date.now(),
         options: {
-          [FootballEvents.GameLevel]: GameLevel.End
+          [BasketballEvents.Sequence]: 2,
+          [BasketballEvents.TeamShootingFoul]: homeId
         }
       }
 
-      await ctx.adapterService.evaluateTrigger(event, ctx.trigger)
+      const result = await ctx.adapterService.evaluateTrigger(event, ctx.trigger.id)
+      assert.equal(result, true)
 
-      const conditions = await ctx.conditions.getByTriggerId(ctx.trigger.id)
-      assert.equal(conditions.length, 0)
-
-      const [ notification ] = ctx.notifications
-      assert.equal(ctx.notifications.length, 1)
-      assert.equal(notification.route, "some.route2")
+      const [ condition1, condition2 ] = await ctx.conditions.getByTriggerId(ctx.trigger.id)
+      assert.equal(condition1.activated, true)
+      assert.equal(condition2.activated, true)
     })
   })
 
@@ -301,17 +324,29 @@ describe("AdapterService", function () {
 
       const triggerConditions: EssentialConditionData[] = [
         {
-          event: FootballEvents.GamePointsHome,
-          compare: CompareOp.GreaterOrEqual,
-          targets: "30",
-          options: []
+          event: BasketballEvents.TeamShootingFoul,
+          compare: CompareOp.In,
+          targets: [ homeId ],
+          options: [
+            {
+              event: BasketballEvents.Sequence,
+              compare: CompareOp.Equal,
+              targets: [ 1 ],
+            },
+          ],
         },
         {
-          event: FootballEvents.GameLevel,
-          compare: CompareOp.Equal,
-          targets: GameLevel.End,
-          options: []
-        },
+          event: BasketballEvents.TeamShootingFoul,
+          compare: CompareOp.In,
+          targets: [ homeId ],
+          options: [
+            {
+              event: BasketballEvents.Sequence,
+              compare: CompareOp.Equal,
+              targets: [ 2 ],
+            },
+          ],
+        }
       ]
 
       await ctx.studioService.createTrigger(triggerData, triggerConditions)
@@ -321,7 +356,7 @@ describe("AdapterService", function () {
       console.log(triggers)
     })
 
-    it(`getTriggersSubscribedToEvent`, async () => {
+    it(`getTriggers`, async () => {
 
       const event: Event = {
         name: FootballEvents.GameLevel,

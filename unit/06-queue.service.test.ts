@@ -17,12 +17,12 @@ import { TriggerConditionCollection } from "../src/repositories/trigger-conditio
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subscription.collection"
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
-import { FootballEvents } from "../src/configs/definitions/football/football-events"
-import { GameLevel } from "../src/configs/definitions/football/football-game-level"
+import { FootballEvents } from "../src/configs/studio/football/football-events"
+import { GameLevel } from "../src/configs/studio/football/game-level"
 import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
 import { QueueService } from "../src/services/queue/queue.service"
 import { AdapterEvent } from "../src/models/events/adapter-event"
-import { FootballPlayerState } from "../src/configs/definitions/football/football-player-state"
+import { PlayerState as FootballPlayerState } from "../src/configs/studio/football/player-state"
 import { Defer } from "../src/utils/defer"
 import assert from "assert"
 
@@ -83,7 +83,7 @@ describe("QueueService", function () {
 
     ctx.adapter = new AdapterService(log, ctx.redis, amqp, { triggerLifetimeSeconds: 3600 })
     ctx.studio = new StudioService(log, ctx.redis)
-    ctx.queue = new QueueService(log, ctx.adapter, {})
+    ctx.queue = new QueueService(log, ctx.redis, ctx.adapter, {})
     ctx.triggers = new TriggerCollection(ctx.redis)
     ctx.conditions = new TriggerConditionCollection(ctx.redis)
     ctx.subscriptions = new TriggerSubscriptionCollection(ctx.redis)
@@ -103,24 +103,24 @@ describe("QueueService", function () {
       {
         event: FootballEvents.GamePointsHome,
         compare: CompareOp.GreaterOrEqual,
-        targets: "30",
+        targets: [ 30 ],
         options: []
       },
       {
         event: FootballEvents.GameLevel,
         compare: CompareOp.Equal,
-        targets: GameLevel.End,
+        targets: [ GameLevel.End ],
         options: []
       },
       {
         event: FootballEvents.PlayerState,
         compare: CompareOp.Equal,
-        targets: FootballPlayerState.Touchdown,
+        targets: [ FootballPlayerState.Touchdown ],
         options: [
           {
             event: FootballEvents.Player,
             compare: CompareOp.Equal,
-            targets: playerId
+            targets: [ playerId ]
           }
         ]
       },

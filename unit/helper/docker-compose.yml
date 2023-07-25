@@ -4,6 +4,6 @@ version: '3.8'
 services:
   redis:
     image: redis:6.2.0
-    container_name: "redis"
+    container_name: "triggers-redis"
     ports:
       - "6379:6379"

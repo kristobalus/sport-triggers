@@ -25,6 +25,9 @@ import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditi
 import { SubscriptionCancelRequest } from "../../src/models/dto/subscription-cancel-request"
 import { TriggerDeleteRequest } from "../../src/models/dto/trigger-delete-request"
 
+
+const sinon = require('sinon');
+
 interface SuitContext extends TestContext {
   triggerId?: string
   subscriptionId?: string
@@ -43,6 +46,7 @@ describe('StudioService', function () {
   const ctx: SuitContext = {}
 
   before(async () => {
+
     await startContext(ctx, {
       logger: {
         debug: true,
@@ -51,6 +55,11 @@ describe('StudioService', function () {
         },
       },
     } as Partial<CoreOptions>)
+
+    const amqpService = ctx.service.amqp;
+    const stub = sinon.stub(amqpService, 'publishAndWait');
+    stub.withArgs('sports.events.retrieveProviderId').resolves({ providerId: "0d996d35-85e5-4913-bd45-ac9cfedbf272" });
+    stub.callThrough();
   })
 
   after(async () => {
@@ -73,7 +82,7 @@ describe('StudioService', function () {
       {
         event: FootballEvents.GameLevel,
         compare: CompareOp.Equal,
-        targets: GameLevel.Start,
+        targets: [ GameLevel.Start ],
         options: []
       },
     ]
@@ -219,7 +228,7 @@ describe('StudioService', function () {
 
   it('should get metadata', async () => {
     const prefix = ctx.service.config.routerAmqp.prefix
-    const data = { id: ctx.triggerId } as TriggerDeleteRequest
+    const data = { eventId: "123", sport: "basketball" }
     const response: ItemResponse = await ctx.service.amqp
       .publishAndWait(`${prefix}.studio.metadata.get`, data)
     console.log(response)

@@ -6,6 +6,7 @@ export interface EventMetadata {
   primary: boolean
   input: StudioInputs
   label: string
+  description?: string
   disabled?: boolean
   targets?: string[]
   preferredOptions?: string[]

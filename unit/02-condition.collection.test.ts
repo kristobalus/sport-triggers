@@ -9,9 +9,9 @@ import { TriggerConditionCollection } from "../src/repositories/trigger-conditio
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { Scope, Trigger } from "../src/models/entities/trigger"
 import { CompareOp } from "../src/models/entities/trigger-condition"
-import { FootballEvents } from "../src/configs/definitions/football/football-events"
+import { FootballEvents } from "../src/configs/studio/football/football-events"
 import { EssentialConditionData, EssentialTriggerData } from "../src/models/dto/trigger-create-request"
-import { FootballPlayerStates } from "../src/configs/definitions/football/football-player-state.event"
+import { PlayerState as FootballPlayerStates } from "../src/configs/studio/football/player-state"
 
 describe("ConditionCollection", function () {
 
@@ -63,11 +63,17 @@ describe("ConditionCollection", function () {
       {
         event: FootballEvents.GamePointsHome,
         compare: CompareOp.GreaterOrEqual,
-        targets: "30",
+        targets: [ "30" ],
         options: [],
       },
     ]
     await ctx.conditions.add(ctx.triggerId, datasource, scope, scopeId, data)
+    const conditions = await ctx.conditions.getByTriggerId(ctx.triggerId)
+    assert.ok(Array.isArray(conditions))
+    for(const condition of conditions) {
+      assert.ok(Array.isArray(condition.targets))
+      assert.ok(Array.isArray(condition.options))
+    }
   })
 
   it(`should add condition for ${FootballEvents.PlayerState}`, async () => {
@@ -75,12 +81,12 @@ describe("ConditionCollection", function () {
       {
         event: FootballEvents.PlayerState,
         compare: CompareOp.Equal,
-        targets: FootballPlayerStates.Touchdown,
+        targets: [ FootballPlayerStates.Touchdown ],
         options: [
           {
             event: FootballEvents.Player,
             compare: CompareOp.Equal,
-            targets: randomUUID(),
+            targets: [ randomUUID() ],
           },
         ],
       },
@@ -93,10 +99,10 @@ describe("ConditionCollection", function () {
       {
         event: FootballEvents.PlayerState,
         compare: CompareOp.Equal,
-        targets: "wrong",
+        targets: [ "wrong" ],
         options: [
           {
-            targets: randomUUID(),
+            targets: [ randomUUID() ],
             compare: CompareOp.Equal,
             event: FootballEvents.Player,
           },
@@ -117,7 +123,7 @@ describe("ConditionCollection", function () {
 
   it(`should get triggers by event ${FootballEvents.GamePointsHome} and scope`, async () => {
     const items = await ctx.conditions
-      .getTriggerListByScopeAndEventName(scope, scopeId, FootballEvents.GamePointsHome)
+      .getTriggerListByScopeAndEventName(datasource, scope, scopeId, FootballEvents.GamePointsHome)
     assert.ok(items.length)
   })
 

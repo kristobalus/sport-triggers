@@ -1,25 +1,31 @@
 
-local function Logger()
+local function Debug()
+
     local _debug = {}
 
-    local function debug(data, message)
-        table.insert(_debug, { data, message })
+    local function add(_, data, message)
+        table.insert(_debug, cjson.encode({ data, message }))
     end
 
     local function tostring()
-        return cjson.encode(_debug)
+        local doc = {}
+        for _, row in ipairs(_debug) do
+            table.insert(doc, cjson.decode(row))
+        end
+        return cjson.encode(doc)
     end
 
     local ns = {
-        debug = debug,
+        add = add,
         tostring = tostring
     }
+
     return ns
 end
 
-local logger = Logger()
+local debug = Debug()
 
-local function to_unit(value)
+local function tounit(value)
     if value == "1" then
         return 1
     end
@@ -32,7 +38,7 @@ local function to_unit(value)
     return 0
 end
 
-local function to_bool(value)
+local function tobool(value)
     if value == true then
         return true
     end
@@ -45,219 +51,259 @@ local function to_bool(value)
     return false
 end
 
-local function setConditionCurrentValue(key, value)
-    redis.call("hset", key, "current", value)
-end
+local Conditions = {}
+function Conditions:load(key)
 
-local function setConditionActivated(key, value)
-    redis.call("hset", key, "activated", to_unit(value))
-end
-
-local function getCondition(key)
+    local targets = redis.call("hget", key, "targets")
     local options = redis.call("hget", key, "options")
+
     if options == nil then
         options = {}
     else
         options = cjson.decode(options)
     end
 
+    if targets == nil then
+        targets = {}
+    else
+        targets = cjson.decode(targets)
+    end
+
     local condition = {
-        target = redis.call("hget", key, "target"),
+        key = key,
         compare = redis.call("hget", key, "compare"),
         type = redis.call("hget", key, "type"),
-        activated = to_bool(redis.call("hget", key, "activated")),
-        options = options
+        current = redis.call("hget", key, "current"),
+        activated = tobool(redis.call("hget", key, "activated")),
+        options = options,
+        targets = targets,
     }
+
+    debug:add({ targets = targets, options = options }, "arrays")
+
+    if condition.current == false then
+        condition.current = ""
+    end
+
+    debug:add({  condition = condition }, "condition")
 
     return condition
 end
 
-local function appendEventLog(key, event)
-    redis.call("hset", key, event.id, cjson.encode(event))
+function Conditions:save(condition)
+    debug:add({ condition = condition  }, "save")
+    redis.call("hset", condition.key, "current", condition.current)
+    redis.call("hset", condition.key, "activated", tounit(condition.activated))
 end
 
-local function existsInEventLog(key, eventId)
-    local result = redis.call("hexists", key, eventId)
-    return to_bool(result)
-end
+local function Log(key)
 
-local function getEventLog(key)
-    local result = {}
-    local items = redis.call("hgetall", key)
-    for _, item in ipairs(items) do
-        table.insert(result, cjson.decode(item))
-    end
-    return result
-end
-
--- operation: operation on value and targets, one of [ eq, lt, gt, ge, le, in ]
--- value:  value from event to be compared with targets
--- targets: JSON array of strings
--- type: type of data in targets and value, "number" or "string"
-local function compare(operation, value, targets, type)
-    local result = false
-    local arr = cjson.decode(targets)
-
-    -- do typecasting
-    if type == "number" then
-        value = tonumber(value)
-        for i in ipairs(arr) do
-            arr[i] = tonumber(arr[i])
-        end
-    end
-    if type == "string" then
-        value = tostring(value)
-        for i in ipairs(arr) do
-            arr[i] = tostring(arr[i])
-        end
+    local function append(_, event)
+        redis.call("hset", key, event.id, cjson.encode(event))
     end
 
-    if operation == "in" then
-        -- search value in target set
-        local function has(arr, value)
-            for _, el in ipairs(arr) do
-                if el == value then
-                    return true
-                end
+    local function exists(_, event)
+        -- event.id
+        local result = redis.call("hexists", key, event.id)
+        return tobool(result)
+    end
+
+    local function events()
+        local result = {}
+        local items = redis.call("hgetall", key)
+        for i, item in ipairs(items) do
+            if i % 2 == 0 then
+                table.insert(result, cjson.decode(item))
             end
-            return false
         end
-        -- equivalent of OR condition, checks if value is one of several targets
-        return has(arr, value)
-    end
-
-    -- single target for non-"in" ops
-    local target = arr[1]
-
-    if operation == "eq" then
-        return (value == target)
-    end
-
-    -- only above-mentioned operations are allowed for type "string"
-    if type == "string" then
         return result
     end
 
-    -- operations below are intended for type "number"
-    if operation == "gt" then
-        return (value > target)
-    end
+    local ns = {
+        append = append,
+        exists = exists,
+        events = events
+    }
 
-    if operation == "lt" then
-        return (value < target)
-    end
-
-    if operation == "ge" then
-        return (value >= target)
-    end
-
-    if operation == "le" then
-        return (value <= target)
-    end
-
-    return result
+    return ns
 end
 
-local function aggregate(eventName, operation, eventLog)
-    local result = 0
-    for _, event in ipairs(eventLog) do
-        if event.name == eventName then
+local function Evaluator()
 
-            if operation == "sum" then
-                local value = tonumber(event.value)
-                if value == nil then
-                    value = 0
-                end
-                result = result + value
-            end
+    -- not ready
+    --local function aggregate(eventName, operation, events)
+    --    local result = 0
+    --    for _, event in ipairs(events) do
+    --        if event.name == eventName then
+    --
+    --            if operation == "sum" then
+    --                local value = tonumber(event.value)
+    --                if value == nil then
+    --                    value = 0
+    --                end
+    --                result = result + value
+    --            end
+    --
+    --            if operation == "count" then
+    --                result = result + 1
+    --            end
+    --        end
+    --    end
+    --    return result
+    --end
 
-            if operation == "count" then
-                result = result + 1
+    -- operation: operation on value and targets, one of [ eq, lt, gt, ge, le, in ]
+    -- value:  value from event to be compared with targets
+    -- targets: JSON array of strings
+    -- type: type of data in targets and value, "number" or "string"
+    local function compare(operation, value, targets, type)
+        local result = false
+        debug:add({ operation, value, targets, type }, "compare()")
+        -- do typecasting
+        if type == "number" then
+            value = tonumber(value)
+            for i, target in ipairs(targets) do
+                target = tonumber(target)
             end
         end
-    end
-    return result
-end
+        if type == "string" then
+            value = tostring(value)
+            for i, target in ipairs(targets) do
+                target= tostring(target)
+            end
+        end
 
-local function evaluateOptions(condition, event, eventLog)
-    local result = true
-    local count = 0
-    for _, eventOption in ipairs(event.options) do
-        -- eventOption.name
-        -- eventOption.value
+        if operation == "in" then
+            -- search value in target set
+            local function has(arr, value)
+                for _, el in ipairs(arr) do
+                    if el == value then
+                        return true
+                    end
+                end
+                return false
+            end
+            -- equivalent of OR condition, checks if value is one of several targets
+            return has(targets, value)
+        end
+
+        -- single target for non-"in" ops
+        local target = targets[1]
+
+        if operation == "eq" then
+            return (value == target)
+        end
+
+        -- only above-mentioned operations are allowed for type "string"
+        if type == "string" then
+            return result
+        end
+
+        -- operations below are intended for type "number"
+        if operation == "gt" then
+            return (value > target)
+        end
+
+        if operation == "lt" then
+            return (value < target)
+        end
+
+        if operation == "ge" then
+            return (value >= target)
+        end
+
+        if operation == "le" then
+            return (value <= target)
+        end
+
+        return result
+    end
+
+    -- evaluates condition against current event and log of events
+    local function evaluate(_, condition, event, events)
+
+        --local value
+        --if condition.aggregate ~= nil then
+        --    value = aggregate(condition.event, condition.aggregate, events)
+        --else
+        --    value = event.value
+        --end
+
+        local value = event.value
+
+        -- evaluate operation on main condition (fields targets and operation)
+        condition.activated = compare(condition.compare, value, condition.targets, condition.type)
+        debug:add({ condition = condition, event = event, value = value }, 'condition compared')
+
+        -- evaluate options of the condition
         for _, conditionOption in ipairs(condition.options) do
             -- conditionOption.compare
-            -- conditionOption.aggregate
-            -- conditionOption.target
+            -- conditionOption.targets
             -- conditionOption.event
             -- conditionOption.type
-            if eventOption.name == conditionOption.event then
-                count = count + 1
-
-                local value
-                if conditionOption.aggregate ~= nil then
-                    value = aggregate(conditionOption.event, conditionOption.aggregate, eventLog)
-                else
-                    value = eventOption.value
+            debug:add(conditionOption, 'conditionOption')
+            local matched = false
+            for name, value in pairs(event.options) do
+                -- eventOption.name
+                -- eventOption.value
+                debug:add({ name = name, value = value }, 'event option')
+                matched = name == conditionOption.event
+                if matched then
+                    condition.activated = condition.activated
+                            and compare(conditionOption.compare, value, conditionOption.targets, conditionOption.type)
+                    break
                 end
-
-                result = result and compare(conditionOption.compare, value, conditionOption.targets, conditionOption.type)
-
-                logger.debug({
-                    result = result,
-                    eventName = eventOption.name,
-                    value = value
-                }, 'option compared')
+            end
+            if  matched == false  then
+                -- all options must be evaluated to true
+                condition.activated = false
+            end
+            if condition.activated == false then
+                -- all options must be evaluated to true
+                break
             end
         end
-    end
-    if count == 0 then
-        result = false
-    end
-    return result
-end
 
-local function evaluateCondition(condition, event, eventLog)
-
-    local value
-    if condition.aggregate ~= nil then
-        value = aggregate(condition.event, condition.aggregate, eventLog)
-    else
-        value = event.value
+        debug:add({ condition = condition, event = event, events = events }, 'options compared')
     end
 
-    condition.activated = compare(condition.compare, value, condition.targets, condition.type)
-    logger.debug({ condition = condition, value = value }, 'condition compared')
+    local ns = {
+        evaluate = evaluate
+    }
 
-    condition.activated = condition.activated and evaluateOptions(condition, event, eventLog)
-    logger.debug({ condition = condition, event = event, eventLog = eventLog }, 'options compared')
+    return ns
 end
 
 --- BEGIN
 
-local conditionKey = KEYS[1]
-local eventLogKey = KEYS[2]
+local condition = Conditions:load(KEYS[1])
+local log = Log(KEYS[2])
 local event = cjson.decode(ARGV[1])
-local condition = getCondition(conditionKey)
+debug:add({ condition }, "loaded")
 
 -- check if event has already been processed within condition based on event id
-if existsInEventLog(eventLogKey, event.id) == true then
-    logger.debug({ event = event }, "event is already processed")
-    return { to_unit(condition.activated), logger.tostring() }
+if log:exists(event) == true then
+    debug:add({ event = event }, "event is already processed")
+    return { tounit(condition.activated), debug:tostring() }
 end
 
 -- check if condition has already been activated
 if condition.activated == true then
-    logger.debug({ condition = condition }, "condition is already activated")
-    return { to_unit(condition.activated), logger.tostring() }
+    debug:add({ condition = condition }, "condition is already activated")
+    return { tounit(condition.activated), debug:tostring() }
 end
 
-local eventLog = getEventLog(eventLogKey)
-table.insert(eventLog, event)
+local events = log:events()
+table.insert(events, event) -- temporary attach current event to all events, without changing redis
+debug:add({ events = events }, "event log")
+debug:add({ condition = condition }, "condition")
+debug:add({ event = event }, "event")
 
-evaluateCondition(condition, event, eventLog)
-setConditionActivated(conditionKey, condition.activated)
-setConditionCurrentValue(event.value)
-appendEventLog(eventLogKey, event)
+local evaluator = Evaluator()
+evaluator:evaluate(condition, event, events)
 
-return { to_unit(condition.activated), logger.tostring() }
+condition.current = event.value
+Conditions:save(condition)
+log:append(event)
+
+return { tounit(condition.activated), debug:tostring() }

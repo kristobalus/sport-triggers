@@ -5,8 +5,6 @@ import { Worker, Job, Queue } from 'bullmq'
 import { Redis, RedisOptions } from 'ioredis'
 
 import { AdapterEvent } from '../../models/events/adapter-event'
-import { Trigger } from '../../models/entities/trigger'
-
 import { AdapterService } from '../adapter/adapter.service'
 import { Event } from "../../models/events/event"
 import { EventCollection } from "../../repositories/event.collection"
@@ -23,12 +21,12 @@ export interface EventJob {
 }
 
 export interface TriggerJob {
-  trigger: Trigger
+  triggerId: string
   event: Event
 }
 
 export interface NotificationJob {
-  trigger: Trigger
+  triggerId: string
 }
 
 export class QueueService {
@@ -125,7 +123,7 @@ export class QueueService {
     await this.eventCollection.append(adapterEvent)
 
     for(const [name, value] of Object.entries(adapterEvent.options)) {
-      const event = { ...adapterEvent, name, value }
+      const event = { ...adapterEvent, name, value } as Event
       jobs.push({ name: 'evaluate', data: { event } })
     }
 
@@ -141,7 +139,9 @@ export class QueueService {
     if (await adapterService.hasTriggers(event)) {
       for await (let triggers of adapterService.getTriggers(event)) {
         this.log.debug({ triggers }, 'trigger list from db')
-        const jobs = triggers.map((trigger) => ({ name: 'evaluate', data: { trigger, event } }))
+        const jobs = triggers.map((trigger) => ({
+          name: 'evaluate',
+          data: { triggerId: trigger.id, event } as TriggerJob }))
         await triggerQueue.addBulk(jobs)
       }
     }
@@ -150,12 +150,12 @@ export class QueueService {
   }
 
   async onTriggerJob(job: Job<TriggerJob>) {
-    const { trigger, event } = job.data
+    const { triggerId, event } = job.data
 
-    this.log.debug({ id: job.id, name: job.name, trigger }, 'trigger job started')
-    const result = await this.adapterService.evaluateTrigger(event, trigger)
+    this.log.debug({ id: job.id, name: job.name, triggerId }, 'trigger job started')
+    const result = await this.adapterService.evaluateTrigger(event, triggerId)
     if ( result ) {
-      await this.notificationQueue.add('notify', { trigger } as NotificationJob)
+      await this.notificationQueue.add('notify', { triggerId } as NotificationJob)
     }
 
     this.debugCallback?.(result)
@@ -163,13 +163,13 @@ export class QueueService {
   }
 
   async onNotificationJob(job: Job<NotificationJob>) {
-    const { trigger } = job.data
+    const { triggerId } = job.data
 
-    this.log.debug({ id: job.id, name: job.name, trigger }, 'notification job started')
-    await this.adapterService.notify(trigger)
+    this.log.debug({ id: job.id, name: job.name, triggerId }, 'notification job started')
+    await this.adapterService.notify(triggerId)
 
-    this.debugCallback?.(true)
     this.log.debug({ id: job.id, name: job.name }, 'notification job completed')
+    this.debugCallback?.(true)
   }
 
   async close() {

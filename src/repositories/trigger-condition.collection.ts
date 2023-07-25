@@ -10,7 +10,9 @@ import { AdapterEvent } from '../models/events/adapter-event'
 import { metadata as basketballMeta } from '../configs/studio/basketball/metadata'
 import { metadata as baseballMeta } from '../configs/studio/baseball/metadata'
 import { metadata as footballMeta } from '../configs/studio/football/metadata'
+
 import * as EventUri from '../models/events/event-uri'
+import assert = require("assert");
 
 const metadata = {
   ...basketballMeta,
@@ -44,7 +46,7 @@ export function conditionLogKey(conditionId: string) {
   return `conditions/${conditionId}/logs`
 }
 
-function intersection(array1: string[], array2: string[]) : string[] {
+function intersection(array1: any[], array2: any[]) : any[] {
   const result = []
   for(const e1 of array1) {
     if (array2.indexOf(e1) > -1) {
@@ -55,6 +57,8 @@ function intersection(array1: string[], array2: string[]) : string[] {
 }
 
 export function validateConditionByMetadata(condition: Partial<TriggerCondition>) {
+  assert(metadata[condition.event], `metadata not defined for event ${condition.event}`)
+
   // checking allowed targets, if any restricted
   if (metadata[condition.event].targets?.length > 0) {
     const mutual = intersection(condition.targets, metadata[condition.event].targets)
@@ -74,6 +78,8 @@ export function validateConditionByMetadata(condition: Partial<TriggerCondition>
 }
 
 export function validateOptionByMetadata(option: TriggerConditionOption) {
+  assert(metadata[option.event], `metadata not defined for event ${option.event}`)
+
   // checking allowed targets, if any restricted
   if (metadata[option.event].targets?.length > 0) {
     const mutual = intersection(option.targets, metadata[option.event].targets)
@@ -251,12 +257,13 @@ export class TriggerConditionCollection {
     } while (cursor !== "0")
   }
 
-  async appendToEventLog(conditionId: string, event: AdapterEvent): Promise<boolean> {
-    const logKey = conditionLogKey(conditionId)
-    const result = await this.redis.hset(logKey, event.id, JSON.stringify(event))
-
-    return result > 0
-  }
+  // moved into lua script
+  // async appendToEventLog(conditionId: string, event: AdapterEvent): Promise<boolean> {
+  //   const logKey = conditionLogKey(conditionId)
+  //   const result = await this.redis.hset(logKey, event.id, JSON.stringify(event))
+  //
+  //   return result > 0
+  // }
 
   async getEventLog(conditionId: string): Promise<AdapterEvent[]> {
     const log = await this.redis.hgetall(conditionLogKey(conditionId))

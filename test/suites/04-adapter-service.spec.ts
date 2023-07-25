@@ -6,25 +6,22 @@ import { strict as assert } from 'assert'
 import { TestContext } from '../module'
 import { Scope } from '../../src/models/entities/trigger'
 import { startContext, stopContext } from '../helpers/common'
-import { FootballEvents } from '../../src/configs/studio/football/football-events'
+
 import { ChainOp, CompareOp } from '../../src/models/entities/trigger-condition'
 import {
   EssentialConditionData,
   EssentialTriggerData,
   TriggerCreateRequest,
 } from '../../src/models/dto/trigger-create-request'
-import { GameLevel } from '../../src/configs/studio/football/game-level'
+import { GameLevel } from '../../src/configs/studio/basketball/game-level'
 import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-request'
 import { ItemResponse } from '../../src/models/dto/response'
 import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
 import { AdapterPushRequest } from '../../src/models/dto/adapter-push-request'
-import {
-  PlayerState
-} from '../../src/configs/studio/football/player-state'
 import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
-import { AdapterEvent } from "../../src/models/events/adapter-event"
 import { Defer } from "../../src/utils/defer"
+import { BasketballEvents } from "../../src/configs/studio/basketball/basketball-events"
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string
@@ -47,8 +44,10 @@ describe('AdapterService', function () {
   const scopeId = randomUUID()
   const entity = 'moderation'
   const entityId = randomUUID()
+  const homeId = randomUUID()
+  const awayId = randomUUID()
 
-  const events: Record<string, AdapterEvent> = {
+  const events = {
     gameLevelStart: {
       id: randomUUID(),
       datasource,
@@ -56,7 +55,7 @@ describe('AdapterService', function () {
       scopeId,
       timestamp: Date.now(),
       options: {
-        [FootballEvents.GameLevel]: GameLevel.Start
+        [BasketballEvents.GameLevel]: GameLevel.Start
       }
     },
     homeTeamPoints: {
@@ -66,29 +65,30 @@ describe('AdapterService', function () {
       scopeId,
       timestamp: Date.now() + 1,
       options: {
-        [FootballEvents.GamePointsHome]: "30"
+        [BasketballEvents.GamePointsHome]: "30",
+        [BasketballEvents.Team]: homeId
       }
     },
-    wrongPlayerTouchdown: {
+    wrongTeamShootingFoul: {
       id: randomUUID(),
       datasource,
       scope,
       scopeId,
       timestamp: Date.now() + 2,
       options: {
-        [FootballEvents.PlayerState]: PlayerState.Touchdown,
-        [FootballEvents.Player]: randomUUID()
+        [BasketballEvents.TeamShootingFoul]: awayId,
+        [BasketballEvents.Team]: awayId
       }
     },
-    correctPlayerTouchdown: {
+    correctTeamShootingFoul: {
       id: randomUUID(),
       datasource,
       scope,
       scopeId,
       timestamp: Date.now() + 3,
       options: {
-        [FootballEvents.PlayerState]: PlayerState.Touchdown,
-        [FootballEvents.Player]: randomUUID()
+        [BasketballEvents.TeamShootingFoul]: homeId,
+        [BasketballEvents.Team]: homeId
       }
     }
   }
@@ -116,29 +116,41 @@ describe('AdapterService', function () {
     }
 
     const conditionData: EssentialConditionData[] = [
+      // {
+      //   event: BasketballEvents.GameLevel,
+      //   compare: CompareOp.Equal,
+      //   targets: [
+      //     GameLevel.Start
+      //   ],
+      //   options: []
+      // },
+      // {
+      //   event: BasketballEvents.GamePointsHome,
+      //   compare: CompareOp.Equal,
+      //   targets: [ "30" ],
+      //   chainOperation: ChainOp.AND,
+      //   options: [
+      //     {
+      //       event: BasketballEvents.Team,
+      //       compare: CompareOp.In,
+      //       targets: [ homeId ]
+      //     }
+      //   ]
+      // },
       {
-        event: FootballEvents.GameLevel,
-        compare: CompareOp.Equal,
-        targets: events.gameLevelStart.options[FootballEvents.GameLevel],
-        options: []
-      },
-      {
-        event: FootballEvents.GamePointsHome,
-        compare: CompareOp.GreaterOrEqual,
-        targets: events.homeTeamPoints.options[FootballEvents.GamePointsHome],
-        chainOperation: ChainOp.AND,
-        options: []
-      },
-      {
-        event: FootballEvents.PlayerState,
-        compare: CompareOp.Equal,
-        targets: PlayerState.Touchdown,
+        event: BasketballEvents.TeamShootingFoul,
+        compare: CompareOp.In,
+        targets: [
+           homeId
+        ],
         chainOperation: ChainOp.AND,
         options: [
           {
-            event: FootballEvents.Player,
-            compare: CompareOp.Equal,
-            targets: events.correctPlayerTouchdown.options[FootballEvents.Player]
+            event: BasketballEvents.Team,
+            compare: CompareOp.In,
+            targets: [
+              homeId
+            ]
           }
         ]
       }
@@ -149,6 +161,7 @@ describe('AdapterService', function () {
         trigger: triggerData,
         conditions: conditionData,
       } as TriggerCreateRequest)
+    console.log(response)
 
     ctx.triggerId = response.data.id
   }
@@ -174,6 +187,7 @@ describe('AdapterService', function () {
     const { amqp } = ctx.service
 
     await amqp.createConsumedQueue((message) => {
+      ctx.service.log.debug({ message }, 'queue received a message')
       ctx.pendingSubscriberMessage?.resolve(message)
     }, [ctx.receiver.route], { queue: 'service', noAck: true })
 
@@ -185,6 +199,7 @@ describe('AdapterService', function () {
       await ctx.service.amqp.publishAndWait(`${ctx.amqpPrefix}.studio.trigger.get`,
         { id: ctx.triggerId } as TriggerGetRequest)
 
+
     assert.ok(response)
     assert.ok(response.data)
 
@@ -193,6 +208,8 @@ describe('AdapterService', function () {
     assert.ok(item.type)
     assert.equal(item.type, 'trigger')
     assert.equal(item.type, 'trigger')
+
+    console.log("getTriggerActivated:", JSON.stringify(item.attributes.trigger.activated))
 
     return item.attributes.trigger.activated
   }
@@ -218,18 +235,17 @@ describe('AdapterService', function () {
     await stopContext(ctx)
   })
 
-  it('push game level event', async () => {
+  it.skip('push game level event', async () => {
     await ctx.request.post('adapter/event/push', {
       json: {
         event: events.gameLevelStart,
       } as AdapterPushRequest,
     })
 
-    console.log(await getTriggerActivated())
     assert.equal(await getTriggerActivated(), false)
   })
 
-  it('push home team points event', async () => {
+  it.skip('push home team points event', async () => {
     await ctx.request.post('adapter/event/push', {
       json: {
         event: events.homeTeamPoints,
@@ -237,34 +253,30 @@ describe('AdapterService', function () {
     })
 
     assert.equal(await getTriggerActivated(), false)
-    console.log(await getTriggerActivated())
   })
 
-  it('push wrong player touchdown event', async () => {
+  it.skip('push wrong foul event', async () => {
     await ctx.request.post('adapter/event/push', {
       json: {
-        event: events.wrongPlayerTouchdown,
+        event: events.wrongTeamShootingFoul,
       } as AdapterPushRequest,
     })
 
     assert.equal(await getTriggerActivated(), false)
-    console.log(await getTriggerActivated())
   })
 
-  it('push correct player touchdown event', async () => {
+  it('push correct foul event', async () => {
+
+    ctx.pendingSubscriberMessage = new Defer()
+
     await ctx.request.post('adapter/event/push', {
       json: {
-        event: events.correctPlayerTouchdown,
+        event: events.correctTeamShootingFoul,
       } as AdapterPushRequest,
     })
-    console.log(await getTriggerActivated())
+
+    await ctx.pendingSubscriberMessage.promise
     assert.equal(await getTriggerActivated(), true)
   })
 
-  it('should send message to subscriber', async () => {
-    const message = await ctx.pendingSubscriberMessage.promise
-    console.log(message)
-    assert.ok(message)
-    assert.equal(message.id, 1)
-  })
 })

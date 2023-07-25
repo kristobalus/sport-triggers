@@ -9,8 +9,12 @@ export function init(parent: FleetApp) {
   // eslint-disable-next-line require-await
   parent.addConnector(ConnectorsTypes.application, async () => {
     parent.metadataService = new MetadataService()
-    const dir = path.resolve(__dirname, "../configs/studio/basketball/games")
-    parent.metadataService.loadGames(dir)
+
+    parent.metadataService
+      .loadGames(path.resolve(__dirname, "../configs/studio/basketball/games"), "basketball")
+
+    // parent.metadataService
+      // .loadGames(path.resolve(__dirname, "../configs/studio/baseball/games"), "baseball")
   })
 
   // eslint-disable-next-line require-await

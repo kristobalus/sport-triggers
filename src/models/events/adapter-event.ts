@@ -11,5 +11,5 @@ export interface AdapterEvent {
   // event timestamp
   timestamp: number
   // event name -> event value
-  options: Record<string, string>
+  options: Record<string, string | number>
 }
