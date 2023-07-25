@@ -1,10 +1,13 @@
 
 local function Debug()
 
+    local enabled = false
     local _debug = {}
 
     local function add(_, data, message)
-        table.insert(_debug, cjson.encode({ data, message }))
+        if (enabled) then
+            table.insert(_debug, cjson.encode({ data, message }))
+        end
     end
 
     local function tostring()
@@ -158,20 +161,29 @@ local function Evaluator()
     -- type: type of data in targets and value, "number" or "string"
     local function compare(operation, value, targets, type)
         local result = false
-        debug:add({ operation, value, targets, type }, "compare()")
+
         -- do typecasting
+
         if type == "number" then
             value = tonumber(value)
             for i, target in ipairs(targets) do
-                target = tonumber(target)
+                targets[i] = tonumber(targets[i])
             end
         end
+
         if type == "string" then
             value = tostring(value)
             for i, target in ipairs(targets) do
-                target= tostring(target)
+                targets[i] = tostring(targets[i])
             end
         end
+
+        debug:add({
+            operation = operation,
+            value = value,
+            targets = targets,
+            type = type
+        }, "compare()")
 
         if operation == "in" then
             -- search value in target set

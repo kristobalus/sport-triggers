@@ -135,7 +135,7 @@ describe("QueueService", function () {
     } as EssentialSubscriptionData
 
     await ctx.studio.subscribeTrigger(triggerId, subscriptionData)
-    ctx.queue.debugCallback = (result) => {
+    ctx.queue.notificationJobCallback = (result) => {
       ctx.deferred?.resolve(result)
     }
   })

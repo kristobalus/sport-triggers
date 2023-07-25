@@ -78,6 +78,8 @@ export class AdapterService {
     // store trigger status
     await this.triggerCollection.updateOne(trigger.id, { activated: result })
 
+    this.log.debug({ result, triggerId }, 'trigger evaluation result')
+
     return result
   }
 
@@ -158,7 +160,7 @@ export class AdapterService {
 
     const [activated, debug] = await this.redis.set_and_compare(2, key, logKey, JSON.stringify(event))
     result.activated = !!activated
-    this.log.debug({ key, debug, result }, 'evaluation result')
+    this.log.debug({ key, debug: debug ? JSON.parse(debug) : {}, result }, 'condition evaluation result')
 
     return result
   }

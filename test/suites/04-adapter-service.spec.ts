@@ -1,7 +1,7 @@
 import { CoreOptions } from '@microfleet/core-types'
 
 import { randomUUID } from 'crypto'
-import { strict as assert } from 'assert'
+import assert = require("assert")
 
 import { TestContext } from '../module'
 import { Scope } from '../../src/models/entities/trigger'
@@ -22,6 +22,7 @@ import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditi
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { Defer } from "../../src/utils/defer"
 import { BasketballEvents } from "../../src/studio/basketball/basketball-events"
+
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string
@@ -116,27 +117,27 @@ describe('AdapterService', function () {
     }
 
     const conditionData: EssentialConditionData[] = [
-      // {
-      //   event: BasketballEvents.GameLevel,
-      //   compare: CompareOp.Equal,
-      //   targets: [
-      //     GameLevel.Start
-      //   ],
-      //   options: []
-      // },
-      // {
-      //   event: BasketballEvents.GamePointsHome,
-      //   compare: CompareOp.Equal,
-      //   targets: [ "30" ],
-      //   chainOperation: ChainOp.AND,
-      //   options: [
-      //     {
-      //       event: BasketballEvents.Team,
-      //       compare: CompareOp.In,
-      //       targets: [ homeId ]
-      //     }
-      //   ]
-      // },
+      {
+        event: BasketballEvents.GameLevel,
+        compare: CompareOp.Equal,
+        targets: [
+          GameLevel.Start
+        ],
+        options: []
+      },
+      {
+        event: BasketballEvents.GamePointsHome,
+        compare: CompareOp.Equal,
+        targets: [ "30" ],
+        chainOperation: ChainOp.AND,
+        options: [
+          {
+            event: BasketballEvents.Team,
+            compare: CompareOp.In,
+            targets: [ homeId ]
+          }
+        ]
+      },
       {
         event: BasketballEvents.TeamShootingFoul,
         compare: CompareOp.In,
@@ -157,7 +158,7 @@ describe('AdapterService', function () {
     ]
 
     const response: ItemResponse<TriggerCreateResponse> =
-      await ctx.service.amqp.publishAndWait(`${amqpPrefix}.studio.trigger.create`, {
+      await ctx.app.amqp.publishAndWait(`${amqpPrefix}.studio.trigger.create`, {
         trigger: triggerData,
         conditions: conditionData,
       } as TriggerCreateRequest)
@@ -169,7 +170,7 @@ describe('AdapterService', function () {
   async function createSubscription(ctx: SuitContext) {
     const { amqpPrefix } = ctx
 
-    const response: ItemResponse = await ctx.service.amqp
+    const response: ItemResponse = await ctx.app.amqp
       .publishAndWait(`${amqpPrefix}.studio.trigger.subscribe`, {
         triggerId: ctx.triggerId,
         subscription: {
@@ -184,10 +185,10 @@ describe('AdapterService', function () {
   }
 
   async function createConsumer(ctx: SuitContext) {
-    const { amqp } = ctx.service
+    const { amqp } = ctx.app
 
     await amqp.createConsumedQueue((message) => {
-      ctx.service.log.debug({ message }, 'queue received a message')
+      ctx.app.log.debug({ message }, 'queue received a message')
       ctx.pendingSubscriberMessage?.resolve(message)
     }, [ctx.receiver.route], { queue: 'service', noAck: true })
 
@@ -196,7 +197,7 @@ describe('AdapterService', function () {
 
   async function getTriggerActivated(): Promise<boolean> {
     const response: ItemResponse<TriggerWithConditions> =
-      await ctx.service.amqp.publishAndWait(`${ctx.amqpPrefix}.studio.trigger.get`,
+      await ctx.app.amqp.publishAndWait(`${ctx.amqpPrefix}.studio.trigger.get`,
         { id: ctx.triggerId } as TriggerGetRequest)
 
 
@@ -218,13 +219,14 @@ describe('AdapterService', function () {
     await startContext(ctx, {
       logger: {
         debug: true,
+        prettifyDefaultLogger: false,
         options: {
           level: 'trace',
         },
       },
     } as Partial<CoreOptions>)
 
-    ctx.amqpPrefix = ctx.service.config.routerAmqp.prefix
+    ctx.amqpPrefix = ctx.app.config.routerAmqp.prefix
 
     await createConsumer(ctx)
     await createTrigger(ctx)
@@ -235,39 +237,48 @@ describe('AdapterService', function () {
     await stopContext(ctx)
   })
 
-  it.skip('push game level event', async () => {
+  it('push game level event', async () => {
+    const defer = new Defer()
+    ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
     await ctx.request.post('adapter/event/push', {
       json: {
         event: events.gameLevelStart,
       } as AdapterPushRequest,
     })
-
-    assert.equal(await getTriggerActivated(), false)
+    const { result } = await defer.promise
+    assert.equal(result, false)
   })
 
-  it.skip('push home team points event', async () => {
+  it('push home team points event', async () => {
+    const defer = new Defer()
+    ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
     await ctx.request.post('adapter/event/push', {
       json: {
         event: events.homeTeamPoints,
       } as AdapterPushRequest,
     })
-
-    assert.equal(await getTriggerActivated(), false)
+    const { result } = await defer.promise
+    assert.equal(result, false)
   })
 
-  it.skip('push wrong foul event', async () => {
+  it('push wrong foul event', async () => {
+    const defer = new Defer()
+    ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
     await ctx.request.post('adapter/event/push', {
       json: {
         event: events.wrongTeamShootingFoul,
       } as AdapterPushRequest,
     })
-
-    assert.equal(await getTriggerActivated(), false)
+    const { result } = await defer.promise
+    assert.equal(result, false)
   })
 
   it('push correct foul event', async () => {
 
     ctx.pendingSubscriberMessage = new Defer()
+    const defer = new Defer()
+
+    ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
 
     await ctx.request.post('adapter/event/push', {
       json: {
@@ -275,7 +286,11 @@ describe('AdapterService', function () {
       } as AdapterPushRequest,
     })
 
-    await ctx.pendingSubscriberMessage.promise
+    const { result } = await defer.promise
+    assert.equal(result, true)
+
+    const message = await ctx.pendingSubscriberMessage.promise
+    ctx.app.log.debug({ message }, 'message received by subscriber')
     assert.equal(await getTriggerActivated(), true)
   })
 

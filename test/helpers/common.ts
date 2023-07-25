@@ -7,12 +7,12 @@ import { createFleetApp } from "../../src/fleet-app"
 import { RouterHapiPluginConfig } from "@microfleet/plugin-router-hapi";
 
 export async function startContext(ctx: TestContext, opts: Partial<CoreOptions> = {}) {
-    ctx.service = await createFleetApp(opts)
+    ctx.app = await createFleetApp(opts)
 
-    const { config } = ctx.service
+    const { config } = ctx.app
     const { prefix } = config.routerHapi as RouterHapiPluginConfig
 
-    await ctx.service.connect()
+    await ctx.app.connect()
 
     ctx.request = got.extend({
       prefixUrl: `http://localhost:3000/${prefix}/`
@@ -20,14 +20,14 @@ export async function startContext(ctx: TestContext, opts: Partial<CoreOptions> 
 }
 
 export async function stopContext(ctx: TestContext) {
-    await ctx.service?.close()
-    ctx.service = undefined
+    await ctx.app?.close()
+    ctx.app = undefined
     ctx.request = undefined
 }
 
 export function flushRedis(ctx: TestContext, _dropIndex?: boolean) {
   return async () => {
-    const { redis: { name, sentinels, options } } = ctx.service.config
+    const { redis: { name, sentinels, options } } = ctx.app.config
     const redis = new Redis({
       name,
       sentinels,

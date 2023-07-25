@@ -31,6 +31,10 @@ export interface NotificationJob {
 
 export class QueueService {
 
+  public notificationJobCallback?: (result) => any
+  public triggerJobCallback?: (result) => any
+  public eventJobCallback?: (result) => any
+
   private eventQueue: Queue
   private eventWorker: Worker
 
@@ -45,8 +49,7 @@ export class QueueService {
     private log: Microfleet['log'],
     private redis: Redis,
     private adapterService: AdapterService,
-    redisOptions: RedisOptions,
-    public debugCallback?: (result) => any
+    redisOptions: RedisOptions
   ) {
     this.eventCollection = new EventCollection(this.redis)
 
@@ -147,19 +150,20 @@ export class QueueService {
     }
 
     this.log.debug({ id: job.id }, 'event job completed')
+    this.eventJobCallback?.({ result: true, job })
   }
 
   async onTriggerJob(job: Job<TriggerJob>) {
     const { triggerId, event } = job.data
 
-    this.log.debug({ id: job.id, name: job.name, triggerId }, 'trigger job started')
+    this.log.debug({ id: job.id, name: job.name, triggerId, event }, 'trigger job started')
     const result = await this.adapterService.evaluateTrigger(event, triggerId)
     if ( result ) {
       await this.notificationQueue.add('notify', { triggerId } as NotificationJob)
     }
 
-    this.debugCallback?.(result)
     this.log.debug({ id: job.id, name: job.name, result }, 'trigger job completed')
+    this.triggerJobCallback?.({ result, job })
   }
 
   async onNotificationJob(job: Job<NotificationJob>) {
@@ -169,7 +173,7 @@ export class QueueService {
     await this.adapterService.notify(triggerId)
 
     this.log.debug({ id: job.id, name: job.name }, 'notification job completed')
-    this.debugCallback?.(true)
+    this.notificationJobCallback?.({ result: true, job })
   }
 
   async close() {

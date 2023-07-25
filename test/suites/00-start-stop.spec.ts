@@ -10,11 +10,11 @@ describe('start and stop service', () => {
   it('should start service', async () => {
     await startContext(ctx)
     // console.log(process.env)
-    assert(ctx.service, 'service was not started')
+    assert(ctx.app, 'service was not started')
   })
 
   it('should stop service', async () => {
     await stopContext(ctx)
-    assert(ctx.service === undefined, 'service was not stopped')
+    assert(ctx.app === undefined, 'service was not stopped')
   })
 })

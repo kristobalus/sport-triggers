@@ -1,8 +1,9 @@
 
 import { GotInstance } from 'got'
+import { FleetApp } from "../src/fleet-app"
 
 interface TestContext {
-  service?: import('@microfleet/core').Microfleet
+  app?: FleetApp
   request?: GotInstance
   sandbox?: import('sinon').SinonSandbox
   stubs?: {

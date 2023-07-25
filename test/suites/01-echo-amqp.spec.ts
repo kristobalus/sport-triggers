@@ -16,9 +16,9 @@ describe('echo test via amqp plugin (rabbitmq)', () => {
   })
 
   it('should get pong', async () => {
-    assert(ctx.service, 'service was not started')
-    const prefix = ctx.service.config.routerAmqp.prefix
-    const response = await ctx.service.amqp.publishAndWait(`${prefix}.echo`, { ping: true })
+    assert(ctx.app, 'service was not started')
+    const prefix = ctx.app.config.routerAmqp.prefix
+    const response = await ctx.app.amqp.publishAndWait(`${prefix}.echo`, { ping: true })
 
     assert(response)
     assert(response.pong)
@@ -26,10 +26,10 @@ describe('echo test via amqp plugin (rabbitmq)', () => {
   })
 
   it('should get 403 error', async () => {
-    assert(ctx.service, 'service was not started')
+    assert(ctx.app, 'service was not started')
     assert(ctx.request, 'context has no "got" instance')
-    const prefix = ctx.service.config.routerAmqp.prefix
-    const req = ctx.service.amqp.publishAndWait(`${prefix}.echo`, { ping: false })
+    const prefix = ctx.app.config.routerAmqp.prefix
+    const req = ctx.app.amqp.publishAndWait(`${prefix}.echo`, { ping: false })
 
     await assert.rejects(req, { status: 403 })
   })
