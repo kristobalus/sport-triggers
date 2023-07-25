@@ -7,7 +7,7 @@ describe('Metadata tests', function () {
   let service: MetadataService
   before(() => {
     service = new MetadataService()
-    service.loadGames(path.resolve(__dirname, "../src/studio/basketball/games"), "basketball")
+    service.loadGames(path.resolve(__dirname, "../games/basketball"), "basketball")
   })
 
   it('condition data for screen', () => {

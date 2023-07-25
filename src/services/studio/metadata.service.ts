@@ -58,7 +58,9 @@ export class MetadataService {
 
       if ( data.targetSource ) {
         if (!result.sources[data.targetSource]) {
+
           let targets
+
           if ( data.targetSource == CommonSources.GameTeams ) {
             targets = this.createTeamTargets(game)
           }
@@ -68,8 +70,9 @@ export class MetadataService {
           else if ( targetTree[data.targetSource] ) {
             targets = this.createTargetsBySource(data, targetTree)
           }
+
           if (targets) {
-            result.sources[data.targetSource] = targets
+            result.sources[data.targetSource] = { targets }
           }
         }
       }
