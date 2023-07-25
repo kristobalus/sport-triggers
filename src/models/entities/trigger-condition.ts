@@ -52,7 +52,7 @@ export interface TriggerCondition {
   type: ConditionType
   // target value of the event, threshold value to compare with
   targets: string[] | number[]
-  // condition options
+  // condition options, additional events required for condition to be activated
   options: TriggerConditionOption[]
   // current value read from event
   current?: string
