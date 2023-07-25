@@ -1,6 +1,6 @@
 import { CoreOptions } from '@microfleet/core-types'
 
-import * as assert from 'assert'
+import assert = require("assert")
 import { randomUUID } from 'crypto'
 
 import { TestContext } from '../module'
@@ -231,7 +231,9 @@ describe('StudioService', function () {
     const data = { eventId: "123", sport: "basketball" }
     const response: ItemResponse = await ctx.service.amqp
       .publishAndWait(`${prefix}.studio.metadata.get`, data)
-    console.log(response)
+    assert.ok(response)
+    assert.ok(response.data)
+    // console.log(response)
   })
 
 })

@@ -216,5 +216,10 @@ describe("QueueService", function () {
     assert.equal(condition3.activated, true)
   })
 
+  after(async () => {
+    await ctx.queue.close()
+    ctx.redis.disconnect()
+  })
+
 
 })

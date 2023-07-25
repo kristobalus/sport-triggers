@@ -161,7 +161,7 @@ describe('AdapterService', function () {
         trigger: triggerData,
         conditions: conditionData,
       } as TriggerCreateRequest)
-    console.log(response)
+    // console.log(response)
 
     ctx.triggerId = response.data.id
   }
@@ -209,7 +209,7 @@ describe('AdapterService', function () {
     assert.equal(item.type, 'trigger')
     assert.equal(item.type, 'trigger')
 
-    console.log("getTriggerActivated:", JSON.stringify(item.attributes.trigger.activated))
+    // console.log("getTriggerActivated:", JSON.stringify(item.attributes.trigger.activated))
 
     return item.attributes.trigger.activated
   }

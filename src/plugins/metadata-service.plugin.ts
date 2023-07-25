@@ -11,10 +11,10 @@ export function init(parent: FleetApp) {
     parent.metadataService = new MetadataService()
 
     parent.metadataService
-      .loadGames(path.resolve(__dirname, "../configs/studio/basketball/games"), "basketball")
+      .loadGames(path.resolve(__dirname, "../studio/basketball/games"), "basketball")
 
     // parent.metadataService
-      // .loadGames(path.resolve(__dirname, "../configs/studio/baseball/games"), "baseball")
+      // .loadGames(path.resolve(__dirname, "../studio/baseball/games"), "baseball")
   })
 
   // eslint-disable-next-line require-await

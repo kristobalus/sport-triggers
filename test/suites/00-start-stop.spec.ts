@@ -9,7 +9,7 @@ describe('start and stop service', () => {
 
   it('should start service', async () => {
     await startContext(ctx)
-    console.log(process.env)
+    // console.log(process.env)
     assert(ctx.service, 'service was not started')
   })
 
