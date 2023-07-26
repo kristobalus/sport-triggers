@@ -9,10 +9,10 @@ async function Handler(this: FleetApp, request: ServiceRequest) {
 
   // resolve by amqp request
   const response = await amqp.publishAndWait("sports.events.retrieveProviderId",
-    { eventId },
+    { id: eventId, provider: metadataService.getDatasource() },
     { reuse: true, cache: 600 })
 
-  const { providerId: gameId } = response
+  const { id: gameId } = response.data
 
   // create metadata
   const data: StudioConditionData = metadataService.getConditionData(gameId, sport)

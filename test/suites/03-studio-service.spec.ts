@@ -50,6 +50,7 @@ describe('StudioService', function () {
     await startContext(ctx, {
       logger: {
         debug: true,
+        prettifyDefaultLogger: false,
         options: {
           level: 'trace',
         },
@@ -58,7 +59,11 @@ describe('StudioService', function () {
 
     const amqpService = ctx.app.amqp;
     const stub = sinon.stub(amqpService, 'publishAndWait');
-    stub.withArgs('sports.events.retrieveProviderId').resolves({ providerId: "0d996d35-85e5-4913-bd45-ac9cfedbf272" });
+    stub.withArgs('sports.events.retrieveProviderId').resolves({
+      data: {
+        id: "0d996d35-85e5-4913-bd45-ac9cfedbf272"
+      }
+    });
     stub.callThrough();
   })
 
