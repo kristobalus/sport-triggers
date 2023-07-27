@@ -31,6 +31,12 @@ export class MetadataService {
     const game = this.getGame(gameId)
 
     const result: StudioConditionData = {
+      game: {
+        id: game.id,
+        datasource: game.datasource,
+        scope: game.scope,
+        sport: game.sport
+      },
       index: [],
       events: {},
       sources: {},
