@@ -12,7 +12,7 @@ describe('Metadata tests', function () {
 
   it('condition data for screen', () => {
     const gameId = "0d996d35-85e5-4913-bd45-ac9cfedbf272"
-    const data = service.getConditionData(gameId, "basketball", true)
+    const data = service.getConditionData(gameId, true)
     console.log(JSON.stringify(data, null, 4))
   })
 

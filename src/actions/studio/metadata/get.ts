@@ -5,9 +5,9 @@ import { StudioConditionData } from "../../../models/studio/studio.condition-dat
 
 async function Handler(this: FleetApp, request: ServiceRequest) {
   const { amqp, metadataService, log } = this
-  const { eventId, sport } = request.params as unknown as { eventId: string, sport: string }
+  const { eventId } = request.params as unknown as { eventId: string }
 
-  log.debug({  eventId, sport }, `get metadata request`)
+  log.debug({  eventId }, `get metadata request`)
 
   // resolve by amqp request
   const response = await amqp.publishAndWait("sports.events.retrieveProviderId",
@@ -19,7 +19,7 @@ async function Handler(this: FleetApp, request: ServiceRequest) {
   const { id: gameId } = response.data
 
   // create metadata
-  const data: StudioConditionData = metadataService.getConditionData(gameId, sport)
+  const data: StudioConditionData = metadataService.getConditionData(gameId, true)
 
   log.debug({  data }, `event ui metadata`)
 

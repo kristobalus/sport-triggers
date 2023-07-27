@@ -2,6 +2,10 @@
     "$id": "studio.metadata.get",
     "type": "object",
     "additionalProperties": true,
-    "required": [],
-    "properties": {}
+    "required": ["eventId"],
+    "properties": {
+        "eventId": {
+            "type": ["string", "number"]
+        }
+    }
 }

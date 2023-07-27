@@ -1,7 +1,6 @@
 
 import fs = require("fs");
 import _ = require("lodash");
-import assert = require("assert");
 
 import { Game } from "../../models/studio/game"
 import { Game as SportradarGame } from "../../models/sportradar/game"
@@ -17,23 +16,19 @@ import { StudioInputsProtobuf } from "../../models/studio/studio.inputs.protobuf
 import { Team } from "../../models/studio/team"
 import { Player } from "../../models/studio/player"
 
-
-export type Sport = "basketball"
+export type Sport = "basketball" | "baseball" | "football" | "soccer"
 
 export class MetadataService {
 
-  private games: Record<string, Map<string, Game>> = {
-    basketball: new Map(),
-  }
+  private games: Map<string, Game> = new Map<string, Game>
 
   constructor() {}
 
   getConditionData(
     gameId: string,
-    sport: string,
     shouldMapEnum: boolean = false): StudioConditionData {
 
-    const game = this.getGame(gameId, sport)
+    const game = this.getGame(gameId)
 
     const result: StudioConditionData = {
       index: [],
@@ -125,9 +120,8 @@ export class MetadataService {
     return targets
   }
 
-  getGame(gameId: string, sport: string): Game {
-    assert(this.games[sport], `games for sport ${sport} not found`)
-    return this.games[sport].get(gameId)
+  getGame(gameId: string): Game {
+    return this.games.get(gameId)
   }
 
   getStudioInputMapped(input: StudioInputs): StudioInputsProtobuf {
@@ -222,7 +216,7 @@ export class MetadataService {
       game.teams[homeTeam.id] = homeTeam
       game.teams[awayTeam.id] = awayTeam
 
-      this.games[sport].set(game.id, game)
+      this.games.set(game.id, game)
     }
   }
 
