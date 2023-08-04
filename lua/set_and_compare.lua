@@ -1,7 +1,6 @@
-
 local function Debug()
 
-    local enabled = false
+    local enabled = true
     local _debug = {}
 
     local function add(_, data, message)
@@ -74,6 +73,7 @@ function Conditions:load(key)
 
     local condition = {
         key = key,
+        event = redis.call("hget", key, "event"),
         compare = redis.call("hget", key, "compare"),
         type = redis.call("hget", key, "type"),
         current = redis.call("hget", key, "current"),
@@ -82,19 +82,19 @@ function Conditions:load(key)
         targets = targets,
     }
 
-    debug:add({ targets = targets, options = options }, "arrays")
+    -- debug:add({ targets = targets, options = options }, "arrays")
 
     if condition.current == false then
         condition.current = ""
     end
 
-    debug:add({  condition = condition }, "condition")
+    debug:add({ condition = condition }, "condition")
 
     return condition
 end
 
 function Conditions:save(condition)
-    debug:add({ condition = condition  }, "save")
+    debug:add({ condition = condition }, "save")
     redis.call("hset", condition.key, "current", condition.current)
     redis.call("hset", condition.key, "activated", tounit(condition.activated))
 end
@@ -133,27 +133,20 @@ end
 
 local function Evaluator()
 
-    -- not ready
-    --local function aggregate(eventName, operation, events)
-    --    local result = 0
-    --    for _, event in ipairs(events) do
-    --        if event.name == eventName then
-    --
-    --            if operation == "sum" then
-    --                local value = tonumber(event.value)
-    --                if value == nil then
-    --                    value = 0
-    --                end
-    --                result = result + value
-    --            end
-    --
-    --            if operation == "count" then
-    --                result = result + 1
-    --            end
-    --        end
-    --    end
-    --    return result
-    --end
+    local function to_table(arr)
+        local result = {}
+        for i = 1, #arr, 2 do
+            result[arr[i]] = arr[i + 1]
+        end
+        return result
+    end
+
+    local function ft_aggregate(query)
+        local _, arr = unpack(redis.call(unpack(query)))
+        local result = to_table(arr)
+        debug:add({ result = result }, "result of ft.aggregate invocation")
+        return result.count
+    end
 
     -- operation: operation on value and targets, one of [ eq, lt, gt, ge, le, in ]
     -- value:  value from event to be compared with targets
@@ -232,51 +225,82 @@ local function Evaluator()
     end
 
     -- evaluates condition against current event and log of events
-    local function evaluate(_, condition, event, events)
+    ---evaluate
+    ---@param _ table reference to calling object
+    ---@param condition table reference to condition object
+    ---@param event table current adapter event to be evaluated
+    ---@param events table log of previous adapter events
+    local function evaluate(_, condition, event)
 
-        --local value
-        --if condition.aggregate ~= nil then
-        --    value = aggregate(condition.event, condition.aggregate, events)
-        --else
-        --    value = event.value
-        --end
+        local value
+        if condition.aggregate ~= nil then
+            value = ft_aggregate(condition.aggregate)
+        else
+            value = event.value
+        end
 
-        local value = event.value
+        if condition.event ~= event.name then
+            debug:add({ condition = condition, event = event }, 'condition event mismatched')
+            condition.activated = false
+            return
+        end
 
         -- evaluate operation on main condition (fields targets and operation)
         condition.activated = compare(condition.compare, value, condition.targets, condition.type)
         debug:add({ condition = condition, event = event, value = value }, 'condition compared')
 
-        -- evaluate options of the condition
-        for _, conditionOption in ipairs(condition.options) do
-            -- conditionOption.compare
-            -- conditionOption.targets
-            -- conditionOption.event
-            -- conditionOption.type
-            debug:add(conditionOption, 'conditionOption')
-            local matched = false
-            for name, value in pairs(event.options) do
-                -- eventOption.name
-                -- eventOption.value
-                debug:add({ name = name, value = value }, 'event option')
-                matched = name == conditionOption.event
-                if matched then
-                    condition.activated = condition.activated
-                            and compare(conditionOption.compare, value, conditionOption.targets, conditionOption.type)
+        if condition.activated then
+            -- evaluate options of the condition
+            for _, option in ipairs(condition.options) do
+                -- conditionOption.compare
+                -- conditionOption.targets
+                -- conditionOption.event
+                -- conditionOption.type
+                debug:add(option, 'option to be compared')
+                local matched = false
+                for name, challenge in pairs(event.options) do
+                    -- eventOption.name
+                    -- eventOption.value
+                    matched = name == option.event
+                    if matched then
+
+                        local value
+
+                        if option.aggregate ~= nil then
+                            value = ft_aggregate(option.aggregate)
+                            debug:add({ aggregate = option.aggregate }, "ft.aggregate executed")
+                        else
+                            value = challenge
+                        end
+
+                        condition.activated = condition.activated and
+                                compare(option.compare, value, option.targets, option.type)
+
+                        debug:add({
+                            name = name,
+                            value = value,
+                            compare = option.compare,
+                            targets = option.targets,
+                            type = option.type,
+                            result = condition.activated }, 'option compared')
+
+                        break
+                    end
+                end
+                if matched == false then
+                    -- all options must be evaluated to true
+                    condition.activated = false
+                end
+                if condition.activated == false then
+                    -- all options must be evaluated to true
                     break
                 end
             end
-            if  matched == false  then
-                -- all options must be evaluated to true
-                condition.activated = false
-            end
-            if condition.activated == false then
-                -- all options must be evaluated to true
-                break
-            end
+
+            debug:add({ condition = condition, event = event }, 'options compared')
         end
 
-        debug:add({ condition = condition, event = event, events = events }, 'options compared')
+
     end
 
     local ns = {
@@ -291,7 +315,7 @@ end
 local condition = Conditions:load(KEYS[1])
 local log = Log(KEYS[2])
 local event = cjson.decode(ARGV[1])
-debug:add({ condition }, "loaded")
+--debug:add({ condition }, "loaded")
 
 -- check if event has already been processed within condition based on event id
 if log:exists(event) == true then
@@ -305,14 +329,11 @@ if condition.activated == true then
     return { tounit(condition.activated), debug:tostring() }
 end
 
-local events = log:events()
-table.insert(events, event) -- temporary attach current event to all events, without changing redis
-debug:add({ events = events }, "event log")
-debug:add({ condition = condition }, "condition")
-debug:add({ event = event }, "event")
+--debug:add({ condition = condition }, "condition")
+--debug:add({ event = event }, "event")
 
 local evaluator = Evaluator()
-evaluator:evaluate(condition, event, events)
+evaluator:evaluate(condition, event)
 
 condition.current = event.value
 Conditions:save(condition)

@@ -1,33 +1,30 @@
 
-import fs = require("fs");
-import _ = require("lodash");
+import fs = require('fs');
 
-import { Game } from "../../models/studio/game"
-import { Game as SportradarGame } from "../../models/sportradar/game"
-import { metadata, targetTree } from "../../studio"
-import { EventMetadata } from "../../models/events/event-metadata"
-import { StudioConditionData } from "../../models/studio/studio.condition-data"
-import { StudioEvent } from "../../models/studio/studio.event"
-import { StudioTargetTree } from "../../models/studio/studio.target-tree"
-import { StudioTarget } from "../../models/studio/studio.target"
-import { CommonSources } from "../../studio/common-sources"
-import { StudioInputs } from "../../models/studio/studio.inputs"
-import { StudioInputsProtobuf } from "../../models/studio/studio.inputs.protobuf"
-import { Team } from "../../models/studio/team"
-import { Player } from "../../models/studio/player"
+import _ = require('lodash');
 
-export type Sport = "basketball" | "baseball" | "football" | "soccer"
+import { Game } from '../../models/studio/game'
+import { Game as SportradarGame } from '../../models/sportradar/game'
+import { metadata, targetTree } from '../../sports'
+import { EventMetadata } from '../../models/events/event-metadata'
+import { StudioConditionData } from '../../models/studio/studio.condition-data'
+import { StudioEvent } from '../../models/studio/studio.event'
+import { StudioTargetTree } from '../../models/studio/studio.target-tree'
+import { StudioTarget } from '../../models/studio/studio.target'
+import { CommonSources } from '../../sports/common-sources'
+import { StudioInputs } from '../../models/studio/studio.inputs'
+import { StudioInputsProtobuf } from '../../models/studio/studio.inputs.protobuf'
+import { Team } from '../../models/studio/team'
+import { Player } from '../../models/studio/player'
+
+export type Sport = 'basketball' | 'baseball' | 'football' | 'soccer'
 
 export class MetadataService {
-
   private games: Map<string, Game> = new Map<string, Game>
-
-  constructor() {}
 
   getConditionData(
     gameId: string,
-    shouldMapEnum: boolean = false): StudioConditionData {
-
+    shouldMapEnum = false): StudioConditionData {
     const game = this.getGame(gameId)
 
     const result: StudioConditionData = {
@@ -42,15 +39,15 @@ export class MetadataService {
       sources: {},
     }
 
-    for(const [ id, data ] of Object.entries(metadata) ){
-      if ( data.disabled ) continue;
-      if ( game.sport != data.sport ) continue;
+    for (const [id, data] of Object.entries(metadata) ) {
+      if ( data.disabled ) { continue }
+      if ( game.sport != data.sport ) { continue }
 
       const item: StudioEvent = {
         id: id,
         sport: data.sport,
         primary: data.primary,
-        input: shouldMapEnum ? this.getStudioInputMapped(data.input) :data.input,
+        input: shouldMapEnum ? this.getStudioInputMapped(data.input) : data.input,
         label: data.label,
         compare: data.compare,
         targetSource: data.targetSource,
@@ -59,7 +56,6 @@ export class MetadataService {
 
       if ( data.targetSource ) {
         if (!result.sources[data.targetSource]) {
-
           let targets
 
           if ( data.targetSource == CommonSources.GameTeams ) {
@@ -78,51 +74,59 @@ export class MetadataService {
         }
       }
 
-      result.events[item.id] = item;
-      result.index.push(item.id);
+      result.events[item.id] = item
+      result.index.push(item.id)
     }
+
     return result
   }
 
-  createTargetsBySource(metas: EventMetadata, targetTree: StudioTargetTree) : StudioTarget[] {
-      const targets: StudioTarget[] = []
-      for(const id of metas.targets){
+  createTargetsBySource(metas: EventMetadata, targetTree: StudioTargetTree): StudioTarget[] {
+    const targets: StudioTarget[] = []
 
-        const target = {
-          label: targetTree[metas.targetSource][id].label,
-          description: targetTree[metas.targetSource][id].description,
-          id: id,
-          group: targetTree[metas.targetSource][id].group
-        } as StudioTarget
+    for (const id of metas.targets) {
+      const target = {
+        label: targetTree[metas.targetSource][id].label,
+        description: targetTree[metas.targetSource][id].description,
+        id: id,
+        group: targetTree[metas.targetSource][id].group
+      } as StudioTarget
 
-        targets.push(target)
-      }
-      return targets
+      targets.push(target)
+    }
+
+    return targets
   }
 
   createPlayerTargets(game: Game) {
     const targets = []
-    for(const player of game.players){
+
+    for (const player of game.players) {
       const team = game.teams[player.team]
       const target = {
         label: player.name,
         id: player.id,
         group: team?.name,
       } as StudioTarget
+
       targets.push(target)
     }
-    return targets;
+
+    return targets
   }
 
   createTeamTargets(game: Game): StudioTarget[] {
     const targets = []
-    for(const [_, team] of Object.entries(game.teams)){
+
+    for (const [_, team] of Object.entries(game.teams)) {
       const target = {
         label: team.name,
         id: team.id
       } as StudioTarget
+
       targets.push(target)
     }
+
     return targets
   }
 
@@ -132,6 +136,8 @@ export class MetadataService {
 
   getStudioInputMapped(input: StudioInputs): StudioInputsProtobuf {
     switch (input) {
+      case StudioInputs.None:
+        return StudioInputsProtobuf.STUDIO_INPUT_UNSET
       case StudioInputs.Number:
         return StudioInputsProtobuf.STUDIO_INPUT_NUMBER
       case StudioInputs.SelectMulti:
@@ -145,32 +151,36 @@ export class MetadataService {
       case StudioInputs.TimeMinutes:
         return StudioInputsProtobuf.STUDIO_INPUT_TIME_MINUTES
       default:
-        throw new Error("Unknown studio input type")
+        throw new Error('Unknown studio input type')
     }
   }
 
   loadGames(dir: string, sport: Sport) {
     if (!fs.existsSync(dir)) {
-      throw new Error("Games dir not found")
+      throw new Error('Games dir not found')
     }
 
     const stats = fs.statSync(dir)
+
     if (stats.isFile()) {
-      throw new Error("Provided path is not a folder")
+      throw new Error('Provided path is not a folder')
     }
 
     const files = fs.readdirSync(dir)
+
     for (const file of files) {
       const filePath = `${dir}/${file}`
+      // eslint-disable-next-line  @typescript-eslint/no-var-requires
       const data = require(filePath) as SportradarGame
 
       const players: Player[] = []
-      for(const period of data.periods){
-        for(const event of period.events) {
+
+      for (const period of data.periods) {
+        for (const event of period.events) {
           if ( event.on_court ) {
             const { home, away } = event.on_court
 
-            for(const player of away.players){
+            for (const player of away.players) {
               players.push({
                 id: player.id,
                 name: player.full_name,
@@ -181,7 +191,7 @@ export class MetadataService {
               } as Player)
             }
 
-            for(const player of home.players){
+            for (const player of home.players) {
               players.push({
                 id: player.id,
                 name: player.full_name,
@@ -192,7 +202,6 @@ export class MetadataService {
               } as Player)
             }
           }
-
         }
       }
 
@@ -209,8 +218,8 @@ export class MetadataService {
       }
 
       const game: Game = {
-        datasource: "sportradar",
-        scope: "game",
+        datasource: 'sportradar',
+        scope: 'game',
         sport: sport,
         id: data.id,
         players: _.uniqBy(players, player => player.id),
@@ -227,6 +236,6 @@ export class MetadataService {
   }
 
   getDatasource() {
-    return "sportradar"
+    return 'sportradar'
   }
 }

@@ -1,5 +1,5 @@
-import { ConditionType } from '../entities/trigger-condition'
-import { StudioInputs } from "../studio/studio.inputs"
+import { CompareOp, ConditionType } from '../entities/trigger-condition'
+import { StudioInputs } from '../studio/studio.inputs'
 
 export interface EventMetadata {
   sport: string
@@ -8,9 +8,17 @@ export interface EventMetadata {
   label: string
   description?: string
   disabled?: boolean
-  targets?: string[]
+  targets?: (string | number)[]
   preferredOptions?: string[]
-  targetSource?: string;
+  targetSource?: string
   compare?: string[]
   type: ConditionType
+  // if true for empty targets should use default targets from scope
+  inferTargetsFromScope?: boolean
+  // list of events which can be the scope of aggregation
+  optionScope?: string[]
+  optionDefaultCompare?: CompareOp
+  // list of targets to be used for aggregation
+  aggregateTargets?: string[]
+  aggregate?: (datasource: string, scopeId: string, targets: string[]) => string[]
 }

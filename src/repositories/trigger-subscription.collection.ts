@@ -117,7 +117,7 @@ export class TriggerSubscriptionCollection {
     return this.redis.smembers(subscriptionByEntityKey(entity, entityId))
   }
 
-  updateOne(id: string, data: Partial<TriggerSubscription>) : Promise<number> {
+  updateOne(id: string, data: Partial<TriggerSubscription>): Promise<number> {
     return this.redis.hset(subscriptionKey(id), data as unknown as Record<string, any>)
   }
 }

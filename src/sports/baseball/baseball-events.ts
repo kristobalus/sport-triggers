@@ -2,8 +2,8 @@
 export enum GameState {
   GameStart = 'game.start',
   GameEnd = 'game.end',
-  InningStart = "inning.start",
-  InningEnd = "inning.end"
+  InningStart = 'inning.start',
+  InningEnd = 'inning.end'
 }
 
 export enum PitchOutcomeState {
@@ -17,27 +17,27 @@ export enum PitchOutcomeState {
 }
 
 export enum AtBatOutcomeState {
-  HIT = "HIT",
-  X1 = "X1",
-  X2 = "X2",
-  X3 = "X3",
-  HR = "HR",
-  XBH = "XBH",
-  BB = "BB",
-  HBP = "HBP",
-  REACH = "REACH",
-  ERR = "ERR",
-  CI = "CI",
-  RBI = "RBI",
-  OUT = "OUT",
-  K = "K",
-  KL = "KL",
-  KS = "KS",
-  IPO = "IPO",
-  FO = "FO",
-  GO = "GO",
-  GIDP = "GIDP",
-  BI = "BI"
+  HIT = 'HIT',
+  X1 = 'X1',
+  X2 = 'X2',
+  X3 = 'X3',
+  HR = 'HR',
+  XBH = 'XBH',
+  BB = 'BB',
+  HBP = 'HBP',
+  REACH = 'REACH',
+  ERR = 'ERR',
+  CI = 'CI',
+  RBI = 'RBI',
+  OUT = 'OUT',
+  K = 'K',
+  KL = 'KL',
+  KS = 'KS',
+  IPO = 'IPO',
+  FO = 'FO',
+  GO = 'GO',
+  GIDP = 'GIDP',
+  BI = 'BI'
 }
 
 export enum BaseballEvents {

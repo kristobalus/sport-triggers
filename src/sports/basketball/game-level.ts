@@ -7,4 +7,3 @@ export enum GameLevel {
   End = 'end'
 }
 
-

@@ -1,6 +1,7 @@
 import { Microfleet } from '@microfleet/core-types'
 
 import { Redis } from 'ioredis'
+import { ArgumentError } from 'common-errors'
 
 import { TriggerCollection } from '../../repositories/trigger.collection'
 import { TriggerConditionCollection } from '../../repositories/trigger-condition.collection'
@@ -9,8 +10,7 @@ import { EssentialConditionData, EssentialTriggerData } from '../../models/dto/t
 import { TriggerWithConditions } from '../../models/dto/trigger-with-conditions'
 import { EssentialSubscriptionData } from '../../models/dto/trigger-subscribe-request'
 import { TriggerSubscription } from '../../models/entities/trigger-subscription'
-import { metadata } from '../../studio'
-import { ArgumentError } from "common-errors"
+import { metadata } from '../../sports'
 
 export interface TriggerOptions {
   showLog?: boolean
@@ -50,9 +50,10 @@ export class StudioService {
     }, 'create trigger')
 
     let triggerId
+
     try {
       triggerId = await this.triggers.add(triggerData)
-    } catch (err){
+    } catch (err) {
       this.log.fatal({ err }, 'failed to create trigger instance')
       throw new ArgumentError('failed to create trigger', err)
     }
@@ -64,8 +65,8 @@ export class StudioService {
         triggerData.scope,
         triggerData.scopeId,
         conditionData)
-    } catch(err){
-      if(triggerId) {
+    } catch (err) {
+      if (triggerId) {
         await this.triggers.deleteOne(triggerId)
       }
       this.log.fatal({ err }, 'failed to create condition instance')

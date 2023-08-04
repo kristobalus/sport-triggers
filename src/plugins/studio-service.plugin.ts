@@ -8,10 +8,12 @@ export function init(parent: FleetApp) {
   parent.addConnector(ConnectorsTypes.application, async () => {
     const { log, redis, config } = parent
     const { triggerLifetimeSeconds } = config.triggers
+
     parent.studioService = new StudioService(log, redis, { triggerLifetimeSeconds })
   })
 
   // eslint-disable-next-line require-await
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   parent.addDestructor(ConnectorsTypes.application, async () => {
 
   })

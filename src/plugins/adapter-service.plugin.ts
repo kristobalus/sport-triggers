@@ -13,7 +13,6 @@ export function init(parent: FleetApp) {
     parent.adapterService = new AdapterService(log, redis, amqp, { triggerLifetimeSeconds })
     parent.queueService = new QueueService(
       log,
-      parent.redis,
       parent.adapterService,
       getQueueRedisConfig(config.redis))
   })

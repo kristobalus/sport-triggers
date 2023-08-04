@@ -38,7 +38,7 @@ pitch outcome as value:
 ```js 
 {
   "id": "{guid}",
-  "scope": "nvenue.game",
+  "scope": "game",
   "scopeId": "{guid}"  
   "name": "baseball.pitch.speed",
   "player": "{guid}"
@@ -96,8 +96,15 @@ pitch outcome as single state:
 }
 ```
 
-- __atbat__<br/>The result of a batter's at-bat. This could be a hit (single, double, triple, home run), an out (like a groundout, flyout, or strikeout), or a walk, among other possibilities.
-- __inning__<br/>A subdivision of a baseball game. In most professional games, there are nine innings, and each inning is divided into two halves. The visiting team bats in the top half (first part) of the inning, and the home team bats in the bottom half (second part).
+- __atbat__<br/>The result of a batter's at-bat. 
+This could be a hit (single, double, triple, home run), an out (like a groundout, flyout, or strikeout), 
+or a walk, among other possibilities.
+
+- __inning__<br/>A subdivision of a baseball game. 
+In most professional games, there are nine innings, and each inning is divided into two halves. 
+The visiting team bats in the top half (first part) of the inning, and 
+the home team bats in the bottom half (second part).
+
 - __inning_start__<br/>The start of an inning. In the top of the inning, the visiting team goes up to bat; in the bottom, the home team does.
 - __inning_end__<br/>The end of an inning, which happens when three outs have been made.
 - __score_differential__<br/>The difference in score between the two teams. If the home team has scored 3 runs and the away team has scored 1 run, the score differential is 2 (in favor of the home team).

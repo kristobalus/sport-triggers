@@ -28,6 +28,7 @@ export class TriggerCollection {
     const item = {
       ...data
     }
+
     if (!item.id) {
       item.id = randomUUID()
     }
@@ -105,5 +106,4 @@ export class TriggerCollection {
 
     await pipe.exec()
   }
-
 }

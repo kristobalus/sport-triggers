@@ -13,26 +13,30 @@ import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { Scope, Trigger } from "../src/models/entities/trigger"
 import { Event } from "../src/models/events/event"
 import { CompareOp } from "../src/models/entities/trigger-condition"
-import { FootballEvents } from "../src/studio/football/football-events"
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
 import { EssentialConditionData, EssentialTriggerData } from "../src/models/dto/trigger-create-request"
+import { BasketballEvents } from "../src/sports/basketball/basketball-events"
+import {  pino } from "pino"
+import { EventCollection } from "../src/repositories/event.collection"
+import { AdapterEvent } from "../src/models/events/adapter-event"
 
 describe("set_and_compare.lua", function () {
 
+  const log = pino({ name: "test", level: "trace", transport: { target: "pino-pretty" } })
   const datasource = "sportradar"
   const scope = Scope.Game
   const scopeId = randomUUID()
   const entity = "moderation"
   const entityId = randomUUID()
-  const passingPlayerId = randomUUID()
-  const rushingPlayerId = randomUUID()
+  const playerId = randomUUID()
 
   const ctx: {
     redis?: Redis
     triggerId?: string
     trigger?: Trigger
     triggers?: TriggerCollection
-    conditions?: TriggerConditionCollection,
+    conditions?: TriggerConditionCollection
+    events?: EventCollection
     conditionKey?: string
     conditionLogKey?: string
   } = {}
@@ -40,8 +44,11 @@ describe("set_and_compare.lua", function () {
   before(async () => {
 
     ctx.redis = await initStandaloneRedis()
+    await ctx.redis.flushall()
+
     ctx.triggers = new TriggerCollection(ctx.redis)
     ctx.conditions = new TriggerConditionCollection(ctx.redis)
+    ctx.events = new EventCollection(ctx.redis)
 
     const triggerData: EssentialTriggerData = {
       name: "...",
@@ -57,14 +64,14 @@ describe("set_and_compare.lua", function () {
 
     const conditionData: EssentialConditionData[] = [
       {
-        event: FootballEvents.PlayerRushing,
-        compare: CompareOp.Equal,
-        targets: [ rushingPlayerId ],
+        event: BasketballEvents.Player,
+        compare: CompareOp.In,
+        targets: [ playerId ],
         options: [
           {
-            event: FootballEvents.PlayerPassing,
+            event: BasketballEvents.PlayerScores3FG,
             compare: CompareOp.Equal,
-            targets: [ passingPlayerId ],
+            targets: [ "1" ],
           },
         ],
       },
@@ -79,27 +86,44 @@ describe("set_and_compare.lua", function () {
 
   after(async () => {
     ctx.redis.disconnect()
+    await new Promise(r => setTimeout(r, 1000))
   })
 
-  it(`should not activate condition when compare main current failed`, async () => {
+  it(`should not activate condition when compare main event failed`, async () => {
+
+    await ctx.events.append({
+      id: randomUUID(),
+      datasource: datasource,
+      scope: scope,
+      scopeId: scopeId,
+      sport: "basketball",
+      timestamp: Date.now(),
+      options: {
+        [BasketballEvents.Team]: playerId,
+        [BasketballEvents.PlayerScores3FG]: playerId
+      },
+    } as AdapterEvent)
 
     const event: Event = {
       id: randomUUID(),
       datasource: datasource,
       scope: scope,
+      sport: "basketball",
       scopeId: scopeId,
       timestamp: Date.now(),
-      name: FootballEvents.PlayerRushing,
-      value: passingPlayerId,
+      name: BasketballEvents.Team,
+      value: playerId,
       options: {
-        [FootballEvents.PlayerPassing]: passingPlayerId
+        [BasketballEvents.PlayerScores3FG]: playerId,
+        [BasketballEvents.Team]: playerId
       },
     }
 
-    const [result] = await ctx.redis.set_and_compare(2,
+    const [result, debug] = await ctx.redis.set_and_compare(2,
       ctx.conditionKey,
       ctx.conditionLogKey,
       JSON.stringify(event))
+    log.debug({ debug: JSON.parse(debug) }, `debug`)
 
     assert.equal(result, 0)
 
@@ -108,16 +132,32 @@ describe("set_and_compare.lua", function () {
   })
 
   it(`should not activate condition when compare options failed`, async () => {
+
+    await ctx.events.append({
+      id: randomUUID(),
+      datasource: datasource,
+      scope: scope,
+      scopeId: scopeId,
+      sport: "basketball",
+      timestamp: Date.now(),
+      options: {
+        [BasketballEvents.Player]: playerId,
+        [BasketballEvents.TeamScores3FG]: playerId
+      },
+    } as AdapterEvent)
+
     const event: Event = {
       id: randomUUID(),
       datasource: datasource,
       scope: scope,
       scopeId: scopeId,
+      sport: "basketball",
       timestamp: Date.now(),
-      name: FootballEvents.PlayerRushing,
-      value: rushingPlayerId,
+      name: BasketballEvents.Player,
+      value: playerId,
       options: {
-        [FootballEvents.PlayerPassing]: rushingPlayerId
+        [BasketballEvents.Player]: playerId,
+        [BasketballEvents.TeamScores3FG]: playerId
       },
     }
 
@@ -133,16 +173,31 @@ describe("set_and_compare.lua", function () {
 
   it(`should activated condition when compare successful`, async () => {
 
+    await ctx.events.append({
+      id: randomUUID(),
+      datasource: datasource,
+      scope: scope,
+      scopeId: scopeId,
+      sport: "basketball",
+      timestamp: Date.now(),
+      options: {
+        [BasketballEvents.Player]: playerId,
+        [BasketballEvents.PlayerScores3FG]: playerId
+      },
+    } as AdapterEvent)
+
     const event: Event = {
       id: randomUUID(),
       datasource: datasource,
       scope: scope,
       scopeId: scopeId,
+      sport: "basketball",
       timestamp: Date.now(),
-      name: FootballEvents.PlayerRushing,
-      value: rushingPlayerId,
+      name: BasketballEvents.Player,
+      value: playerId,
       options: {
-        [FootballEvents.PlayerPassing]: passingPlayerId
+        [BasketballEvents.PlayerScores3FG]: playerId,
+        [BasketballEvents.Player]: playerId
       },
     }
 
@@ -151,7 +206,7 @@ describe("set_and_compare.lua", function () {
       ctx.conditionLogKey,
       JSON.stringify(event)
     )
-    console.log(debug)
+    log.debug({ debug: JSON.parse(debug) }, `debug`)
     assert.equal(result, 1)
 
     const [condition] = await ctx.conditions.getByTriggerId(ctx.triggerId)
@@ -160,16 +215,31 @@ describe("set_and_compare.lua", function () {
 
   it(`once being activated condition should not be changed by further events`, async () => {
 
+    await ctx.events.append({
+      id: randomUUID(),
+      datasource: datasource,
+      scope: scope,
+      scopeId: scopeId,
+      sport: "basketball",
+      timestamp: Date.now(),
+      options: {
+        [BasketballEvents.Player]: playerId,
+        [BasketballEvents.PlayerScores3FG]: playerId
+      },
+    } as AdapterEvent)
+
     const event: Event = {
       id: randomUUID(),
       datasource: datasource,
       scope: scope,
       scopeId: scopeId,
+      sport: "basketball",
       timestamp: Date.now(),
-      name: FootballEvents.PlayerRushing,
-      value: rushingPlayerId,
+      name: BasketballEvents.Player,
+      value: playerId,
       options: {
-        [FootballEvents.PlayerPassing]: passingPlayerId
+        [BasketballEvents.PlayerScores3FG]: playerId,
+        [BasketballEvents.Player]: playerId
       },
     }
 

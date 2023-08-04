@@ -1,5 +1,4 @@
 
-
 export interface Player {
   full_name: string
   jersey_number: string

@@ -1,20 +1,20 @@
 import { CoreOptions } from '@microfleet/core-types'
 
-import assert = require("assert")
+import assert = require('assert')
 import { randomUUID } from 'crypto'
 
 import { TestContext } from '../module'
 import { Scope } from '../../src/models/entities/trigger'
 import { ListResponse, ItemResponse } from '../../src/models/dto/response'
 import { startContext, stopContext } from '../helpers/common'
-import { FootballEvents } from '../../src/studio/football/football-events'
+import { FootballEvents } from '../../src/sports/football/football-events'
 import { CompareOp } from '../../src/models/entities/trigger-condition'
 import {
   EssentialConditionData,
   EssentialTriggerData,
   TriggerCreateRequest
 } from '../../src/models/dto/trigger-create-request'
-import { GameLevel } from '../../src/studio/football/game-level'
+import { GameLevel } from '../../src/sports/football/game-level'
 import { TriggerListRequest } from '../../src/models/dto/trigger-list-request'
 import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
 import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-request'
@@ -22,11 +22,10 @@ import { TriggerSubscription } from '../../src/models/entities/trigger-subscript
 import { SubscriptionListRequest } from '../../src/models/dto/subscription-list-request'
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
-import { SubscriptionCancelRequest } from "../../src/models/dto/subscription-cancel-request"
-import { TriggerDeleteRequest } from "../../src/models/dto/trigger-delete-request"
+import { SubscriptionCancelRequest } from '../../src/models/dto/subscription-cancel-request'
+import { TriggerDeleteRequest } from '../../src/models/dto/trigger-delete-request'
 
-
-const sinon = require('sinon');
+const sinon = require('sinon')
 
 interface SuitContext extends TestContext {
   triggerId?: string
@@ -34,8 +33,7 @@ interface SuitContext extends TestContext {
 }
 
 describe('StudioService', function () {
-
-  const datasource = "sportradar"
+  const datasource = 'sportradar'
   const scope = Scope.Game
   const scopeId = randomUUID()
   const entity = 'moderation'
@@ -46,7 +44,6 @@ describe('StudioService', function () {
   const ctx: SuitContext = {}
 
   before(async () => {
-
     await startContext(ctx, {
       logger: {
         debug: true,
@@ -57,14 +54,15 @@ describe('StudioService', function () {
       },
     } as Partial<CoreOptions>)
 
-    const amqpService = ctx.app.amqp;
-    const stub = sinon.stub(amqpService, 'publishAndWait');
+    const amqpService = ctx.app.amqp
+    const stub = sinon.stub(amqpService, 'publishAndWait')
+
     stub.withArgs('sports.events.retrieveProviderId').resolves({
       data: {
-        id: "0d996d35-85e5-4913-bd45-ac9cfedbf272"
+        id: '0d996d35-85e5-4913-bd45-ac9cfedbf272'
       }
-    });
-    stub.callThrough();
+    })
+    stub.callThrough()
   })
 
   after(async () => {
@@ -72,7 +70,6 @@ describe('StudioService', function () {
   })
 
   it('should create trigger', async () => {
-
     const triggerData: EssentialTriggerData = {
       name: '...',
       description: '..',
@@ -87,7 +84,7 @@ describe('StudioService', function () {
       {
         event: FootballEvents.GameLevel,
         compare: CompareOp.Equal,
-        targets: [ GameLevel.Start ],
+        targets: [GameLevel.Start],
         options: []
       },
     ]
@@ -192,7 +189,7 @@ describe('StudioService', function () {
     assert.ok(response.data)
     assert.ok(response.data.length)
 
-    const [ found ] = response.data.filter(item => item.id == ctx.subscriptionId)
+    const [found] = response.data.filter(item => item.id == ctx.subscriptionId)
 
     assert.ok(found)
     assert.ok(found.type)
@@ -203,7 +200,6 @@ describe('StudioService', function () {
   })
 
   it('should cancel subscription', async () => {
-
     const prefix = ctx.app.config.routerAmqp.prefix
     const data = { id: ctx.subscriptionId } as SubscriptionCancelRequest
 
@@ -233,12 +229,12 @@ describe('StudioService', function () {
 
   it('should get metadata', async () => {
     const prefix = ctx.app.config.routerAmqp.prefix
-    const data = { eventId: "123", sport: "basketball" }
+    const data = { eventId: '123', sport: 'basketball' }
     const response: ItemResponse = await ctx.app.amqp
       .publishAndWait(`${prefix}.studio.metadata.get`, data)
+
     assert.ok(response)
     assert.ok(response.data)
     // console.log(response)
   })
-
 })

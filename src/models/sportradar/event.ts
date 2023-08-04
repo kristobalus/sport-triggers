@@ -1,7 +1,7 @@
-import { Team } from "./team"
-import { Player } from "./player"
+import { Team } from './team'
+import { Player } from './player'
 
-export type EventType = "lineupchange"
+export type EventType = 'lineupchange'
 
 export interface Attribution {
   name: string
@@ -13,8 +13,8 @@ export interface Attribution {
 
 export interface Scoring {
   lead_changes: number
-  home: Pick<Team, "id" | "name" | "market" | "points" | "reference">
-  away: Pick<Team, "id" | "name" | "market" | "points" | "reference">
+  home: Pick<Team, 'id' | 'name' | 'market' | 'points' | 'reference'>
+  away: Pick<Team, 'id' | 'name' | 'market' | 'points' | 'reference'>
 }
 
 export interface Period {
@@ -26,8 +26,8 @@ export interface Period {
   scoring: Scoring
 }
 
-export type EventPlayer = Pick<Player, "full_name" | "jersey_number" | "reference" | "id" | "sr_id">
-export type EventTeam = Pick<Team, "name" | "market" | "reference" | "id" | "sr_id">
+export type EventPlayer = Pick<Player, 'full_name' | 'jersey_number' | 'reference' | 'id' | 'sr_id'>
+export type EventTeam = Pick<Team, 'name' | 'market' | 'reference' | 'id' | 'sr_id'>
 
 export interface Court {
   home: Team
@@ -49,7 +49,7 @@ export interface Event {
   description: string
   home_points: number
   away_points: number
-  attribution: Attribution,
-  period: Period,
+  attribution: Attribution
+  period: Period
   on_court: Court
 }

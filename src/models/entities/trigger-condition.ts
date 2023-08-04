@@ -26,8 +26,9 @@ export enum ChainOp {
 
 export interface TriggerConditionOption {
   event: string
-  compare: CompareOp
-  targets: string[] | number[]
+  compare?: CompareOp
+  aggregate?: string[]
+  targets?: string[]
   type?: string
 }
 
@@ -44,14 +45,19 @@ export interface TriggerCondition {
   scope: string
   // scope identifier
   scopeId: string
-  // aggregation operation not ready
-  // aggregate?: AggregateOp,
+
+  // TODO aggregation should be used only in options
+  // ft.aggregate query
+  // aggregate?: string[]
+  // ft.aggregate filter targets
+  // aggregateTargets?: string[]
+
   // comparison operation, should be used to compare "current" and "target" and return a boolean
-  compare: CompareOp
+  compare?: CompareOp
   // type of condition
   type: ConditionType
   // target value of the event, threshold value to compare with
-  targets: string[] | number[]
+  targets?: string[]
   // condition options, additional events required for condition to be activated
   options: TriggerConditionOption[]
   // current value read from event

@@ -1,28 +1,26 @@
 import { CoreOptions } from '@microfleet/core-types'
 
 import { randomUUID } from 'crypto'
-import assert = require("assert")
+import assert = require('assert')
 
 import { TestContext } from '../module'
 import { Scope } from '../../src/models/entities/trigger'
 import { startContext, stopContext } from '../helpers/common'
-
 import { ChainOp, CompareOp } from '../../src/models/entities/trigger-condition'
 import {
   EssentialConditionData,
   EssentialTriggerData,
   TriggerCreateRequest,
 } from '../../src/models/dto/trigger-create-request'
-import { GameLevel } from '../../src/studio/basketball/game-level'
+import { GameLevel } from '../../src/sports/basketball/game-level'
 import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-request'
 import { ItemResponse } from '../../src/models/dto/response'
 import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
 import { AdapterPushRequest } from '../../src/models/dto/adapter-push-request'
 import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
-import { Defer } from "../../src/utils/defer"
-import { BasketballEvents } from "../../src/studio/basketball/basketball-events"
-
+import { Defer } from '../../src/utils/defer'
+import { BasketballEvents } from '../../src/sports/basketball/basketball-events'
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string
@@ -39,57 +37,64 @@ interface SuitContext extends TestContext {
 }
 
 describe('AdapterService', function () {
-
-  const datasource = "sportradar"
+  const datasource = 'sportradar'
   const scope = Scope.Game
   const scopeId = randomUUID()
   const entity = 'moderation'
   const entityId = randomUUID()
-  const homeId = randomUUID()
-  const awayId = randomUUID()
+
+  const teamId = randomUUID()
+  const teamPoints = '30'
 
   const events = {
-    gameLevelStart: {
+    [BasketballEvents.GameLevel]: {
       id: randomUUID(),
       datasource,
       scope,
       scopeId,
+      sport: 'basketball',
       timestamp: Date.now(),
       options: {
+        [BasketballEvents.GamePointsHome]: teamPoints,
+        [BasketballEvents.GamePointsAway]: teamPoints,
+        [BasketballEvents.Sequence]: '1',
+        [BasketballEvents.Quarter]: '1',
+        [BasketballEvents.Period]: '1',
         [BasketballEvents.GameLevel]: GameLevel.Start
       }
     },
-    homeTeamPoints: {
+    [BasketballEvents.TeamScoresPoints]: {
       id: randomUUID(),
       datasource,
       scope,
       scopeId,
+      sport: 'basketball',
       timestamp: Date.now() + 1,
       options: {
-        [BasketballEvents.GamePointsHome]: "30",
-        [BasketballEvents.Team]: homeId
+        [BasketballEvents.GamePointsHome]: teamPoints,
+        [BasketballEvents.GamePointsAway]: teamPoints,
+        [BasketballEvents.Sequence]: '1',
+        [BasketballEvents.Quarter]: '1',
+        [BasketballEvents.Period]: '1',
+        [BasketballEvents.TeamScoresPoints]: teamPoints,
+        [BasketballEvents.Team]: teamId
       }
     },
-    wrongTeamShootingFoul: {
+    [BasketballEvents.TeamShootingFoul]: {
       id: randomUUID(),
       datasource,
       scope,
       scopeId,
-      timestamp: Date.now() + 2,
-      options: {
-        [BasketballEvents.TeamShootingFoul]: awayId,
-        [BasketballEvents.Team]: awayId
-      }
-    },
-    correctTeamShootingFoul: {
-      id: randomUUID(),
-      datasource,
-      scope,
-      scopeId,
+      sport: 'basketball',
       timestamp: Date.now() + 3,
       options: {
-        [BasketballEvents.TeamShootingFoul]: homeId,
-        [BasketballEvents.Team]: homeId
+        [BasketballEvents.GamePointsHome]: teamPoints,
+        [BasketballEvents.GamePointsAway]: teamPoints,
+        [BasketballEvents.Sequence]: '1',
+        [BasketballEvents.Quarter]: '1',
+        [BasketballEvents.Period]: '1',
+        [BasketballEvents.TeamShootingFoul]: teamId,
+        [BasketballEvents.Team]: teamId
       }
     }
   }
@@ -126,32 +131,28 @@ describe('AdapterService', function () {
         options: []
       },
       {
-        event: BasketballEvents.GamePointsHome,
-        compare: CompareOp.Equal,
-        targets: [ "30" ],
+        event: BasketballEvents.Team,
+        compare: CompareOp.In,
+        targets: [teamId],
         chainOperation: ChainOp.AND,
         options: [
           {
-            event: BasketballEvents.Team,
-            compare: CompareOp.In,
-            targets: [ homeId ]
+            event: BasketballEvents.TeamScoresPoints,
+            compare: CompareOp.Equal,
+            targets: [teamPoints]
           }
         ]
       },
       {
-        event: BasketballEvents.TeamShootingFoul,
+        event: BasketballEvents.Team,
         compare: CompareOp.In,
         targets: [
-           homeId
+          teamId
         ],
         chainOperation: ChainOp.AND,
         options: [
           {
-            event: BasketballEvents.Team,
-            compare: CompareOp.In,
-            targets: [
-              homeId
-            ]
+            event: BasketballEvents.TeamShootingFoul
           }
         ]
       }
@@ -200,7 +201,6 @@ describe('AdapterService', function () {
       await ctx.app.amqp.publishAndWait(`${ctx.amqpPrefix}.studio.trigger.get`,
         { id: ctx.triggerId } as TriggerGetRequest)
 
-
     assert.ok(response)
     assert.ok(response.data)
 
@@ -239,42 +239,33 @@ describe('AdapterService', function () {
 
   it('push game level event', async () => {
     const defer = new Defer()
+
     ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
     await ctx.request.post('adapter/event/push', {
       json: {
-        event: events.gameLevelStart,
+        event: events[BasketballEvents.GameLevel],
       } as AdapterPushRequest,
     })
     const { result } = await defer.promise
+
     assert.equal(result, false)
   })
 
-  it('push home team points event', async () => {
+  it('push team scores points event', async () => {
     const defer = new Defer()
+
     ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
     await ctx.request.post('adapter/event/push', {
       json: {
-        event: events.homeTeamPoints,
+        event: events[BasketballEvents.TeamScoresPoints],
       } as AdapterPushRequest,
     })
     const { result } = await defer.promise
+
     assert.equal(result, false)
   })
 
-  it('push wrong foul event', async () => {
-    const defer = new Defer()
-    ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
-    await ctx.request.post('adapter/event/push', {
-      json: {
-        event: events.wrongTeamShootingFoul,
-      } as AdapterPushRequest,
-    })
-    const { result } = await defer.promise
-    assert.equal(result, false)
-  })
-
-  it('push correct foul event', async () => {
-
+  it('push team shooting foul event', async () => {
     ctx.pendingSubscriberMessage = new Defer()
     const defer = new Defer()
 
@@ -282,16 +273,19 @@ describe('AdapterService', function () {
 
     await ctx.request.post('adapter/event/push', {
       json: {
-        event: events.correctTeamShootingFoul,
+        event: events[BasketballEvents.TeamShootingFoul],
       } as AdapterPushRequest,
     })
 
     const { result } = await defer.promise
-    assert.equal(result, true)
 
+    assert.equal(result, true)
+  })
+
+  it('should receive notification', async () => {
     const message = await ctx.pendingSubscriberMessage.promise
+
     ctx.app.log.debug({ message }, 'message received by subscriber')
     assert.equal(await getTriggerActivated(), true)
   })
-
 })

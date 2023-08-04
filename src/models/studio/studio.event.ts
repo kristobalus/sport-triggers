@@ -1,7 +1,7 @@
 
-import { StudioTarget } from "./studio.target"
-import { StudioInputs } from "./studio.inputs"
-import { StudioInputsProtobuf } from "./studio.inputs.protobuf"
+import { StudioTarget } from './studio.target'
+import { StudioInputs } from './studio.inputs'
+import { StudioInputsProtobuf } from './studio.inputs.protobuf'
 
 export interface StudioEvent {
   id: string

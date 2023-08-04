@@ -1,9 +1,10 @@
 import { CompareOp, ConditionType } from '../../models/entities/trigger-condition'
-import { EventMetadata } from "../../models/events/event-metadata"
-import { AtBatOutcomeState, BaseballEvents, GameState, PitchOutcomeState } from "./baseball-events"
-import { Sources } from "./sources"
-import { StudioInputs } from "../../models/studio/studio.inputs"
-import { CommonSources } from "../common-sources"
+import { EventMetadata } from '../../models/events/event-metadata'
+import { StudioInputs } from '../../models/studio/studio.inputs'
+import { CommonSources } from '../common-sources'
+
+import { AtBatOutcomeState, BaseballEvents, GameState, PitchOutcomeState } from './baseball-events'
+import { Sources } from './sources'
 
 export const metadata: Record<string, EventMetadata> = {
 
@@ -266,6 +267,5 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     targetSource: Sources.AtBatOutcome
   },
-
 
 }

@@ -7,17 +7,15 @@ import { ArgumentError } from 'common-errors'
 import { ChainOp, ConditionType, TriggerCondition, TriggerConditionOption } from '../models/entities/trigger-condition'
 import { assertNoError, createArrayFromHGetAll } from '../utils/pipeline-utils'
 import { AdapterEvent } from '../models/events/adapter-event'
-import { metadata as basketballMeta } from '../studio/basketball/metadata'
-import { metadata as baseballMeta } from '../studio/baseball/metadata'
-import { metadata as footballMeta } from '../studio/football/metadata'
-
+import { metadata as basketballMeta } from '../sports/basketball/metadata'
+import { metadata as baseballMeta } from '../sports/baseball/metadata'
+import { metadata as footballMeta } from '../sports/football/metadata'
 import * as EventUri from '../models/events/event-uri'
-import assert = require("assert");
 
 const metadata = {
   ...basketballMeta,
   ...baseballMeta,
-  ...footballMeta
+  ...footballMeta,
 }
 
 export function conditionSetByTriggerKey(triggerId: string) {
@@ -46,62 +44,141 @@ export function conditionLogKey(conditionId: string) {
   return `conditions/${conditionId}/logs`
 }
 
-function intersection(array1: any[], array2: any[]) : any[] {
+function intersection(array1: any[], array2: any[]): any[] {
   const result = []
-  for(const e1 of array1) {
+
+  for (const e1 of array1) {
     if (array2.indexOf(e1) > -1) {
       result.push(e1)
     }
   }
+
   return result
 }
 
-export function validateConditionByMetadata(condition: Partial<TriggerCondition>) {
-  assert(metadata[condition.event], `metadata not defined for event ${condition.event}`)
+export function validateCondition(
+  condition: Partial<TriggerCondition>,
+) {
+  if (!metadata[condition.event]) {
+    throw new ArgumentError(`metadata not defined for event ${condition.event}`)
+  }
+
+  if (!condition?.targets?.length) {
+    throw new ArgumentError('Condition targets should be defined')
+  }
+
+  const meta = metadata[condition.event]
+
+  condition.targets = condition.targets.map(target => target.toString())
+  condition.type = meta.type
+
+  if (condition.type == ConditionType.Number) {
+    condition.current = '0'
+  }
+
+  if (condition.type == ConditionType.String) {
+    condition.current = ''
+  }
 
   // checking allowed targets, if any restricted
-  if (metadata[condition.event].targets?.length > 0) {
-    const mutual = intersection(condition.targets, metadata[condition.event].targets)
+  if (meta.targets?.length > 0) {
+    const mutual = intersection(condition.targets, meta.targets)
+
     if (mutual.length == 0) {
       throw new ArgumentError(`Condition for event ${condition.event} should `
-        + `have target one of ${JSON.stringify(metadata[condition.event].targets)}.`)
+        + `have target one of ${JSON.stringify(meta.targets)}.`)
     }
   }
 
   // checking allowed compare operations, if any restricted
-  if (metadata[condition.event].compare?.length > 0) {
-    if (!metadata[condition.event].compare.includes(condition.compare)) {
+  if (meta.compare?.length > 0) {
+    if (!meta.compare.includes(condition.compare)) {
       throw new ArgumentError(`Condition for event ${condition.event} should `
-        + `have compare one of ${JSON.stringify(metadata[condition.event].compare)}.`)
+        + `have compare one of ${JSON.stringify(meta.compare)}.`)
     }
+  }
+
+  // TODO aggregation is disabled in condition and left for option
+  //  the logic is: condition determines the scope, option aggregates within scope
+  // if (meta.aggregate) {
+  //   if ( condition.aggregateTargets?.length ) {
+  //     const { datasource, scopeId, aggregateTargets } = condition
+  //     condition.aggregate = meta.aggregate(datasource, scopeId, aggregateTargets)
+  //   }
+  // }
+
+  if (!condition.options) {
+    condition.options = []
+  } else {
+    condition.options.forEach(option => validateOption(option, condition))
   }
 }
 
-export function validateOptionByMetadata(option: TriggerConditionOption) {
-  assert(metadata[option.event], `metadata not defined for event ${option.event}`)
+export function validateOption(
+  option: Partial<TriggerConditionOption>,
+  // parent condition
+  condition: Partial<TriggerCondition>,
+) {
+  if (!metadata[option.event]) {
+    throw new ArgumentError(`Metadata not defined for event ${option.event}`)
+  }
+
+  const meta = metadata[option.event]
+
+  if (meta.optionScope && !meta.optionScope.includes(condition.event)) {
+    throw new ArgumentError(`Event ${option.event} can be used as option for ${JSON.stringify(meta.optionScope)} only.`)
+  }
+
+  if (!option.targets?.length) {
+    if (meta.inferTargetsFromScope) {
+      option.targets = [...condition.targets]
+    }
+  }
+
+  if (!option.targets?.length) {
+    throw new ArgumentError('No default event found. Option targets should be defined')
+  }
 
   // checking allowed targets, if any restricted
-  if (metadata[option.event].targets?.length > 0) {
-    const mutual = intersection(option.targets, metadata[option.event].targets)
+  if (meta.targets?.length > 0) {
+    const mutual = intersection(option.targets, meta.targets)
+
     if (mutual.length == 0) {
       throw new ArgumentError(`Option for event ${option.event} should `
-        + `have target one of ${JSON.stringify(metadata[option.event].targets)}.`)
+        + `have target one of ${JSON.stringify(meta.targets)}.`)
     }
   }
+
   // checking allowed compare operations, if any restricted
-  if (metadata[option.event].compare?.length > 0) {
-    if (!metadata[option.event].compare.includes(option.compare)) {
+  if (meta.compare?.length > 0) {
+    if (!meta.compare.includes(option.compare)) {
       throw new ArgumentError(`Option for event ${option.event} should `
-        + `have compare one of ${JSON.stringify(metadata[option.event].compare)}.`)
+        + `have compare one of ${JSON.stringify(meta.compare)}.`)
     }
   }
-  option.type = metadata[option.event].type
+
+  option.type = meta.type
+
+  if (!option.compare) {
+    if ( meta.optionDefaultCompare ) {
+      option.compare = meta.optionDefaultCompare
+    }
+  }
+
+  if (meta.aggregate) {
+    if (!meta.optionScope) {
+      throw new ArgumentError(`Metadata optionScope should be defined for ${option.event} for aggregation`)
+    }
+    const { datasource, scopeId, targets } = condition
+
+    option.aggregate = meta.aggregate(datasource, scopeId, targets)
+  }
 }
 
 export class TriggerConditionCollection {
   constructor(
     private redis: Redis,
-    private expiresInSeconds?: number
+    private expiresInSeconds?: number,
   ) {
   }
 
@@ -116,17 +193,20 @@ export class TriggerConditionCollection {
     }
 
     // prefill and validate data
-    const items = []
+    const items: TriggerCondition[] = []
+
     for (let i = 0; i < conditions.length; i++) {
-      const condition = { ...conditions[i] }
+      const condition = { ...conditions[i] } as TriggerCondition
 
-      validateConditionByMetadata(condition)
-
-      if (!condition.options) {
-        condition.options = []
-      } else {
-        condition.options.forEach(validateOptionByMetadata)
+      if (!condition.id) {
+        condition.id = randomUUID()
       }
+      condition.datasource = datasource
+      condition.scope = scope
+      condition.scopeId = scopeId
+      condition.uri = EventUri.fromCondition(condition)
+
+      validateCondition(condition)
 
       if (!condition.triggerId) {
         condition.triggerId = triggerId
@@ -134,30 +214,14 @@ export class TriggerConditionCollection {
         throw new ArgumentError('Owner conflict')
       }
 
-      if (!condition.id) {
-        condition.id = randomUUID()
-      }
-
-      if (condition.type == ConditionType.Number) {
-        condition.current = '0'
-      }
-
-      if (condition.type == ConditionType.String) {
-        condition.current = ''
-      }
-
+      condition.chainOrder = i
       if (!condition.chainOperation) {
         condition.chainOperation = ChainOp.AND
       }
 
-      condition.type = metadata[condition.event].type
-      condition.datasource = datasource
-      condition.scope = scope
-      condition.scopeId = scopeId
-      condition.chainOrder = i
-      condition.uri = EventUri.fromCondition(condition)
       condition.options = JSON.stringify(condition.options) as any
       condition.targets = JSON.stringify(condition.targets) as any
+
       items.push(condition)
     }
 
@@ -231,12 +295,12 @@ export class TriggerConditionCollection {
     scope: string,
     scopeId: string,
     eventName: string,
-    start: number = 0,
-    stop: number = -1): Promise<string[]> {
+    start = 0,
+    stop = -1): Promise<string[]> {
     return this.redis.zrange(subscribedToScopeAndEvent(datasource, scope, scopeId, eventName), start, stop)
   }
 
-  getTriggerListByUri(uri: string, start: number = 0, stop: number = -1): Promise<string[]> {
+  getTriggerListByUri(uri: string, start = 0, stop = -1): Promise<string[]> {
     return this.redis.zrange(subscribedToUri(uri), start, stop)
   }
 
@@ -248,13 +312,15 @@ export class TriggerConditionCollection {
    * @description returns a generator of lists of trigger's id subscribed to uri
    *              iterates until all subscribers will be fetched
    */
-  async * getSubscribedToUri(uri: string, count: number = 100) : AsyncGenerator<string[], void, void>  {
+  async* getSubscribedToUri(uri: string, count = 100): AsyncGenerator<string[], void, void> {
     let cursor = null
+
     do {
-      const [ cur, result ]  = await this.redis.zscan(subscribedToUri(uri), cursor, "count", count)
+      const [cur, result] = await this.redis.zscan(subscribedToUri(uri), cursor, 'count', count)
+
       cursor = cur
       yield result.filter((_, index) => index % 2 == 0)
-    } while (cursor !== "0")
+    } while (cursor !== '0')
   }
 
   // moved into lua script

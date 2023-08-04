@@ -1,5 +1,5 @@
-import { Team } from "./team"
-import { Period } from "./event"
+import { Team } from './team'
+import { Period } from './event'
 
 export interface Game {
   id: string
@@ -7,7 +7,7 @@ export interface Game {
   coverage: string
   reference: string
   scheduled: string
-  home: Team,
-  away: Team,
+  home: Team
+  away: Team
   periods?: Period[]
 }

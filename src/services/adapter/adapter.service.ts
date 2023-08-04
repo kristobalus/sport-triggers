@@ -14,7 +14,8 @@ import { TriggerSubscriptionCollection } from '../../repositories/trigger-subscr
 import { TriggerCollection } from '../../repositories/trigger.collection'
 import { fromEvent } from '../../models/events/event-uri'
 import { Trigger } from '../../models/entities/trigger'
-import { Event } from "../../models/events/event"
+import { Event } from '../../models/events/event'
+import { EventCollection } from '../../repositories/event.collection'
 
 export interface CompareResult {
   activated: boolean
@@ -25,6 +26,7 @@ export class AdapterService {
   private readonly conditionCollection: TriggerConditionCollection
   private readonly subscriptionCollection: TriggerSubscriptionCollection
   private readonly triggerCollection: TriggerCollection
+  private readonly eventCollection: EventCollection
 
   constructor(
     private readonly log: Microfleet['log'],
@@ -35,6 +37,14 @@ export class AdapterService {
     this.triggerCollection = new TriggerCollection(this.redis, options?.triggerLifetimeSeconds)
     this.conditionCollection = new TriggerConditionCollection(this.redis, options?.triggerLifetimeSeconds)
     this.subscriptionCollection = new TriggerSubscriptionCollection(this.redis, options?.triggerLifetimeSeconds)
+    this.eventCollection = new EventCollection(this.redis)
+  }
+
+  /**
+   * executed in queue "
+   */
+  async store(adapterEvent: AdapterEvent) {
+    await this.eventCollection.append(adapterEvent)
   }
 
   /**
@@ -49,12 +59,15 @@ export class AdapterService {
 
     for (const condition of conditions) {
       if (condition.activated) {
+        // skip activated condition
         continue
       }
-      if (condition.uri === uri) {
-        const result = await this.evaluateCondition(condition, event)
 
-        condition.activated = result.activated
+      if (condition.uri === uri) {
+        // condition event matched
+        const { activated } = await this.evaluateCondition(condition, event)
+
+        condition.activated = activated
       }
     }
 
@@ -89,6 +102,7 @@ export class AdapterService {
    */
   async notify(triggerId: string) {
     const trigger = await this.triggerCollection.getOne(triggerId)
+
     if (trigger.activated) {
       this.log.debug({ triggerId }, 'sending subscriptions')
 
@@ -98,6 +112,7 @@ export class AdapterService {
 
       for (const id of ids) {
         const subscription = await this.subscriptionCollection.getOne(id)
+
         if ( !subscription.sent ) {
           const { route, payload } = subscription
 
@@ -116,7 +131,6 @@ export class AdapterService {
     }
   }
 
-
   /**
    * @description shows if any trigger is interested in this event
    */
@@ -124,22 +138,26 @@ export class AdapterService {
     const { conditionCollection } = this
     const uri = fromEvent(event)
     const count = await conditionCollection.countSubscribedToUri(uri)
+
     return count > 0
   }
 
   /**
    * @description get triggers subscribed to event by their conditions
    */
-  async * getTriggers(event: AdapterEvent) : AsyncGenerator<Trigger[], void, void>  {
+  async * getTriggers(event: AdapterEvent): AsyncGenerator<Trigger[], void, void>  {
     const uri = fromEvent(event)
     const { triggerCollection, conditionCollection } = this
 
     const triggerIdGenerator = conditionCollection.getSubscribedToUri(uri)
-    for await (let batch of triggerIdGenerator) {
+
+    for await (const batch of triggerIdGenerator) {
       // noinspection JSMismatchedCollectionQueryUpdate
       const result: Trigger[] = []
+
       for (const id of batch) {
         const trigger = await triggerCollection.getOne(id)
+
         result.push(trigger)
       }
       yield result
@@ -158,11 +176,16 @@ export class AdapterService {
       activated: false
     }
 
+    // TODO now logic is moved into lua script
+    //   however since we are using bullmq and this method is guaranteed to be called with single concurrent
+    //   there is no point of using lua here.
+    //   it would be much easier to shift comparison and aggregation logic into Javascript domain
+    //   to keep things simple
     const [activated, debug] = await this.redis.set_and_compare(2, key, logKey, JSON.stringify(event))
+
     result.activated = !!activated
     this.log.debug({ key, debug: debug ? JSON.parse(debug) : {}, result }, 'condition evaluation result')
 
     return result
   }
-
 }

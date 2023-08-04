@@ -2,18 +2,21 @@ import { Config as RedisConfig } from '@microfleet/plugin-redis-sentinel'
 import { Microfleet } from '@microfleet/core-types'
 
 import { Worker, Job, Queue } from 'bullmq'
-import { Redis, RedisOptions } from 'ioredis'
+import { RedisOptions } from 'ioredis'
 
 import { AdapterEvent } from '../../models/events/adapter-event'
 import { AdapterService } from '../adapter/adapter.service'
-import { Event } from "../../models/events/event"
-import { EventCollection } from "../../repositories/event.collection"
+import { Event } from '../../models/events/event'
 
-export function getQueueRedisConfig(config: RedisConfig) {
+export function getQueueRedisConfig(config: RedisConfig): RedisOptions {
   return {
     ...config,
     ...{ options: { keyPrefix: undefined } } as RedisConfig,
   }
+}
+
+export interface StoreJob {
+  adapterEvent: AdapterEvent
 }
 
 export interface EventJob {
@@ -30,10 +33,12 @@ export interface NotificationJob {
 }
 
 export class QueueService {
-
   public notificationJobCallback?: (result) => any
   public triggerJobCallback?: (result) => any
   public eventJobCallback?: (result) => any
+
+  private storeQueue: Queue
+  private storeWorker: Worker
 
   private eventQueue: Queue
   private eventWorker: Worker
@@ -43,15 +48,19 @@ export class QueueService {
 
   private notificationQueue: Queue
   private notificationWorker: Worker
-  private eventCollection: EventCollection
 
   constructor(
     private log: Microfleet['log'],
-    private redis: Redis,
     private adapterService: AdapterService,
     redisOptions: RedisOptions
   ) {
-    this.eventCollection = new EventCollection(this.redis)
+    this.storeQueue = new Queue('store', {
+      defaultJobOptions: {
+        removeOnComplete: true,
+        removeOnFail: false,
+      },
+      connection: redisOptions,
+    })
 
     this.triggerQueue = new Queue('triggers', {
       defaultJobOptions: {
@@ -76,6 +85,20 @@ export class QueueService {
       },
       connection: redisOptions,
     })
+
+    this.storeWorker = new Worker('store',
+      async (job: Job) => {
+        try {
+          await this.onStoreJob(job)
+        } catch (err) {
+          log.error(err)
+          throw err
+        }
+      },
+      {
+        connection: redisOptions,
+        concurrency: 1
+      })
 
     this.eventWorker = new Worker('events',
       async (job: Job) => {
@@ -121,13 +144,21 @@ export class QueueService {
   }
 
   async addEvent(adapterEvent: AdapterEvent) {
+    await this.storeQueue.add('store', { adapterEvent } as StoreJob)
+  }
+
+  async onStoreJob(job: Job<StoreJob>) {
+    const { adapterEvent } = job.data
+
+    // store adapter event in game log
+    await this.adapterService.store(adapterEvent)
+
     const jobs = []
 
-    await this.eventCollection.append(adapterEvent)
-
-    for(const [name, value] of Object.entries(adapterEvent.options)) {
+    for (const [name, value] of Object.entries(adapterEvent.options)) {
       const event = { ...adapterEvent, name, value } as Event
-      jobs.push({ name: 'evaluate', data: { event } })
+
+      jobs.push({ name: 'evaluate', data: { event, adapterEvent } })
     }
 
     await this.eventQueue.addBulk(jobs)
@@ -139,17 +170,20 @@ export class QueueService {
 
     this.log.debug({ id: job.id }, 'event job started')
 
+    // trigger processing
     if (await adapterService.hasTriggers(event)) {
-      for await (let triggers of adapterService.getTriggers(event)) {
+      for await (const triggers of adapterService.getTriggers(event)) {
         this.log.debug({ triggers }, 'trigger list from db')
         const jobs = triggers.map((trigger) => ({
           name: 'evaluate',
           data: { triggerId: trigger.id, event } as TriggerJob }))
+
         await triggerQueue.addBulk(jobs)
       }
     }
 
     this.log.debug({ id: job.id }, 'event job completed')
+
     this.eventJobCallback?.({ result: true, job })
   }
 
@@ -158,6 +192,7 @@ export class QueueService {
 
     this.log.debug({ id: job.id, name: job.name, triggerId, event }, 'trigger job started')
     const result = await this.adapterService.evaluateTrigger(event, triggerId)
+
     if ( result ) {
       await this.notificationQueue.add('notify', { triggerId } as NotificationJob)
     }
@@ -177,9 +212,11 @@ export class QueueService {
   }
 
   async close() {
+    await this.storeQueue.close()
     await this.eventQueue.close()
     await this.triggerQueue.close()
     await this.notificationQueue.close()
+    await this.storeWorker.close()
     await this.eventWorker.close()
     await this.triggerWorker.close()
     await this.notificationWorker.close()

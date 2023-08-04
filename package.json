@@ -8,6 +8,7 @@
     "precompile": "pnpm run clean",
     "compile": "tsc -b ./tsconfig.build.json",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx src/ test/",
+    "lint:fix": "eslint --ext .js,.jsx,.ts,.tsx src/ test/ --fix",
     "pretest": "pnpm lint && pnpm compile",
     "test": "pnpm clean && pnpm compile && mdep test run",
     "test:unit": "mocha unit/**/*.test.ts",

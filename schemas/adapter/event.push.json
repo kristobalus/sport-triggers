@@ -11,6 +11,9 @@
         "datasource": {
           "type": "string"
         },
+        "sport": {
+          "type": "string"
+        },
         "scope": {
           "type": "string"
         },
@@ -28,7 +31,7 @@
         }
       },
       "additionalProperties": false,
-      "required": ["id", "datasource", "scope", "scopeId", "timestamp", "options"]
+      "required": ["id", "datasource", "scope", "sport", "scopeId", "timestamp", "options"]
     }
   },
   "additionalProperties": false,

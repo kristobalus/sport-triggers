@@ -1,10 +1,10 @@
 import { CompareOp, ConditionType } from '../../models/entities/trigger-condition'
-import { EventMetadata } from "../../models/events/event-metadata"
+import { EventMetadata } from '../../models/events/event-metadata'
+import { StudioInputs } from '../../models/studio/studio.inputs'
 
-import { FootballEvents } from "./football-events"
-import { GameLevel } from "./game-level"
-import { PlayerState } from "./player-state"
-import { StudioInputs } from "../../models/studio/studio.inputs"
+import { FootballEvents } from './football-events'
+import { GameLevel } from './game-level'
+import { PlayerState } from './player-state'
 
 export const metadata: Record<string, EventMetadata> = {
 
@@ -13,12 +13,12 @@ export const metadata: Record<string, EventMetadata> = {
     input: StudioInputs.String,
     type: ConditionType.String,
     primary: true,
-    label: "Player",
+    label: 'Player',
     compare: [
       CompareOp.Equal
     ],
     targets: [],
-    targetSource: "game.players"
+    targetSource: 'game.players'
   },
 
   [FootballEvents.GameLevel]: {
@@ -26,7 +26,7 @@ export const metadata: Record<string, EventMetadata> = {
     input: StudioInputs.SelectMulti,
     type: ConditionType.String,
     primary: true,
-    label: "Game level",
+    label: 'Game level',
     compare: [
       CompareOp.Equal
     ],
@@ -39,13 +39,13 @@ export const metadata: Record<string, EventMetadata> = {
       GameLevel.QuarterEnd,
       GameLevel.UnderReview,
     ],
-    targetSource: "football.game.level"
+    targetSource: 'football.game.level'
   },
 
   [FootballEvents.GamePointsHome]: {
     sport: 'football',
     primary: true,
-    label: "Total points, home",
+    label: 'Total points, home',
     input: StudioInputs.Number,
     type: ConditionType.Number,
     compare: [
@@ -59,7 +59,7 @@ export const metadata: Record<string, EventMetadata> = {
 
   [FootballEvents.GamePointsAway]: {
     sport: 'football',
-    label: "Total points, away",
+    label: 'Total points, away',
     primary: true,
     input: StudioInputs.Number,
     compare: [
@@ -95,32 +95,31 @@ export const metadata: Record<string, EventMetadata> = {
     label: 'Player passing',
     input: StudioInputs.Select,
     type: ConditionType.String,
-    description: "expects player-id (string) in targets",
+    description: 'expects player-id (string) in targets',
     targets: [],
-    targetSource: "game.players"
+    targetSource: 'game.players'
   },
 
   [FootballEvents.PlayerRushing]: {
     sport: 'football',
     input: StudioInputs.Select,
     primary: true,
-    label: "Player rushing",
-    description: "expects player-id (string) in targets",
+    label: 'Player rushing',
+    description: 'expects player-id (string) in targets',
     type: ConditionType.String,
     targets: [],
-    targetSource: "game.players"
+    targetSource: 'game.players'
   },
 
   [FootballEvents.PlayerReceiving]: {
     sport: 'football',
     input: StudioInputs.Number,
     type: ConditionType.String,
-    description: "expects player-id (string) in targets",
+    description: 'expects player-id (string) in targets',
     primary: true,
-    label: "Player receiving",
+    label: 'Player receiving',
     targets: [],
-    targetSource: "game.players"
+    targetSource: 'game.players'
   },
-
 
 }

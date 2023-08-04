@@ -1,6 +1,6 @@
 // start local redis instance (dir helper) to start test from IDE, faster than full integration tests via mdep
 
-import { Redis } from "ioredis"
+import { Redis, RedisOptions } from "ioredis"
 import pino from "pino"
 import pretty from "pino-pretty"
 
@@ -9,7 +9,7 @@ import { AdapterService } from "../src/services/adapter/adapter.service"
 import { AMQPTransport, Publish } from "@microfleet/transport-amqp"
 import { randomUUID } from "crypto"
 import { StudioService } from "../src/services/studio/studio.service"
-// import assert from "assert"
+
 import { Trigger } from "../src/models/entities/trigger"
 import { EssentialConditionData, EssentialTriggerData } from "../src/models/dto/trigger-create-request"
 import { CompareOp } from "../src/models/entities/trigger-condition"
@@ -17,12 +17,12 @@ import { TriggerConditionCollection } from "../src/repositories/trigger-conditio
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subscription.collection"
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
-import { FootballEvents } from "../src/studio/football/football-events"
-import { GameLevel } from "../src/studio/football/game-level"
+import { FootballEvents } from "../src/sports/football/football-events"
+import { GameLevel } from "../src/sports/football/game-level"
 import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
 import { QueueService } from "../src/services/queue/queue.service"
 import { AdapterEvent } from "../src/models/events/adapter-event"
-import { PlayerState as FootballPlayerState } from "../src/studio/football/player-state"
+import { PlayerState as FootballPlayerState } from "../src/sports/football/player-state"
 import { Defer } from "../src/utils/defer"
 import assert from "assert"
 
@@ -37,6 +37,7 @@ describe("QueueService", function () {
 
   const ctx: {
     redis?: Redis,
+    redisOptions?: RedisOptions,
     adapter?: AdapterService,
     studio?: StudioService,
     queue?: QueueService,
@@ -53,7 +54,9 @@ describe("QueueService", function () {
 
   before(async () => {
 
-    ctx.redis = await initStandaloneRedis()
+    ctx.redisOptions = { keyPrefix: "{triggers}" }
+    ctx.redis = await initStandaloneRedis(ctx.redisOptions)
+
     await ctx.redis.flushall()
 
     ctx.receiver = {
@@ -83,7 +86,7 @@ describe("QueueService", function () {
 
     ctx.adapter = new AdapterService(log, ctx.redis, amqp, { triggerLifetimeSeconds: 3600 })
     ctx.studio = new StudioService(log, ctx.redis)
-    ctx.queue = new QueueService(log, ctx.redis, ctx.adapter, {})
+    ctx.queue = new QueueService(log, ctx.adapter, ctx.redisOptions)
     ctx.triggers = new TriggerCollection(ctx.redis)
     ctx.conditions = new TriggerConditionCollection(ctx.redis)
     ctx.subscriptions = new TriggerSubscriptionCollection(ctx.redis)
@@ -103,7 +106,7 @@ describe("QueueService", function () {
       {
         event: FootballEvents.GamePointsHome,
         compare: CompareOp.GreaterOrEqual,
-        targets: [ 30 ],
+        targets: [ "30" ],
         options: []
       },
       {
@@ -152,6 +155,7 @@ describe("QueueService", function () {
       datasource,
       scope,
       scopeId,
+      sport: "basketball",
       timestamp: Date.now(),
       options: {
         [FootballEvents.GamePointsHome]: "30"
@@ -175,6 +179,7 @@ describe("QueueService", function () {
       datasource,
       scope,
       scopeId,
+      sport: "basketball",
       timestamp: Date.now(),
       options: {
         [FootballEvents.GameLevel]: GameLevel.End
@@ -199,6 +204,7 @@ describe("QueueService", function () {
       datasource,
       scope,
       scopeId,
+      sport: "basketball",
       timestamp: Date.now(),
       options: {
         [FootballEvents.PlayerState]: FootballPlayerState.Touchdown,

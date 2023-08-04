@@ -58,8 +58,12 @@
                             "properties": {
                                 "event": { "type": "string" },
                                 "compare": { "type": "string" },
-                                "target": { "type": "string" }
-                            }
+                                "targets": {
+                                    "type": "array",
+                                    "items": { "type": "string" }
+                                }
+                            },
+                            "additionalProperties": false
                         }
                     }
                 },

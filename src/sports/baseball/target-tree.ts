@@ -1,6 +1,7 @@
-import { AtBatOutcomeState, GameState, PitchOutcomeState } from "./baseball-events"
-import { Sources } from "./sources"
-import { StudioTargetTree } from "../../models/studio/studio.target-tree"
+import { StudioTargetTree } from '../../models/studio/studio.target-tree'
+
+import { AtBatOutcomeState, GameState, PitchOutcomeState } from './baseball-events'
+import { Sources } from './sources'
 
 export const targetTree: StudioTargetTree = {
 
@@ -37,104 +38,104 @@ export const targetTree: StudioTargetTree = {
 
   [Sources.AtBatOutcome]: {
     [AtBatOutcomeState.GIDP]: {
-      label: "GIDP"
+      label: 'GIDP'
     },
 
     [AtBatOutcomeState.BB]: {
-      label: "BB"
+      label: 'BB'
     },
 
     [AtBatOutcomeState.BI]: {
-      label: "BI"
+      label: 'BI'
     },
 
     [AtBatOutcomeState.ERR]: {
-      label: "ERR"
+      label: 'ERR'
     },
 
     [AtBatOutcomeState.FO]: {
-      label: "FO"
+      label: 'FO'
     },
 
     [AtBatOutcomeState.CI]: {
-      label: "CI"
+      label: 'CI'
     },
 
     [AtBatOutcomeState.GO]: {
-      label: "GO"
+      label: 'GO'
     },
 
     [AtBatOutcomeState.XBH]: {
-      label: "XBH"
+      label: 'XBH'
     },
 
     [AtBatOutcomeState.X1]: {
-      label: "X1"
+      label: 'X1'
     },
 
     [AtBatOutcomeState.X2]: {
-      label: "X2"
+      label: 'X2'
     },
 
     [AtBatOutcomeState.X3]: {
-      label: "X3"
+      label: 'X3'
     },
 
     [AtBatOutcomeState.REACH]: {
-      label: "REACH"
+      label: 'REACH'
     },
 
     [AtBatOutcomeState.RBI]: {
-      label: "RBI"
+      label: 'RBI'
     },
 
     [AtBatOutcomeState.OUT]: {
-      label: "OUT"
+      label: 'OUT'
     },
 
     [AtBatOutcomeState.KS]: {
-      label: "KS"
+      label: 'KS'
     },
 
     [AtBatOutcomeState.IPO]: {
-      label: "IPO"
+      label: 'IPO'
     },
 
     [AtBatOutcomeState.KL]: {
-      label: "KL"
+      label: 'KL'
     },
 
     [AtBatOutcomeState.K]: {
-      label: "K"
+      label: 'K'
     },
 
     [AtBatOutcomeState.HIT]: {
-      label: "HIT"
+      label: 'HIT'
     },
 
     [AtBatOutcomeState.HR]: {
-      label: "HR"
+      label: 'HR'
     },
 
     [AtBatOutcomeState.HBP]: {
-      label: "HBP"
+      label: 'HBP'
     },
   },
 
   [Sources.GameStates]: {
     [GameState.GameStart]: {
-      label: "Game start"
+      label: 'Game start'
     },
     [GameState.GameEnd]: {
-      label: "Game end"
+      label: 'Game end'
     },
     [GameState.InningStart]: {
-      label: "Inning start",
-      description: "The start of an inning is when the first batter of the team that's up to bat steps into the batter's box and the pitcher is set to throw the first pitch. In the top half of the inning, it's the visiting team that bats, and in the bottom half of the inning, it's the home team."
+      label: 'Inning start',
+      description: 'The start of an inning is when the first batter of the team that\'s up to bat steps into the batter\'s box and the pitcher is set to throw the first pitch. In the top half of the inning, it\'s the visiting team that bats, and in the bottom half of the inning, it\'s the home team.'
     },
     [GameState.InningEnd]: {
-      label: "Inning end",
-      description: "The end of an inning occurs when three outs have been made in the bottom half. After the third out, teams switch roles -- the batting team goes into the field to play defense, and the defensive team comes in to bat."
+      label: 'Inning end',
+      description: 'The end of an inning occurs when three outs have been made in the bottom half. After the third out, teams switch roles -- the batting team goes into the field to play defense, and the defensive team comes in to bat.'
     }
   }
 

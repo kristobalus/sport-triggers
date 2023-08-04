@@ -1,6 +1,7 @@
 
 import { GotInstance } from 'got'
-import { FleetApp } from "../src/fleet-app"
+
+import { FleetApp } from '../src/fleet-app'
 
 interface TestContext {
   app?: FleetApp

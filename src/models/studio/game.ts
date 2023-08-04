@@ -1,5 +1,5 @@
-import { Player } from "./player"
-import { Team } from "./team"
+import { Player } from './player'
+import { Team } from './team'
 
 export interface Game {
   datasource: string
@@ -7,7 +7,7 @@ export interface Game {
   id: string
   sport: string
   players: Player[]
-  teams: Record<string, Team>,
+  teams: Record<string, Team>
   home: string
   away: string
 }

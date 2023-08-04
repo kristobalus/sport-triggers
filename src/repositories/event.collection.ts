@@ -1,39 +1,100 @@
-
 import { Redis } from 'ioredis'
-import { AdapterEvent } from "../models/events/adapter-event"
 
+import { AdapterEvent } from '../models/events/adapter-event'
+import * as Basketball from '../sports/basketball/redis-index'
 
-export function getEventDataKey(gameId: string){
-  return `games/${gameId}/event-data`
+export interface AggregateResult {
+  [k: string]: string
 }
 
-export function getEventIndexKey(gameId: string){
-  return `games/${gameId}/event-index`
+export function parse(result): AggregateResult {
+  const [, data] = result
+
+  const reduced = {}
+
+  for (let i = 0; i < data.length; i++) {
+    if ( i % 2 == 0 ) {
+      reduced[data[i]] = data[i + 1]
+    }
+  }
+
+  return reduced
 }
 
 export class EventCollection {
+  private indices: Map<string, boolean> = new Map()
+
   constructor(
     private redis: Redis
   ) {
   }
 
-  async append(event: AdapterEvent){
-    const gameId = event.scopeId
-    await this.redis.hset(getEventDataKey(gameId), event.id, JSON.stringify(event))
-    await this.redis.zadd(getEventIndexKey(gameId), event.timestamp, event.id)
+  // eslint-disable-next-line require-await
+  async execute(query: string[]) {
+    const [cmd, ...args] = query
+
+    return this.redis.send_command(cmd, ...args)
   }
 
-  /**
-   * @description list of event id, sorted by timestamp from first to last
-   */
-  async getEventIndex(gameId: string) : Promise<string[]> {
-    return this.redis.zrangebyscore(getEventIndexKey(gameId), "-inf", "+inf")
+  // eslint-disable-next-line require-await
+  async dropIndex(name: string) {
+    return this.redis.send_command('ft.dropindex', name)
   }
 
-  async getEvent(gameId: string, eventId: string) : Promise<AdapterEvent> {
-    const data = await this.redis.hget(getEventDataKey(gameId), eventId)
-    return JSON.parse(data)
+  async createIndex(datasource: string, sport: string, scopeId: string): Promise<boolean> {
+    if ( sport == 'basketball' ) {
+      const indexName = Basketball.getIndexName(datasource, scopeId)
+
+      if ( !this.indices.has(indexName) ) {
+        const query = Basketball.getIndexQuery(datasource, scopeId)
+
+        try {
+          await this.execute(query)
+          this.indices.set(indexName, true)
+        } catch (err) {
+          if ( err.message == 'Index already exists' ) {
+            this.indices.set(indexName, true)
+          } else {
+            throw err
+          }
+        }
+
+        return true
+      } else {
+        return false
+      }
+    } else {
+      throw new Error(`Unknown sport: ${sport}`)
+    }
   }
 
+  async append(data: AdapterEvent): Promise<boolean> {
+    const { datasource, sport, scopeId, id } = data
+
+    await this.createIndex(datasource, sport, scopeId)
+
+    data.events = Object.keys(data.options)
+
+    if ( sport == 'basketball' ) {
+      const key = Basketball.getEventKey(datasource, scopeId, id)
+      const json = JSON.stringify(data)
+      const result = await this.redis.send_command('json.set', key, '$', json)
+
+      return result == 'OK'
+    }
+
+    return false
+  }
+
+  async getItem(datasource: string, sport: string, scopeId: string, eventId: string): Promise<AdapterEvent> {
+    if ( sport == 'basketball' ) {
+      const key = Basketball.getEventKey(datasource, scopeId, eventId)
+      const result = await this.redis.send_command('json.get', key, '$')
+
+      return JSON.parse(result)
+    }
+
+    return null
+  }
 }
 
