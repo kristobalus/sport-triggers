@@ -2,20 +2,20 @@
 
 import assert from "assert"
 import IORedis, { Redis } from "ioredis"
-import pino from "pino"
+import pino, { Logger } from "pino"
 import pretty from "pino-pretty"
 
 import { StudioService } from "../src/services/studio/studio.service"
 import { EssentialConditionData, EssentialTriggerData } from "../src/models/dto/trigger-create-request"
-import { ConditionType, CompareOp } from "../src/models/entities/trigger-condition"
+import { CompareOp, ConditionType } from "../src/models/entities/trigger-condition"
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { randomUUID } from "crypto"
 import { FootballEvents } from "../src/sports/football/football-events"
-import { GameLevel } from "../src/sports/football/game-level"
 import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subscription.collection"
 import { Scope } from "../src/models/entities/trigger"
 import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
+import { BasketballEvents } from "../src/sports/basketball/basketball-events"
 
 describe("StudioService", function () {
 
@@ -24,8 +24,10 @@ describe("StudioService", function () {
   const datasource = "sportradar"
   const entity = "moderation"
   const entityId = randomUUID()
+  const teamId = randomUUID()
 
   const ctx: {
+    log?: Logger,
     redis?: Redis,
     triggerId?: string
     service?: StudioService
@@ -40,7 +42,7 @@ describe("StudioService", function () {
 
     const log = pino({
       name: "StudioService",
-      level: "info"
+      level: "debug"
     }, pretty({
       levelFirst: true,
       colorize: true,
@@ -51,6 +53,7 @@ describe("StudioService", function () {
     ctx.conditions = new TriggerConditionCollection(ctx.redis)
     ctx.subscriptions = new TriggerSubscriptionCollection(ctx.redis)
     ctx.service = new StudioService(log, ctx.redis)
+    ctx.log = log
   })
 
   after(async () => {
@@ -66,8 +69,8 @@ describe("StudioService", function () {
   it(`should create trigger`, async () => {
 
     const triggerData: EssentialTriggerData = {
-      name: "...",
-      description: "..",
+      name: "Trigger name",
+      description: "Trigger Description",
       datasource,
       scope,
       scopeId,
@@ -77,10 +80,16 @@ describe("StudioService", function () {
 
     const conditionData: EssentialConditionData[] = [
       {
-        event: FootballEvents.GameLevel,
-        compare: CompareOp.Equal,
-        targets: [ GameLevel.Start ],
-        options: []
+        event: BasketballEvents.Team,
+        compare: CompareOp.In,
+        targets: [ teamId ],
+        options: [
+          {
+            event: BasketballEvents.TeamScoresPoints,
+            compare: CompareOp.GreaterOrEqual,
+            targets: [ "20" ]
+          }
+        ]
       }
     ]
 
@@ -88,22 +97,22 @@ describe("StudioService", function () {
     assert.ok(ctx.triggerId)
 
     const [ condition ] = await ctx.conditions.getByTriggerId(ctx.triggerId)
-    console.log(condition)
-    assert.equal(condition.event, FootballEvents.GameLevel)
+
+    assert.equal(condition.event, BasketballEvents.Team)
     assert.equal(condition.type, ConditionType.String)
-    assert.equal(condition.compare, CompareOp.Equal)
-    assert.equal(condition.targets, GameLevel.Start)
+    assert.equal(condition.compare, CompareOp.In)
+    assert.deepEqual(condition.targets, [ teamId ])
   })
 
   it(`should find list of triggers by scope`, async () => {
-    const [ id ]  = await ctx.triggers.getListByScope(datasource, scope, scopeId)
+    const [ id ] = await ctx.triggers.getListByScope(datasource, scope, scopeId)
     assert.ok(id)
     assert.equal(ctx.triggerId, id)
   })
 
   it(`should be able to find trigger by event and scope`, async () => {
     const triggers = await ctx.conditions
-      .getTriggerListByScopeAndEventName(datasource, scope, scopeId, FootballEvents.GameLevel)
+      .getTriggerListByScopeAndEventName(datasource, scope, scopeId, BasketballEvents.Team)
     assert.equal(triggers.length, 1)
     assert.equal(triggers.indexOf(ctx.triggerId), 0)
   })
@@ -123,6 +132,17 @@ describe("StudioService", function () {
     assert.ok(subscription.route)
     assert.ok(subscription.payload)
     assert.equal(subscription.route, data.route)
+  })
+
+  it(`studio should get trigger by id`, async () => {
+    const trigger = await ctx.service.getTrigger(ctx.triggerId, { showLog: true, trim: true })
+    assert.ok(trigger.trigger.name, "Trigger")
+    assert.ok(trigger.trigger.name, "Trigger Description")
+    ctx.log.debug({ trigger }, 'trigger by id')
+  })
+
+  after(async () => {
+    await new Promise(h => setTimeout(h, 1000))
   })
 
 

@@ -1,10 +1,17 @@
-export type TriggerConfig = {
+export interface TriggerConfig {
   triggerLifetimeSeconds: number
+}
+
+export interface AdapterConfig {
+  digestApiKey: string
+  digestAlgorithm: string
+  digestHeader: string
 }
 
 declare module '@microfleet/core-types' {
   export interface ConfigurationOptional {
     triggers: TriggerConfig
+    adapter: AdapterConfig
   }
 }
 

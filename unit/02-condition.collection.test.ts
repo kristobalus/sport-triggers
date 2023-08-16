@@ -33,7 +33,7 @@ describe("ConditionCollection", function () {
   } = {}
 
   before(async () => {
-    ctx.log = pino({ name: "test", level: "trace" })
+    ctx.log = pino({ name: "test", level: "trace", transport: { target: "pino-pretty" } })
     ctx.redis = new IORedis()
     ctx.triggers = new TriggerCollection(ctx.redis)
     ctx.conditions = new TriggerConditionCollection(ctx.redis)
@@ -85,10 +85,12 @@ describe("ConditionCollection", function () {
     const conditions = await ctx.conditions.getByTriggerId(ctx.triggerId)
 
     assert.ok(Array.isArray(conditions))
+    ctx.log.debug({ conditions }, "conditions retrieved")
 
     for(const condition of conditions) {
       assert.ok(Array.isArray(condition.targets))
       assert.ok(Array.isArray(condition.options))
+
     }
   })
 

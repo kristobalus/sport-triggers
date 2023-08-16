@@ -49,7 +49,6 @@ describe("TriggerCollection", function () {
 
   it('should get trigger', async () => {
     const trigger = await ctx.triggers.getOne(ctx.triggerId)
-
     assert.ok(trigger)
     assert.ok(trigger.id == ctx.triggerId)
   })
