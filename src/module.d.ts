@@ -1,4 +1,7 @@
-import { SignedRequestOptions } from "./configs/auth"
+
+// noinspection JSUnusedGlobalSymbols
+
+import { SignedRequestOptions } from "./configs/signed-request"
 
 export interface TriggerConfig {
   triggerLifetimeSeconds: number
@@ -9,7 +12,6 @@ declare module '@microfleet/core-types' {
     triggers: TriggerConfig
     signedRequest: SignedRequestOptions
   }
-
 }
 
 declare module 'ioredis' {

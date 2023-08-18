@@ -1,8 +1,25 @@
 import { ConnectorsTypes } from '@microfleet/core'
 
 import { FleetApp } from '../fleet-app'
-import { NotPermittedError } from "common-errors"
-import { sign } from "../middleware/signed-request.middleware"
+import { AuthenticationRequiredError, NotPermittedError } from "common-errors"
+import crypto from "crypto"
+import { ServiceRequest } from "@microfleet/plugin-router"
+
+export function isSignedRequest(this: FleetApp, request: ServiceRequest) {
+  const { config } = this
+  const { headers } = request
+
+  const token = headers[config.signedRequest.tokenHeader]
+  if (!token) {
+    throw new AuthenticationRequiredError("Bad access token")
+  }
+}
+
+export function sign(algorithm:string , secret: string, data: string) {
+  return crypto.createHmac(algorithm, secret)
+    .update(data)
+    .digest('base64')
+}
 
 function verify(parent: FleetApp, request, rawPayload) {
   const { log, config  } = parent

@@ -63,7 +63,7 @@
   "dependencies": {
     "@hapi/hapi": "^21.3.2",
     "@microfleet/core": "^19.2.8",
-    "@microfleet/core-types": "^2.2.7",
+    "@microfleet/core-types": "^2.2.8",
     "@microfleet/plugin-amqp": "^2.2.7",
     "@microfleet/plugin-hapi": "^2.2.7",
     "@microfleet/plugin-logger": "^2.2.7",
