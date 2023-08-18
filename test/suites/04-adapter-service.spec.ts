@@ -224,6 +224,8 @@ describe('AdapterService', function () {
     const secret = accessTokens[accessToken]
     const digest = sign(algorithm, secret, body)
 
+    ctx.app.log.info({ body, digest }, 'sending signed request')
+
     await ctx.request.post('adapter/event/push', {
       headers: {
         [tokenHeader]: accessToken,

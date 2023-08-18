@@ -3,18 +3,19 @@ import { ServiceRequest } from '@microfleet/plugin-router'
 
 import crypto from 'crypto'
 
-import { AuthenticationRequiredError, NotPermittedError } from 'common-errors'
+import { boomify } from '@hapi/boom'
+import { HttpStatusError } from 'common-errors'
 
 import { FleetApp } from '../fleet-app'
 
-export function isSignedRequest(this: FleetApp, request: ServiceRequest) {
+export function allowSignedRequest(this: FleetApp, request: ServiceRequest) {
   const { config } = this
   const { headers } = request
 
   const token = headers[config.signedRequest.tokenHeader]
 
   if (!token) {
-    throw new AuthenticationRequiredError('Bad access token')
+    throw new HttpStatusError(401, 'Authentication required')
   }
 }
 
@@ -33,7 +34,7 @@ function verify(parent: FleetApp, request, rawPayload) {
     const secret = accessTokens[token]
 
     if (!secret) {
-      throw new NotPermittedError('Bad access token')
+      throw new HttpStatusError(401, 'Authentication required')
     }
 
     const bodyDigest = sign(algorithm, secret, rawPayload)
@@ -42,7 +43,7 @@ function verify(parent: FleetApp, request, rawPayload) {
     log.trace({ secret, token, digest, bodyDigest, payload: rawPayload }, 'authentication attempt')
 
     if (digest !== bodyDigest) {
-      throw new NotPermittedError('Bad digest')
+      throw new HttpStatusError(403, 'Bad digest')
     }
   }
 }
@@ -69,7 +70,11 @@ export function init(parent: FleetApp) {
             request.raw.req.on('end', () => {
               const rawPayload = Buffer.concat(chunks).toString('utf8')
 
-              verify(parent, request, rawPayload)
+              try {
+                verify(parent, request, rawPayload)
+              } catch (err) {
+                throw boomify(err, { statusCode: err.status_code, message: err.message })
+              }
             })
 
             return h.continue
