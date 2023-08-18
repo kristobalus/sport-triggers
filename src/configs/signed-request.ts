@@ -5,6 +5,7 @@
 export interface SignedRequestOptions {
   digestHeader: string
   tokenHeader: string
+  // stores pairs access-token --> secret
   accessTokens: Record<string, string>
   algorithm: string
 }
