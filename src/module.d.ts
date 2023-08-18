@@ -1,7 +1,7 @@
 
 // noinspection JSUnusedGlobalSymbols
 
-import { SignedRequestOptions } from "./configs/signed-request"
+import { SignedRequestOptions } from './configs/signed-request'
 
 export interface TriggerConfig {
   triggerLifetimeSeconds: number

@@ -21,7 +21,7 @@ import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditi
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { Defer } from '../../src/utils/defer'
 import { BasketballEvents } from '../../src/sports/basketball/basketball-events'
-import { sign } from "../../src/plugins/signed-request.plugin"
+import { sign } from '../../src/plugins/signed-request.plugin'
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string

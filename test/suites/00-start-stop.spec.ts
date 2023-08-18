@@ -16,6 +16,7 @@ describe('start and stop service', () => {
   it('health', async () => {
     const res = await fetch('http://localhost:3000/generic/health')
     const body = await res.json()
+
     assert(body.data.status === 'ok')
   })
 

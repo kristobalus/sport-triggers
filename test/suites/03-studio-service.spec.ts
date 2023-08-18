@@ -122,7 +122,7 @@ describe('StudioService', function () {
     assert.ok(item.type)
     assert.equal(item.type, 'trigger')
 
-    ctx.app.log.debug({ response }, "service response for studio.trigger.get")
+    ctx.app.log.debug({ response }, 'service response for studio.trigger.get')
   })
 
   it('should list triggers by entity', async () => {
