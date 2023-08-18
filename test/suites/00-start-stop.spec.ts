@@ -13,6 +13,12 @@ describe('start and stop service', () => {
     assert(ctx.app, 'service was not started')
   })
 
+  it('health', async () => {
+    const res = await fetch('http://localhost:3000/generic/health')
+    const body = await res.json()
+    assert(body.data.status === 'ok')
+  })
+
   it('should stop service', async () => {
     await stopContext(ctx)
     assert(ctx.app === undefined, 'service was not stopped')
