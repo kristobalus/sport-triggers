@@ -1,6 +1,6 @@
 import { ConnectorsTypes } from '@microfleet/core'
 import { ServiceRequest } from '@microfleet/plugin-router'
-
+import { boomify } from '@hapi/boom'
 import crypto from 'crypto'
 
 import { HttpStatusError } from 'common-errors'
@@ -24,11 +24,9 @@ export function sign(algorithm: string, secret: string, data: string) {
     .digest('base64')
 }
 
-function verify(parent: FleetApp, request) {
+function verify(parent: FleetApp, request, rawPayload) {
   const { log, config  } = parent
   const { tokenHeader, digestHeader, algorithm, accessTokens } = config.signedRequest
-
-  const { rawPayload } = request.plugins['signed-request']
 
   if (request.headers[tokenHeader]) {
     const token = request.headers[tokenHeader]
@@ -58,6 +56,9 @@ export function init(parent: FleetApp) {
         version: '1.0.0',
         // eslint-disable-next-line require-await
         register: async function (server, _options) {
+
+          const { log } = parent
+
           server.ext('onRequest', (request, h) => {
             // This will store the chunks of data received
             const chunks = []
@@ -70,18 +71,13 @@ export function init(parent: FleetApp) {
             // Once the stream ends, we have the complete raw payload
             request.raw.req.on('end', () => {
               const rawPayload = Buffer.concat(chunks).toString('utf8')
-              request.plugins['signed-request'] = { rawPayload }
+              try {
+                verify(parent, request, rawPayload)
+              } catch (err) {
+                log.error({ err }, "error in signed request")
+                throw boomify(err, { statusCode: 401 })
+              }
             })
-
-            return h.continue
-          })
-
-          server.ext("onPreHandler", (request, h) => {
-            try {
-              verify(parent, request)
-            } catch (err) {
-              return h.response("Authentication required").code(401)
-            }
 
             return h.continue
           })
