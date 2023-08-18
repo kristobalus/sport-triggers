@@ -3,7 +3,7 @@ import { ServiceRequest } from '@microfleet/plugin-router'
 
 import crypto from 'crypto'
 
-// import { boomify } from '@hapi/boom'
+import { boomify } from '@hapi/boom'
 import { HttpStatusError } from 'common-errors'
 
 import { FleetApp } from '../fleet-app'
@@ -25,9 +25,11 @@ export function sign(algorithm: string, secret: string, data: string) {
     .digest('base64')
 }
 
-function verify(parent: FleetApp, request, rawPayload) {
+function verify(parent: FleetApp, request) {
   const { log, config  } = parent
   const { tokenHeader, digestHeader, algorithm, accessTokens } = config.signedRequest
+
+  const { rawPayload } = request.plugins['signed-request']
 
   if (request.headers[tokenHeader]) {
     const token = request.headers[tokenHeader]
@@ -69,23 +71,27 @@ export function init(parent: FleetApp) {
             // Once the stream ends, we have the complete raw payload
             request.raw.req.on('end', () => {
               const rawPayload = Buffer.concat(chunks).toString('utf8')
-
-              try {
-                verify(parent, request, rawPayload)
-              } catch (err) {
-
-                const errorPayload = {
-                  statusCode: 401,
-                  error: 'Authentication required',
-                  message: 'Authentication required'
-                };
-
-                const response = h.response(errorPayload);
-                response.code(401);
-                throw response;  // Throwing ensures the request lifecycle stops here.
-                // throw boomify(err, { statusCode: err.status_code, message: err.message })
-              }
+              request.plugins['signed-request'] = { rawPayload }
             })
+
+            return h.continue
+          })
+
+          server.ext("onPreHandler", (request, h) => {
+            try {
+              verify(parent, request)
+            } catch (err) {
+              // const errorPayload = {
+              //   statusCode: 401,
+              //   error: 'Authentication required',
+              //   message: 'Authentication required'
+              // };
+              //
+              // const response = h.response(errorPayload);
+              // response.code(401);
+              // throw response;  // Throwing ensures the request lifecycle stops here.
+              throw boomify(err, { statusCode: err.status_code, message: err.message })
+            }
 
             return h.continue
           })
