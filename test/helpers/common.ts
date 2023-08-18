@@ -10,12 +10,16 @@ export async function startContext(ctx: TestContext, opts: Partial<CoreOptions> 
     ctx.app = await createFleetApp(opts)
 
     const { config } = ctx.app
-    const { prefix } = config.routerHapi as RouterHapiPluginConfig
+    let { prefix } = config.routerHapi as RouterHapiPluginConfig
 
     await ctx.app.connect()
 
+   if ( prefix ) {
+     prefix = prefix + "/"
+   }
+
     ctx.request = got.extend({
-      prefixUrl: `http://localhost:3000/${prefix}/`
+      prefixUrl: `http://localhost:3000/${prefix}`
     })
 }
 

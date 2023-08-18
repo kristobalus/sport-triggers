@@ -3,7 +3,7 @@ import { ActionTransport, ServiceRequest } from '@microfleet/plugin-router'
 
 import { FleetApp } from '../../fleet-app'
 import { AdapterPushRequest } from '../../models/dto/adapter-push-request'
-import { digestMiddleware } from "../../middleware/digest.middleware"
+import { signedRequestMiddleware } from "../../middleware/signed-request.middleware"
 
 async function Handler(this: FleetApp, request: ServiceRequest): Promise<any> {
   const { event } = request.params as AdapterPushRequest
@@ -19,7 +19,7 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<any> {
 }
 
 Handler.schema = 'adapter.event.push'
-Handler.allowed = digestMiddleware
+Handler.allowed = signedRequestMiddleware
 Handler.transports = [ActionTransport.http]
 
 export = Handler

@@ -19,6 +19,7 @@ import { StudioService } from './services/studio/studio.service'
 import { init as initAdapterService } from './plugins/adapter-service.plugin'
 import { init as initStudioService } from './plugins/studio-service.plugin'
 import { init as initMetadataService } from './plugins/metadata-service.plugin'
+import { init as initSignedRequest } from './plugins/signed-request.plugin'
 import { QueueService } from './services/queue/queue.service'
 import { MetadataService } from './services/studio/metadata.service'
 
@@ -34,6 +35,7 @@ export class FleetApp extends Microfleet {
     initAdapterService(this)
     initStudioService(this)
     initMetadataService(this)
+    initSignedRequest(this)
   }
 }
 

@@ -21,6 +21,7 @@ import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditi
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { Defer } from '../../src/utils/defer'
 import { BasketballEvents } from '../../src/sports/basketball/basketball-events'
+import { sign } from "../../src/middleware/signed-request.middleware"
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string
@@ -60,8 +61,8 @@ describe('AdapterService', function () {
         [BasketballEvents.Sequence]: '1',
         [BasketballEvents.Quarter]: '1',
         [BasketballEvents.Period]: '1',
-        [BasketballEvents.GameLevel]: GameLevel.Start
-      }
+        [BasketballEvents.GameLevel]: GameLevel.Start,
+      },
     },
     [BasketballEvents.TeamScoresPoints]: {
       id: randomUUID(),
@@ -77,8 +78,8 @@ describe('AdapterService', function () {
         [BasketballEvents.Quarter]: '1',
         [BasketballEvents.Period]: '1',
         [BasketballEvents.TeamScoresPoints]: teamPoints,
-        [BasketballEvents.Team]: teamId
-      }
+        [BasketballEvents.Team]: teamId,
+      },
     },
     [BasketballEvents.TeamShootingFoul]: {
       id: randomUUID(),
@@ -94,9 +95,9 @@ describe('AdapterService', function () {
         [BasketballEvents.Quarter]: '1',
         [BasketballEvents.Period]: '1',
         [BasketballEvents.TeamShootingFoul]: teamId,
-        [BasketballEvents.Team]: teamId
-      }
-    }
+        [BasketballEvents.Team]: teamId,
+      },
+    },
   }
 
   const ctx: SuitContext = {
@@ -104,8 +105,8 @@ describe('AdapterService', function () {
       route: 'trigger.receiver',
       payload: { id: 1 },
       entity: 'question',
-      entityId: '1'
-    }
+      entityId: '1',
+    },
   }
 
   async function createTrigger(ctx: SuitContext) {
@@ -126,9 +127,9 @@ describe('AdapterService', function () {
         event: BasketballEvents.GameLevel,
         compare: CompareOp.Equal,
         targets: [
-          GameLevel.Start
+          GameLevel.Start,
         ],
-        options: []
+        options: [],
       },
       {
         event: BasketballEvents.Team,
@@ -139,23 +140,23 @@ describe('AdapterService', function () {
           {
             event: BasketballEvents.TeamScoresPoints,
             compare: CompareOp.Equal,
-            targets: [teamPoints]
-          }
-        ]
+            targets: [teamPoints],
+          },
+        ],
       },
       {
         event: BasketballEvents.Team,
         compare: CompareOp.In,
         targets: [
-          teamId
+          teamId,
         ],
         chainOperation: ChainOp.AND,
         options: [
           {
-            event: BasketballEvents.TeamShootingFoul
-          }
-        ]
-      }
+            event: BasketballEvents.TeamShootingFoul,
+          },
+        ],
+      },
     ]
 
     const response: ItemResponse<TriggerCreateResponse> =
@@ -215,13 +216,30 @@ describe('AdapterService', function () {
     return item.attributes.trigger.activated
   }
 
+  async function sendSignedRequest(request: AdapterPushRequest) {
+    const { tokenHeader, digestHeader, algorithm, accessTokens } = ctx.app.config.signedRequest
+    const body = JSON.stringify(request)
+
+    const [accessToken] = Object.keys(accessTokens)
+    const secret = accessTokens[accessToken]
+    const digest = sign(algorithm, secret, body)
+
+    await ctx.request.post('adapter/event/push', {
+      headers: {
+        [tokenHeader]: accessToken,
+        [digestHeader]: digest,
+      },
+      body: body,
+    })
+  }
+
   before(async () => {
     await startContext(ctx, {
       logger: {
-        debug: true,
-        prettifyDefaultLogger: false,
+        debug: false,
+        prettifyDefaultLogger: true,
         options: {
-          level: 'trace',
+          level: 'info',
         },
       },
     } as Partial<CoreOptions>)
@@ -241,11 +259,11 @@ describe('AdapterService', function () {
     const defer = new Defer()
 
     ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
-    await ctx.request.post('adapter/event/push', {
-      json: {
-        event: events[BasketballEvents.GameLevel],
-      } as AdapterPushRequest,
+
+    await sendSignedRequest({
+      event: events[BasketballEvents.GameLevel],
     })
+
     const { result } = await defer.promise
 
     assert.equal(result, false)
@@ -255,10 +273,9 @@ describe('AdapterService', function () {
     const defer = new Defer()
 
     ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
-    await ctx.request.post('adapter/event/push', {
-      json: {
-        event: events[BasketballEvents.TeamScoresPoints],
-      } as AdapterPushRequest,
+
+    await sendSignedRequest({
+      event: events[BasketballEvents.TeamScoresPoints],
     })
     const { result } = await defer.promise
 
@@ -271,10 +288,8 @@ describe('AdapterService', function () {
 
     ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
 
-    await ctx.request.post('adapter/event/push', {
-      json: {
-        event: events[BasketballEvents.TeamShootingFoul],
-      } as AdapterPushRequest,
+    await sendSignedRequest({
+      event: events[BasketballEvents.TeamShootingFoul],
     })
 
     const { result } = await defer.promise

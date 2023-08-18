@@ -8,5 +8,5 @@ export const plugins: CoreOptions['plugins']  = [
   'hapi',
   'router',
   'router-hapi',
-  'router-amqp',
+  'router-amqp'
 ]
