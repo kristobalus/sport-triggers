@@ -3,7 +3,6 @@ import { ServiceRequest } from '@microfleet/plugin-router'
 
 import crypto from 'crypto'
 
-import { boomify } from '@hapi/boom'
 import { HttpStatusError } from 'common-errors'
 
 import { FleetApp } from '../fleet-app'
@@ -81,16 +80,7 @@ export function init(parent: FleetApp) {
             try {
               verify(parent, request)
             } catch (err) {
-              // const errorPayload = {
-              //   statusCode: 401,
-              //   error: 'Authentication required',
-              //   message: 'Authentication required'
-              // };
-              //
-              // const response = h.response(errorPayload);
-              // response.code(401);
-              // throw response;  // Throwing ensures the request lifecycle stops here.
-              throw boomify(err, { statusCode: err.status_code, message: err.message })
+              return h.response("Authentication required").code(401)
             }
 
             return h.continue
