@@ -209,9 +209,8 @@ describe('AdapterService', function () {
 
     assert.ok(item.type)
     assert.equal(item.type, 'trigger')
-    assert.equal(item.type, 'trigger')
-
-    // console.log("getTriggerActivated:", JSON.stringify(item.attributes.trigger.activated))
+    assert.ok(item.attributes)
+    assert.ok(item.attributes.trigger)
 
     return item.attributes.trigger.activated
   }
