@@ -42,11 +42,11 @@ export function init(parent: FleetApp) {
               const secret = accessTokens[token]
 
               if (!secret) {
-                throw Boom.unauthorized()
+                throw Boom.unauthorized("Bad token")
               }
 
               if (!request.headers[signatureHeader] ) {
-                throw Boom.unauthorized()
+                throw Boom.unauthorized("Signature required")
               }
 
               const hmac = crypto.createHmac(algorithm, secret)
@@ -71,7 +71,7 @@ export function init(parent: FleetApp) {
                 log.trace({ digest, signature }, 'authentication attempt')
 
                 if (digest !== signature) {
-                  throw Boom.unauthorized()
+                  throw Boom.unauthorized("Bad signature")
                 }
               }
             }
