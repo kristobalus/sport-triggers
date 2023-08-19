@@ -217,19 +217,19 @@ describe('AdapterService', function () {
   }
 
   async function sendSignedRequest(request: AdapterPushRequest) {
-    const { tokenHeader, digestHeader, algorithm, accessTokens } = ctx.app.config.signedRequest
+    const { tokenHeader, signatureHeader, algorithm, accessTokens } = ctx.app.config.signedRequest
     const body = JSON.stringify(request)
 
     const [accessToken] = Object.keys(accessTokens)
     const secret = accessTokens[accessToken]
-    const digest = sign(algorithm, secret, body)
+    const signature = sign(algorithm, secret, body)
 
-    ctx.app.log.info({ body, digest }, 'sending signed request')
+    ctx.app.log.info({ body, digest: signature }, 'sending signed request')
 
     await ctx.request.post('adapter/event/push', {
       headers: {
         [tokenHeader]: accessToken,
-        [digestHeader]: digest,
+        [signatureHeader]: signature,
       },
       body: body,
     })
@@ -238,10 +238,10 @@ describe('AdapterService', function () {
   before(async () => {
     await startContext(ctx, {
       logger: {
-        debug: false,
+        debug: true,
         prettifyDefaultLogger: true,
         options: {
-          level: 'info',
+          level: 'trace',
         },
       },
     } as Partial<CoreOptions>)
@@ -255,6 +255,17 @@ describe('AdapterService', function () {
 
   after(async () => {
     await stopContext(ctx)
+  })
+
+  it('push unsigned request', async () => {
+    await assert.rejects(ctx.request.post('adapter/event/push', {
+      json: {
+        event: events[BasketballEvents.GameLevel]
+      },
+    }), (err) => {
+      console.log(err)
+      return true
+    })
   })
 
   it('push game level event', async () => {

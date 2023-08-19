@@ -2,7 +2,7 @@
 // noinspection JSUnusedGlobalSymbols
 
 export interface SignedRequestOptions {
-  digestHeader: string
+  signatureHeader: string
   tokenHeader: string
   // stores pairs access-token --> secret
   accessTokens: Record<string, string>
@@ -10,7 +10,7 @@ export interface SignedRequestOptions {
 }
 
 export const signedRequest: SignedRequestOptions = {
-  digestHeader: 'x-digest',
+  signatureHeader: 'x-signature',
   tokenHeader: 'x-access-token',
   algorithm: 'sha256',
   accessTokens: {
