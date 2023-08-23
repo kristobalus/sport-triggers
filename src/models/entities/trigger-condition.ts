@@ -72,6 +72,6 @@ export interface TriggerCondition {
   chainOrder?: number
   // logical operation on condition when combining multiple conditions together
   chainOperation?: ChainOp
-  // маркировка условия как удаленного пользователем
+  // mark condition as deleted by user
   deleted?: boolean
 }
