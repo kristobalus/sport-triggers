@@ -1,0 +1,31 @@
+{
+    "$id": "studio.trigger.update",
+    "type": "object",
+    "properties": {
+        "trigger": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": true,
+            "required": ["id"]
+        },
+        "conditions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": true,
+                "required": ["id"]
+            }
+        }
+    },
+    "additionalProperties": false,
+    "required": ["trigger", "conditions"]
+}
