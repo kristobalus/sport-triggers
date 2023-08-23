@@ -12,7 +12,7 @@ import { CompareOp } from '../../src/models/entities/trigger-condition'
 import {
   EssentialConditionData,
   EssentialTriggerData,
-  TriggerCreateRequest,
+  TriggerCreateRequest
 } from '../../src/models/dto/trigger-create-request'
 import { GameLevel } from '../../src/sports/football/game-level'
 import { TriggerListRequest } from '../../src/models/dto/trigger-list-request'
@@ -88,7 +88,7 @@ describe('StudioService', function () {
         event: FootballEvents.GameLevel,
         compare: CompareOp.Equal,
         targets: [GameLevel.Start],
-        options: [],
+        options: []
       },
     ]
 
@@ -153,7 +153,7 @@ describe('StudioService', function () {
         payload: { foo: 'bar', id: '1' },
         entity: subEntity,
         entityId: subEntityId,
-      },
+      }
     }
 
     const response: ItemResponse = await ctx.app.amqp
@@ -186,7 +186,7 @@ describe('StudioService', function () {
 
   it('should get subscription list by entity', async () => {
     const prefix = ctx.app.config.routerAmqp.prefix
-    const data = { entity: subEntity, entityId: subEntityId } as SubscriptionListRequest
+    const data = { entity: subEntity, entityId: subEntityId  } as SubscriptionListRequest
     const response: ListResponse<TriggerSubscription> = await ctx.app.amqp
       .publishAndWait(`${prefix}.studio.subscription.list`, data)
 
