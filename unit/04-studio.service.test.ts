@@ -11,7 +11,6 @@ import { CompareOp, ConditionType } from "../src/models/entities/trigger-conditi
 import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { TriggerConditionCollection } from "../src/repositories/trigger-condition.collection"
 import { randomUUID } from "crypto"
-import { FootballEvents } from "../src/sports/football/football-events"
 import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subscription.collection"
 import { Scope } from "../src/models/entities/trigger"
 import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
@@ -58,12 +57,6 @@ describe("StudioService", function () {
 
   after(async () => {
     ctx.redis.disconnect()
-  })
-
-  it(`should get metadata`, async () => {
-    const metadata = ctx.service.getMetadata()
-    assert.ok(metadata)
-    assert.ok(metadata[FootballEvents.PlayerState])
   })
 
   it(`should create trigger`, async () => {
@@ -139,6 +132,20 @@ describe("StudioService", function () {
     assert.ok(trigger.trigger.name, "Trigger")
     assert.ok(trigger.trigger.name, "Trigger Description")
     ctx.log.debug({ trigger }, 'trigger by id')
+  })
+
+  it(`studio should update trigger`, async () => {
+    const document = await ctx.service.getTrigger(ctx.triggerId, { showLog: true, trim: true })
+    assert.ok(document.trigger.name, "Trigger")
+    assert.ok(document.trigger.name, "Trigger Description")
+    ctx.log.debug({ triggerOriginal: document }, 'trigger by id')
+
+    document.trigger.name = "Trigger Updated"
+    await ctx.service.updateTrigger(document.trigger, document.conditions)
+
+    const documentUpdated = await ctx.service.getTrigger(ctx.triggerId, { showLog: true, trim: true })
+    ctx.log.debug({ triggerUpdated: documentUpdated }, 'trigger by id')
+    assert.ok(documentUpdated.trigger.name, "Trigger Updated")
   })
 
   after(async () => {

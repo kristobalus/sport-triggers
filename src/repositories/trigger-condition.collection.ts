@@ -378,5 +378,6 @@ export class TriggerConditionCollection {
       await pipe.exec()
     }
   }
+
 }
 

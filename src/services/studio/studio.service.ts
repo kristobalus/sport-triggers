@@ -10,7 +10,7 @@ import { EssentialConditionData, EssentialTriggerData } from '../../models/dto/t
 import { TriggerWithConditions } from '../../models/dto/trigger-with-conditions'
 import { EssentialSubscriptionData } from '../../models/dto/trigger-subscribe-request'
 import { TriggerSubscription } from '../../models/entities/trigger-subscription'
-import { metadata } from '../../sports'
+import assert from "assert"
 
 export interface TriggerOptions {
   showLog?: boolean
@@ -203,11 +203,19 @@ export class StudioService {
     return { trigger, conditions } as TriggerWithConditions
   }
 
-  /**
-   * @description returns metadata description for standard events
-   *              studio should use it as a reference while building trigger request
-   */
-  getMetadata() {
-    return metadata
+  async updateTrigger(triggerUpdated: EssentialTriggerData, conditionsUpdated: EssentialConditionData[]) {
+
+    assert(triggerUpdated.id)
+
+    for(const condition of conditionsUpdated) {
+      assert(condition.id)
+    }
+
+    const trigger = await this.triggers.getOne(triggerUpdated.id)
+    assert(trigger)
+
+    await this.triggers.updateOne(triggerUpdated.id, triggerUpdated)
+    await this.conditions.add(trigger.id, trigger.datasource, trigger.scope, trigger.scopeId, conditionsUpdated)
   }
+
 }
