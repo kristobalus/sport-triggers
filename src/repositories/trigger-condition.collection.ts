@@ -291,6 +291,8 @@ export class TriggerConditionCollection {
     pipe.del(conditionKey(condition.id))
     pipe.del(conditionLogKey(condition.id))
     pipe.srem(conditionSetByTriggerKey(triggerId), condition.id)
+    // TODO consider changing for zincrby since zrem
+    //   is valid only if there is just 1 condition of certain type of event in a trigger
     pipe.zrem(subscribedToScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
     pipe.zrem(subscribedToUri(EventUri.fromCondition(condition)), triggerId)
 

@@ -232,7 +232,8 @@ describe('StudioService', function () {
           trigger: {
             id: originalDocument.trigger.id,
             name: "Trigger Update"
-          }
+          },
+          conditions: originalDocument.conditions
         },
       ],
     } as TriggerUpdateRequest
@@ -250,6 +251,8 @@ describe('StudioService', function () {
       originalDocument,
       updatedDocument
     }, "updated trigger document")
+
+    assert.equal(updatedDocument.trigger.name, "Trigger Update")
   })
 
   it('should delete trigger', async () => {

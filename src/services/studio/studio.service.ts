@@ -209,16 +209,23 @@ export class StudioService {
 
     assert(triggerUpdate.id)
 
-    // for(const condition of conditionsUpdate) {
-    //   assert(condition.id)
-    // }
-
     const trigger = await this.triggers.getOne(triggerUpdate.id)
     assert(trigger)
 
+    // update trigger
     await this.triggers.updateOne(triggerUpdate.id, triggerUpdate)
 
+    // diff clean up obsolete conditions (which are present in db but not present in update)
+    const updatedIds = conditionsUpdate.map(v => v.id).filter(id => id !== undefined)
+    const currentIds = await this.conditions.getListByTriggerId(triggerUpdate.id)
+    for(const id of currentIds) {
+      if ( updatedIds.indexOf(id) == -1 ) {
+        await this.conditions.deleteById(id)
+      }
+    }
+
     if ( conditionsUpdate.length ) {
+      // update or create conditions
       await this.conditions.add(trigger.id, trigger.datasource, trigger.scope, trigger.scopeId, conditionsUpdate)
     }
   }
