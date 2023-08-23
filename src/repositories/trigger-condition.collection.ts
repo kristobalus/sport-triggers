@@ -254,25 +254,18 @@ export class TriggerConditionCollection {
     const conditions = createArrayFromHGetAll(results) as TriggerCondition[]
 
     for (const condition of conditions) {
-      condition.chainOrder = parseInt(condition.chainOrder as unknown as string)
-      condition.activated = (condition.activated as unknown as string) == '1'
-
-      if (condition.options) {
-        condition.options = JSON.parse(condition.options as any)
-      }
-
-      if (condition.targets) {
-        condition.targets = JSON.parse(condition.targets as any)
-      }
-
-      if (options.showLog) {
-        condition.log = await this.getEventLog(condition.id)
-      }
+      await this.afterRead(condition, options?.showLog)
     }
 
     inPlaceSort(conditions).asc('chainOrder')
 
     return conditions
+  }
+
+  async getById(id: string, options: { showLog?: boolean } = {}): Promise<TriggerCondition> {
+    const condition = await this.redis.hgetall(conditionKey(id))
+    await this.afterRead(condition, options?.showLog)
+    return condition as unknown as TriggerCondition
   }
 
   async deleteByTriggerId(triggerId: string) {
@@ -288,6 +281,24 @@ export class TriggerConditionCollection {
     }
 
     await pipe.exec()
+  }
+
+  async deleteById(id: string) {
+    const condition = await this.getById(id)
+    const pipe = this.redis.pipeline()
+    const { triggerId } = condition
+
+    pipe.del(conditionKey(condition.id))
+    pipe.del(conditionLogKey(condition.id))
+    pipe.srem(conditionSetByTriggerKey(triggerId), condition.id)
+    pipe.zrem(subscribedToScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
+    pipe.zrem(subscribedToUri(EventUri.fromCondition(condition)), triggerId)
+
+    await pipe.exec()
+  }
+
+  async getListByTriggerId(triggerId: string) : Promise<string[]> {
+    return await this.redis.smembers(conditionSetByTriggerKey(triggerId))
   }
 
   getTriggerListByScopeAndEventName(
@@ -376,6 +387,23 @@ export class TriggerConditionCollection {
       pipe.zrem(subscribedToUri(condition.uri), triggerId)
 
       await pipe.exec()
+    }
+  }
+
+  private async afterRead(condition: TriggerCondition | Record<string, string>, appendLog?: boolean) {
+    condition.chainOrder = parseInt(condition.chainOrder as unknown as string)
+    condition.activated = (condition.activated as unknown as string) == '1'
+
+    if (condition.options) {
+      condition.options = JSON.parse(condition.options as any)
+    }
+
+    if (condition.targets) {
+      condition.targets = JSON.parse(condition.targets as any)
+    }
+
+    if (appendLog) {
+      condition.log = await this.getEventLog(condition.id)
     }
   }
 
