@@ -11,6 +11,8 @@ import { TriggerWithConditions } from '../../models/dto/trigger-with-conditions'
 import { EssentialSubscriptionData } from '../../models/dto/trigger-subscribe-request'
 import { TriggerSubscription } from '../../models/entities/trigger-subscription'
 import assert from "assert"
+import { Trigger } from "../../models/entities/trigger"
+import { TriggerCondition } from "../../models/entities/trigger-condition"
 
 export interface TriggerOptions {
   showLog?: boolean
@@ -203,19 +205,22 @@ export class StudioService {
     return { trigger, conditions } as TriggerWithConditions
   }
 
-  async updateTrigger(triggerUpdated: EssentialTriggerData, conditionsUpdated: EssentialConditionData[]) {
+  async updateTrigger(triggerUpdate: Trigger, conditionsUpdate: TriggerCondition[]) {
 
-    assert(triggerUpdated.id)
+    assert(triggerUpdate.id)
 
-    for(const condition of conditionsUpdated) {
-      assert(condition.id)
-    }
+    // for(const condition of conditionsUpdate) {
+    //   assert(condition.id)
+    // }
 
-    const trigger = await this.triggers.getOne(triggerUpdated.id)
+    const trigger = await this.triggers.getOne(triggerUpdate.id)
     assert(trigger)
 
-    await this.triggers.updateOne(triggerUpdated.id, triggerUpdated)
-    await this.conditions.add(trigger.id, trigger.datasource, trigger.scope, trigger.scopeId, conditionsUpdated)
+    await this.triggers.updateOne(triggerUpdate.id, triggerUpdate)
+
+    if ( conditionsUpdate.length ) {
+      await this.conditions.add(trigger.id, trigger.datasource, trigger.scope, trigger.scopeId, conditionsUpdate)
+    }
   }
 
 }

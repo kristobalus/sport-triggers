@@ -13,7 +13,7 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<Respons
 
   for(const update of updates){
     const { trigger, conditions } = update
-    await studioService.updateTrigger(trigger, conditions)
+    await studioService.updateTrigger(trigger, conditions ?? [])
   }
 
   return {} as Response
