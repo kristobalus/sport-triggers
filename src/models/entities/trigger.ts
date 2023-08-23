@@ -16,5 +16,7 @@ export interface Trigger {
   activated: boolean
   entity: string
   entityId: string
+  // mark trigger as deleted by user
+  deleted?: boolean
 }
 

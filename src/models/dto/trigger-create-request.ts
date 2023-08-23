@@ -11,3 +11,4 @@ export interface TriggerCreateRequest {
   trigger: EssentialTriggerData
   conditions: EssentialConditionData[]
 }
+

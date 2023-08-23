@@ -72,4 +72,6 @@ export interface TriggerCondition {
   chainOrder?: number
   // logical operation on condition when combining multiple conditions together
   chainOperation?: ChainOp
+  // mark condition as deleted by user
+  deleted?: boolean
 }
