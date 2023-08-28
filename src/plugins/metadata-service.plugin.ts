@@ -10,7 +10,7 @@ export function init(parent: FleetApp) {
   parent.addConnector(ConnectorsTypes.application, async () => {
     parent.metadataService = new MetadataService()
     parent.metadataService
-      .loadGames(path.resolve(__dirname, '../../games/basketball'), 'basketball')
+      .loadSportradarGames(path.resolve(__dirname, '../../games/basketball'), 'basketball')
     // parent.metadataService
       // .loadGames(path.resolve(__dirname, "../studio/baseball/games"), "baseball")
   })

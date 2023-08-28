@@ -16,6 +16,9 @@ import { StudioInputs } from '../../models/studio/studio.inputs'
 import { StudioInputsProtobuf } from '../../models/studio/studio.inputs.protobuf'
 import { Team } from '../../models/studio/team'
 import { Player } from '../../models/studio/player'
+import { Game as VenueGame }  from "../../models/nvenue/game"
+import { Team as VenueTeam }  from "../../models/nvenue/team"
+import { Player as VenuePlayer }  from "../../models/nvenue/player"
 
 export type Sport = 'basketball' | 'baseball' | 'football' | 'soccer'
 
@@ -155,7 +158,7 @@ export class MetadataService {
     }
   }
 
-  loadGames(dir: string, sport: Sport) {
+  loadSportradarGames(dir: string, sport: Sport) {
     if (!fs.existsSync(dir)) {
       throw new Error('Games dir not found')
     }
@@ -235,7 +238,24 @@ export class MetadataService {
     }
   }
 
-  getDatasource() {
-    return 'sportradar'
+  loadMlbVenueGames(path: string) {
+    const data = require(path) as VenueGame[]
+    for(const game of data){
+      console.log(game.nv_game_id)
+    }
+  }
+
+  loadMlbVenueTeams(path: string) {
+    const data = require(path) as VenueTeam[]
+    for(const team of data){
+      console.log(team.abbr)
+    }
+  }
+
+  loadMlbVenuePlayers(path: string) {
+    const data = require(path) as VenuePlayer[]
+    for(const player of data){
+      console.log(player.mlbam_id)
+    }
   }
 }
