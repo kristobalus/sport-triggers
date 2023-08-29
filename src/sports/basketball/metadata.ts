@@ -434,12 +434,17 @@ export const metadata: Record<string, EventMetadata> = {
     primary: false,
     label: 'Player Scores Pts',
     description: '',
-    type: ConditionType.String,
-    compare: [],
+    type: ConditionType.Number,
+    compare: [
+      CompareOp.Equal,
+      CompareOp.LessOrEqual,
+      CompareOp.LessThan,
+      CompareOp.GreaterThan,
+      CompareOp.GreaterOrEqual,
+    ],
     targets: [],
     optionScope: [BasketballEvents.Player],
-    optionDefaultCompare: CompareOp.In,
-    inferTargetsFromScope: true
+    optionDefaultCompare: CompareOp.In
   },
 
 }
