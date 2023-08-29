@@ -13,7 +13,8 @@ describe('Metadata tests', function () {
   it('condition data for ui', () => {
     service.loadSportradarGames(path.resolve(__dirname, "../games/sportradar/basketball"), "basketball")
     const gameId = "0d996d35-85e5-4913-bd45-ac9cfedbf272"
-    const data = service.getConditionData(gameId, true)
+    const datasource = "sportradar"
+    const data = service.getConditionData(datasource, gameId, true)
     console.log(JSON.stringify(data, null, 4))
   })
 

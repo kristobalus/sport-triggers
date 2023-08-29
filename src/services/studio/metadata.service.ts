@@ -26,6 +26,7 @@ export class MetadataService {
   private games: Map<string, Game> = new Map<string, Game>
 
   getConditionData(
+    _datasource: string,
     gameId: string,
     shouldMapEnum = false): StudioConditionData {
     const game = this.getGame(gameId)
