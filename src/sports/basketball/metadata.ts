@@ -101,7 +101,8 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     targetSource: Sources.GameLevel,
     preferredOptions: [
-      BasketballEvents.TotalPoints
+      BasketballEvents.Quarter,
+      BasketballEvents.Sequence
     ],
     optionDefaultCompare: CompareOp.In
   },

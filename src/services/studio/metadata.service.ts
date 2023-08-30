@@ -1,35 +1,39 @@
 
-import fs = require('fs');
-
-import _ = require('lodash');
-
-import { Game } from '../../models/studio/game'
-import { Game as SportradarGame } from '../../models/sportradar/game'
-import { metadata, targetTree } from '../../sports'
-import { EventMetadata } from '../../models/events/event-metadata'
 import { StudioConditionData } from '../../models/studio/studio.condition-data'
-import { StudioEvent } from '../../models/studio/studio.event'
-import { StudioTargetTree } from '../../models/studio/studio.target-tree'
-import { StudioTarget } from '../../models/studio/studio.target'
-import { CommonSources } from '../../sports/common-sources'
-import { StudioInputs } from '../../models/studio/studio.inputs'
-import { StudioInputsProtobuf } from '../../models/studio/studio.inputs.protobuf'
-import { Team } from '../../models/studio/team'
-import { Player } from '../../models/studio/player'
-import { Game as VenueGame }  from "../../models/nvenue/game"
-import { Team as VenueTeam }  from "../../models/nvenue/team"
-import { Player as VenuePlayer }  from "../../models/nvenue/player"
+import { metadata, targetTree } from "../../sports"
+import { StudioEvent } from "../../models/studio/studio.event"
+import { CommonSources } from "../../sports/common-sources"
+import { Game } from "../../models/studio/game"
+import { StudioInputs } from "../../models/studio/studio.inputs"
+import { StudioInputsProtobuf } from "../../models/studio/studio.inputs.protobuf"
+import { EventMetadata } from "../../models/events/event-metadata"
+import { StudioTargetTree } from "../../models/studio/studio.target-tree"
+import { StudioTarget } from "../../models/studio/studio.target"
+
+export interface Datasource {
+  getGame(gameId: string): Game
+}
 
 export type Sport = 'basketball' | 'baseball' | 'football' | 'soccer'
 
 export class MetadataService {
-  private games: Map<string, Game> = new Map<string, Game>
+
+  private sources: Map<string, Datasource> = new Map<string, Datasource>()
 
   getConditionData(
-    _datasource: string,
+    datasource: string,
     gameId: string,
-    shouldMapEnum = false): StudioConditionData {
-    const game = this.getGame(gameId)
+    shouldMapEnum = false) {
+
+    const ds = this.sources.get(datasource)
+    if (!ds) {
+      throw new Error(`Datasource ${datasource} not found`)
+    }
+
+    const game = ds.getGame(gameId)
+    if (!game) {
+      throw new Error(`Game ${gameId} not found`)
+    }
 
     const result: StudioConditionData = {
       game: {
@@ -85,6 +89,27 @@ export class MetadataService {
     return result
   }
 
+  getStudioInputMapped(input: StudioInputs): StudioInputsProtobuf {
+    switch (input) {
+      case StudioInputs.None:
+        return StudioInputsProtobuf.STUDIO_INPUT_UNSET
+      case StudioInputs.Number:
+        return StudioInputsProtobuf.STUDIO_INPUT_NUMBER
+      case StudioInputs.SelectMulti:
+        return StudioInputsProtobuf.STUDIO_INPUT_SELECT_MULTI
+      case StudioInputs.Select:
+        return StudioInputsProtobuf.STUDIO_INPUT_SELECT
+      case StudioInputs.Points:
+        return StudioInputsProtobuf.STUDIO_INPUT_POINTS
+      case StudioInputs.String:
+        return StudioInputsProtobuf.STUDIO_INPUT_STRING
+      case StudioInputs.TimeMinutes:
+        return StudioInputsProtobuf.STUDIO_INPUT_TIME_MINUTES
+      default:
+        throw new Error('Unknown studio input type')
+    }
+  }
+
   createTargetsBySource(metas: EventMetadata, targetTree: StudioTargetTree): StudioTarget[] {
     const targets: StudioTarget[] = []
 
@@ -134,129 +159,10 @@ export class MetadataService {
     return targets
   }
 
-  getGame(gameId: string): Game {
-    return this.games.get(gameId)
-  }
-
-  getStudioInputMapped(input: StudioInputs): StudioInputsProtobuf {
-    switch (input) {
-      case StudioInputs.None:
-        return StudioInputsProtobuf.STUDIO_INPUT_UNSET
-      case StudioInputs.Number:
-        return StudioInputsProtobuf.STUDIO_INPUT_NUMBER
-      case StudioInputs.SelectMulti:
-        return StudioInputsProtobuf.STUDIO_INPUT_SELECT_MULTI
-      case StudioInputs.Select:
-        return StudioInputsProtobuf.STUDIO_INPUT_SELECT
-      case StudioInputs.Points:
-        return StudioInputsProtobuf.STUDIO_INPUT_POINTS
-      case StudioInputs.String:
-        return StudioInputsProtobuf.STUDIO_INPUT_STRING
-      case StudioInputs.TimeMinutes:
-        return StudioInputsProtobuf.STUDIO_INPUT_TIME_MINUTES
-      default:
-        throw new Error('Unknown studio input type')
+  addDatasource(provider: string, sport: string, datasource: Datasource) {
+    if(!this.sources[provider]) {
+      this.sources[provider] = {}
     }
-  }
-
-  loadSportradarGames(dir: string, sport: Sport) {
-    if (!fs.existsSync(dir)) {
-      throw new Error('Games dir not found')
-    }
-
-    const stats = fs.statSync(dir)
-
-    if (stats.isFile()) {
-      throw new Error('Provided path is not a folder')
-    }
-
-    const files = fs.readdirSync(dir)
-
-    for (const file of files) {
-      const filePath = `${dir}/${file}`
-      // eslint-disable-next-line  @typescript-eslint/no-var-requires
-      const data = require(filePath) as SportradarGame
-
-      const players: Player[] = []
-
-      for (const period of data.periods) {
-        for (const event of period.events) {
-          if ( event.on_court ) {
-            const { home, away } = event.on_court
-
-            for (const player of away.players) {
-              players.push({
-                id: player.id,
-                name: player.full_name,
-                team: away.id,
-                position: player.position,
-                primary_position: player.primary_position,
-                jersey_number: player.jersey_number
-              } as Player)
-            }
-
-            for (const player of home.players) {
-              players.push({
-                id: player.id,
-                name: player.full_name,
-                team: home.id,
-                position: player.position,
-                primary_position: player.primary_position,
-                jersey_number: player.jersey_number
-              } as Player)
-            }
-          }
-        }
-      }
-
-      const homeTeam: Team = {
-        id: data.home.id,
-        name: data.home.name,
-        home: true
-      }
-
-      const awayTeam: Team = {
-        id: data.away.id,
-        name: data.away.name,
-        home: false
-      }
-
-      const game: Game = {
-        datasource: 'sportradar',
-        scope: 'game',
-        sport: sport,
-        id: data.id,
-        players: _.uniqBy(players, player => player.id),
-        teams: {},
-        home: homeTeam.id,
-        away: awayTeam.id
-      }
-
-      game.teams[homeTeam.id] = homeTeam
-      game.teams[awayTeam.id] = awayTeam
-
-      this.games.set(game.id, game)
-    }
-  }
-
-  loadMlbVenueGames(path: string) {
-    const data = require(path) as VenueGame[]
-    for(const game of data){
-      console.log(game.nv_game_id)
-    }
-  }
-
-  loadMlbVenueTeams(path: string) {
-    const data = require(path) as VenueTeam[]
-    for(const team of data){
-      console.log(team.abbr)
-    }
-  }
-
-  loadMlbVenuePlayers(path: string) {
-    const data = require(path) as VenuePlayer[]
-    for(const player of data){
-      console.log(player.mlbam_id)
-    }
+    this.sources[provider][sport] = datasource
   }
 }
