@@ -91,4 +91,22 @@ export class NvenueDatasource implements Datasource {
       this.games.set(game.id, game)
     }
   }
+
+  listGames(nvGamesFile: string) {
+    const nvGames = require(nvGamesFile) as NVenueGame[]
+    for(const nvGame of nvGames){
+      const row = [
+        nvGame.status,
+        nvGame.season,
+        nvGame.season_type,
+        nvGame.mlb_game_id,
+        nvGame.nv_game_id,
+        nvGame.scheduled,
+        nvGame.home_abbr,
+        nvGame.away_abbr
+      ]
+      console.log(row.join(","))
+    }
+  }
+
 }

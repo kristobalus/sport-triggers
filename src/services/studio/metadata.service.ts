@@ -159,10 +159,7 @@ export class MetadataService {
     return targets
   }
 
-  addDatasource(provider: string, sport: string, datasource: Datasource) {
-    if(!this.sources[provider]) {
-      this.sources[provider] = {}
-    }
-    this.sources[provider][sport] = datasource
+  addDatasource(provider: string, datasource: Datasource) {
+    this.sources.set(provider, datasource)
   }
 }
