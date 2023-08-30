@@ -263,6 +263,7 @@ describe('AdapterService', function () {
       },
     }), (err) => {
       console.log(err)
+      
       return true
     })
   })

@@ -264,7 +264,9 @@ export class TriggerConditionCollection {
 
   async getById(id: string, options: { showLog?: boolean } = {}): Promise<TriggerCondition> {
     const condition = await this.redis.hgetall(conditionKey(id))
+
     await this.afterRead(condition, options?.showLog)
+
     return condition as unknown as TriggerCondition
   }
 
@@ -299,8 +301,10 @@ export class TriggerConditionCollection {
     await pipe.exec()
   }
 
-  async getListByTriggerId(triggerId: string) : Promise<string[]> {
-    return await this.redis.smembers(conditionSetByTriggerKey(triggerId))
+  // eslint-disable-next-line require-await
+  async getListByTriggerId(triggerId: string): Promise<string[]> {
+    // eslint-disable-next-line require-await
+    return this.redis.smembers(conditionSetByTriggerKey(triggerId))
   }
 
   getTriggerListByScopeAndEventName(
@@ -408,6 +412,5 @@ export class TriggerConditionCollection {
       condition.log = await this.getEventLog(condition.id)
     }
   }
-
 }
 

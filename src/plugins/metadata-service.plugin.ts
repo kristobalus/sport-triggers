@@ -4,18 +4,18 @@ import path = require('path')
 
 import { FleetApp } from '../fleet-app'
 import { MetadataService } from '../services/studio/metadata.service'
-import { SportradarDatasource } from "../datasources/sportradar.datasource"
-import { NvenueDatasource } from "../datasources/nvenue.datasource"
-
+import { SportradarDatasource } from '../datasources/sportradar.datasource'
+import { NvenueDatasource } from '../datasources/nvenue.datasource'
 
 export function init(parent: FleetApp) {
   // eslint-disable-next-line require-await
   parent.addConnector(ConnectorsTypes.application, async () => {
-
     const sportradar = new SportradarDatasource()
+
     sportradar.loadGamesDir(path.resolve(__dirname, '../../games/sportradar/basketball'), 'basketball')
 
     const nvenue = new NvenueDatasource()
+
     nvenue.loadGames(
       path.resolve(__dirname, '../../games/nvenue/baseball/games.json'),
       path.resolve(__dirname, '../../games/mlb/teams.json'),
@@ -23,8 +23,9 @@ export function init(parent: FleetApp) {
       'baseball')
 
     const service = parent.metadataService = new MetadataService()
-    service.addDatasource("sportradar", sportradar)
-    service.addDatasource("nvenue", nvenue)
+
+    service.addDatasource('sportradar', sportradar)
+    service.addDatasource('nvenue', nvenue)
   })
 
   // eslint-disable-next-line require-await

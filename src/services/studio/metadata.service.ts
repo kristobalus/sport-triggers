@@ -1,31 +1,31 @@
 
 import { StudioConditionData } from '../../models/studio/studio.condition-data'
-import { metadata, targetTree } from "../../sports"
-import { StudioEvent } from "../../models/studio/studio.event"
-import { CommonSources } from "../../sports/common-sources"
-import { Game } from "../../models/studio/game"
-import { StudioInputs } from "../../models/studio/studio.inputs"
-import { StudioInputsProtobuf } from "../../models/studio/studio.inputs.protobuf"
-import { EventMetadata } from "../../models/events/event-metadata"
-import { StudioTargetTree } from "../../models/studio/studio.target-tree"
-import { StudioTarget } from "../../models/studio/studio.target"
-import { Datasource } from "../../models/studio/datasource"
+import { metadata, targetTree } from '../../sports'
+import { StudioEvent } from '../../models/studio/studio.event'
+import { CommonSources } from '../../sports/common-sources'
+import { Game } from '../../models/studio/game'
+import { StudioInputs } from '../../models/studio/studio.inputs'
+import { StudioInputsProtobuf } from '../../models/studio/studio.inputs.protobuf'
+import { EventMetadata } from '../../models/events/event-metadata'
+import { StudioTargetTree } from '../../models/studio/studio.target-tree'
+import { StudioTarget } from '../../models/studio/studio.target'
+import { Datasource } from '../../models/studio/datasource'
 
 export class MetadataService {
-
   private sources: Map<string, Datasource> = new Map<string, Datasource>()
 
   getConditionData(
     datasource: string,
     gameId: string,
     shouldMapEnum = false) {
-
     const ds = this.sources.get(datasource)
+
     if (!ds) {
       throw new Error(`Datasource ${datasource} not found`)
     }
 
     const game = ds.getGame(gameId)
+
     if (!game) {
       throw new Error(`Game ${gameId} not found in datasource ${datasource}`)
     }

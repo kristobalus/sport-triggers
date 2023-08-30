@@ -7,10 +7,9 @@ import { Game } from '../models/studio/game'
 import { Game as SportradarGame } from '../models/sportradar/game'
 import { Team } from '../models/studio/team'
 import { Player } from '../models/studio/player'
-import { Sport } from "../models/studio/sport"
+import { Sport } from '../models/studio/sport'
 
 export class SportradarDatasource {
-
   private games: Map<string, Game> = new Map<string, Game>
 
   getGame(gameId: string): Game {
@@ -96,5 +95,4 @@ export class SportradarDatasource {
       this.games.set(game.id, game)
     }
   }
-
 }

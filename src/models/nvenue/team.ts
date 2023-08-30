@@ -1,5 +1,4 @@
 
-
 export interface Team {
   league: string
   division: string

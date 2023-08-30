@@ -4,8 +4,8 @@ import { StudioInputs } from '../../models/studio/studio.inputs'
 import { CommonSources } from '../common-sources'
 
 import { BaseballEvents } from './baseball-events'
-import { Sources } from "./sources"
-import { InningHalf } from "./inning-half"
+import { Sources } from './sources'
+import { InningHalf } from './inning-half'
 // import { Sources } from './sources'
 
 export const metadata: Record<string, EventMetadata> = {

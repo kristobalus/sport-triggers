@@ -1,6 +1,5 @@
 
-
 export enum InningHalf {
-  Top = "top",
-  Bottom = "bottom"
+  Top = 'top',
+  Bottom = 'bottom'
 }

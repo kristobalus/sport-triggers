@@ -1,5 +1,7 @@
 import { Microfleet } from '@microfleet/core-types'
 
+import assert from 'assert'
+
 import { Redis } from 'ioredis'
 import { ArgumentError } from 'common-errors'
 
@@ -10,9 +12,8 @@ import { EssentialConditionData, EssentialTriggerData } from '../../models/dto/t
 import { TriggerWithConditions } from '../../models/dto/trigger-with-conditions'
 import { EssentialSubscriptionData } from '../../models/dto/trigger-subscribe-request'
 import { TriggerSubscription } from '../../models/entities/trigger-subscription'
-import assert from "assert"
-import { Trigger } from "../../models/entities/trigger"
-import { TriggerCondition } from "../../models/entities/trigger-condition"
+import { Trigger } from '../../models/entities/trigger'
+import { TriggerCondition } from '../../models/entities/trigger-condition'
 
 export interface TriggerOptions {
   showLog?: boolean
@@ -206,10 +207,10 @@ export class StudioService {
   }
 
   async updateTrigger(triggerUpdate: Trigger, conditionsUpdate: TriggerCondition[]) {
-
     assert(triggerUpdate.id)
 
     const trigger = await this.triggers.getOne(triggerUpdate.id)
+
     assert(trigger)
 
     // update trigger
@@ -218,7 +219,8 @@ export class StudioService {
     // diff clean up obsolete conditions (which are present in db but not present in update)
     const updatedIds = conditionsUpdate.map(v => v.id).filter(id => id !== undefined)
     const currentIds = await this.conditions.getListByTriggerId(triggerUpdate.id)
-    for(const id of currentIds) {
+
+    for (const id of currentIds) {
       if ( updatedIds.indexOf(id) == -1 ) {
         await this.conditions.deleteById(id)
       }
@@ -229,5 +231,4 @@ export class StudioService {
       await this.conditions.add(trigger.id, trigger.datasource, trigger.scope, trigger.scopeId, conditionsUpdate)
     }
   }
-
 }

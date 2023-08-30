@@ -2,7 +2,7 @@ import { StudioTargetTree } from '../../models/studio/studio.target-tree'
 
 import { AtBatOutcomeState, GameState, PitchOutcomeState } from './baseball-events'
 import { Sources } from './sources'
-import { InningHalf } from "./inning-half"
+import { InningHalf } from './inning-half'
 
 export const targetTree: StudioTargetTree = {
 
@@ -141,12 +141,12 @@ export const targetTree: StudioTargetTree = {
   },
 
   [Sources.InningHalf]: {
-      [InningHalf.Top]: {
-        label: 'Top'
-      },
-      [InningHalf.Bottom]: {
-        label: 'Bottom'
-      },
+    [InningHalf.Top]: {
+      label: 'Top'
+    },
+    [InningHalf.Bottom]: {
+      label: 'Bottom'
+    },
   }
 
 }

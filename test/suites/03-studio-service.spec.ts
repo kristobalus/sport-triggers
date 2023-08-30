@@ -24,7 +24,7 @@ import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
 import { SubscriptionCancelRequest } from '../../src/models/dto/subscription-cancel-request'
 import { TriggerDeleteRequest } from '../../src/models/dto/trigger-delete-request'
-import { TriggerUpdateRequest } from "../../src/models/dto/trigger-update-request"
+import { TriggerUpdateRequest } from '../../src/models/dto/trigger-update-request'
 
 const sinon = require('sinon')
 
@@ -231,7 +231,7 @@ describe('StudioService', function () {
         {
           trigger: {
             id: originalDocument.trigger.id,
-            name: "Trigger Update"
+            name: 'Trigger Update'
           },
           conditions: originalDocument.conditions
         },
@@ -250,9 +250,9 @@ describe('StudioService', function () {
     ctx.app.log.debug({
       originalDocument,
       updatedDocument
-    }, "updated trigger document")
+    }, 'updated trigger document')
 
-    assert.equal(updatedDocument.trigger.name, "Trigger Update")
+    assert.equal(updatedDocument.trigger.name, 'Trigger Update')
   })
 
   it('should delete trigger', async () => {

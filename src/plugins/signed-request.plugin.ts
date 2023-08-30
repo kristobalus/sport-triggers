@@ -1,7 +1,9 @@
 import { ConnectorsTypes } from '@microfleet/core'
 import { ServiceRequest } from '@microfleet/plugin-router'
-import Boom from '@hapi/boom'
+
 import crypto from 'crypto'
+
+import Boom from '@hapi/boom'
 
 import { FleetApp } from '../fleet-app'
 
@@ -31,26 +33,25 @@ export function init(parent: FleetApp) {
         version: '1.0.0',
         // eslint-disable-next-line require-await
         register: async function (server, _options) {
-
           const { config, log } = parent
           const { algorithm, tokenHeader, signatureHeader, accessTokens } = config.signedRequest
 
           server.ext('onRequest', (request, h) => {
-
             if (request.headers[tokenHeader]) {
               const token = request.headers[tokenHeader]
               const secret = accessTokens[token]
 
               if (!secret) {
-                throw Boom.unauthorized("Bad token")
+                throw Boom.unauthorized('Bad token')
               }
 
               if (!request.headers[signatureHeader] ) {
-                throw Boom.unauthorized("Signature required")
+                throw Boom.unauthorized('Signature required')
               }
 
               const hmac = crypto.createHmac(algorithm, secret)
-              request.plugins["hmac"] = hmac
+
+              request.plugins['hmac'] = hmac
 
               // Listen to the data event
               request.raw.req.on('data', (chunk) => {
@@ -61,9 +62,9 @@ export function init(parent: FleetApp) {
             return h.continue
           })
 
-          server.ext("onPreHandler", (request, h) => {
-            if ( request.plugins["hmac"] ) {
-              const digest = request.plugins["hmac"].digest('base64')
+          server.ext('onPreHandler', (request, h) => {
+            if ( request.plugins['hmac'] ) {
+              const digest = request.plugins['hmac'].digest('base64')
 
               if (request.headers[tokenHeader]) {
                 const signature = request.headers[signatureHeader]
@@ -71,7 +72,7 @@ export function init(parent: FleetApp) {
                 log.trace({ digest, signature }, 'authentication attempt')
 
                 if (digest !== signature) {
-                  throw Boom.unauthorized("Bad signature")
+                  throw Boom.unauthorized('Bad signature')
                 }
               }
             }

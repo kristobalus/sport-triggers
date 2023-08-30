@@ -1,8 +1,8 @@
 import { ActionTransport, ServiceRequest } from '@microfleet/plugin-router'
+import { HttpStatusError } from '@microfleet/validation'
 
 import { FleetApp } from '../../../fleet-app'
 import { StudioConditionData } from '../../../models/studio/studio.condition-data'
-import { HttpStatusError } from "@microfleet/validation"
 
 async function Handler(this: FleetApp, request: ServiceRequest) {
   const { amqp, metadataService, log } = this
@@ -12,19 +12,19 @@ async function Handler(this: FleetApp, request: ServiceRequest) {
 
   let datasource
   let gameId
+
   try {
     // resolve by amqp request
     const response = await amqp.publishAndWait('sports.events.retrieveProviderId',
-      { id: eventId, provider: "sportradar" },
+      { id: eventId, provider: 'sportradar' },
       { reuse: true, cache: 600 })
 
     log.debug({  response }, 'sl-sports response with resolved provider id with sportradar')
 
     if ( response?.data?.id ) {
-      datasource = "sportradar"
+      datasource = 'sportradar'
       gameId = response.data.id
     }
-
   } catch (err) {
     log.warn({ err, eventId }, 'failed to resolve eventId in sportradar bindings')
   }
@@ -33,23 +33,22 @@ async function Handler(this: FleetApp, request: ServiceRequest) {
     try {
       // resolve by amqp request
       const response = await amqp.publishAndWait('sports.events.retrieveProviderId',
-        { id: eventId, provider: "nvenue" },
+        { id: eventId, provider: 'nvenue' },
         { reuse: true, cache: 600 })
 
       log.debug({  response }, 'sl-sports response with resolved provider id with nvenue')
 
       if ( response?.data?.id ) {
-        datasource = "nvenue"
+        datasource = 'nvenue'
         gameId = response.data.id
       }
-
     } catch (err) {
       log.warn({ err, eventId }, 'failed to resolve eventId in nvenue bindings')
     }
   }
 
   if (!gameId || !datasource) {
-    throw new HttpStatusError(404, "Provider binding not found the event")
+    throw new HttpStatusError(404, 'Provider binding not found the event')
   }
 
   // create metadata

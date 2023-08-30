@@ -1,17 +1,16 @@
 import fs = require('fs')
 
 import { Game } from '../models/studio/game'
-import { Game as NVenueGame } from "../models/nvenue/game"
-import { Team as NVenueTeam } from "../models/nvenue/team"
-import { Team } from "../models/studio/team"
-import { TeamMlb } from "../models/mlb/team.mlb"
-import { PlayerMlb } from "../models/mlb/player.mlb"
-import { Datasource } from "../models/studio/datasource"
-import { Sport } from "../models/studio/sport"
-import { Player } from "../models/studio/player"
+import { Game as NVenueGame } from '../models/nvenue/game'
+import { Team as NVenueTeam } from '../models/nvenue/team'
+import { Team } from '../models/studio/team'
+import { TeamMlb } from '../models/mlb/team.mlb'
+import { PlayerMlb } from '../models/mlb/player.mlb'
+import { Datasource } from '../models/studio/datasource'
+import { Sport } from '../models/studio/sport'
+import { Player } from '../models/studio/player'
 
 export class NvenueDatasource implements Datasource {
-
   private games: Map<string, Game> = new Map<string, Game>
 
   getGame(gameId: string): Game {
@@ -23,7 +22,6 @@ export class NvenueDatasource implements Datasource {
     mlbTeamFile: string,
     mlbPlayerFile: string,
     sport: Sport) {
-
     if (!fs.existsSync(nvGamesFile)) {
       throw new Error(`${nvGamesFile} not found`)
     }
@@ -36,14 +34,18 @@ export class NvenueDatasource implements Datasource {
       throw new Error(`${mlbPlayerFile} not found`)
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const teamToPlayerDictionary = require(mlbPlayerFile) as Record<string, PlayerMlb[]>
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const mlbTeams = require(mlbTeamFile) as TeamMlb[]
     const mlbTeamsMap: Map<string, TeamMlb> = new Map()
+
     for (const team of mlbTeams) {
       mlbTeamsMap.set(team.name_abbrev, team)
       if (mlbTeamsMap.has(team.bis_team_code) ) {
         const t2 = mlbTeamsMap.get(team.bis_team_code)
+
         if ( t2.team_id !== team.team_id ) {
           throw new Error(`Duplicate team: ${team.bis_team_code} same abbr for different id`)
         }
@@ -51,9 +53,11 @@ export class NvenueDatasource implements Datasource {
       mlbTeamsMap.set(team.bis_team_code, team)
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const nvGames = require(nvGamesFile) as NVenueGame[]
-    for (const nvGame of nvGames) {
 
+    for (const nvGame of nvGames) {
+      // eslint-disable-next-line no-console
       console.log(nvGame.nv_game_id, nvGame.scheduled, nvGame.home_abbr, nvGame.away_abbr)
 
       const homeTeam = mlbTeamsMap.get(nvGame.home_abbr)
@@ -61,14 +65,16 @@ export class NvenueDatasource implements Datasource {
 
       if (!homeTeam) {
         // throw new Error(`Team not found ${nvGame.home_abbr}`)
+        // eslint-disable-next-line no-console
         console.log(`Skipped game since team ${nvGame.home_abbr} not found in MLB`)
-        continue;
+        continue
       }
 
       if (!awayTeam) {
         // throw new Error(`Team not found ${nvGame.away_abbr}`)
+        // eslint-disable-next-line no-console
         console.log(`Skipped game since team ${nvGame.away_abbr} not found in MLB`)
-        continue;
+        continue
       }
 
       const homePlayers = teamToPlayerDictionary[homeTeam.team_id]
@@ -87,7 +93,8 @@ export class NvenueDatasource implements Datasource {
         ...homePlayers,
         ...awayPlayers,
       ]
-      for(const mlbPlayer of joinedMlbPlayers) {
+
+      for (const mlbPlayer of joinedMlbPlayers) {
         const player: Player = {
           id: mlbPlayer.player_id,
           jersey_number: mlbPlayer.jersey_number,
@@ -96,6 +103,7 @@ export class NvenueDatasource implements Datasource {
           primary_position: mlbPlayer.primary_position,
           team: mlbPlayer.team_abbrev
         }
+
         players.push(player)
       }
 
@@ -112,13 +120,15 @@ export class NvenueDatasource implements Datasource {
 
       if (!homeTeam) {
         // throw new Error("Team not found: " + nvGame.home_abbr)
-        console.log(`Game skipped since home team not found`, nvGame.home_abbr)
+        // eslint-disable-next-line no-console
+        console.log('Game skipped since home team not found', nvGame.home_abbr)
         continue
       }
 
       if (!awayTeam) {
         // throw new Error("Team not found: " + nvGame.away_abbr)
-        console.log(`Game skipped since away team not found`, nvGame.away_abbr)
+        // eslint-disable-next-line no-console
+        console.log('Game skipped since away team not found', nvGame.away_abbr)
         continue
       }
 
@@ -139,7 +149,9 @@ export class NvenueDatasource implements Datasource {
   }
 
   printGames(nvGamesFile: string) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const nvGames = require(nvGamesFile) as NVenueGame[]
+
     for (const nvGame of nvGames) {
       const row = [
         nvGame.status,
@@ -151,12 +163,16 @@ export class NvenueDatasource implements Datasource {
         nvGame.home_abbr,
         nvGame.away_abbr,
       ]
-      console.log(row.join(","))
+
+      // eslint-disable-next-line no-console
+      console.log(row.join(','))
     }
   }
 
   printTeams(nvTeamsFile: string) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const nvTeams = require(nvTeamsFile) as NVenueTeam[]
+
     for (const nvTeam of nvTeams) {
       const row = [
         nvTeam.abbr,
@@ -164,8 +180,9 @@ export class NvenueDatasource implements Datasource {
         nvTeam.division,
         nvTeam.league,
       ]
-      console.log(row.join(","))
+
+      // eslint-disable-next-line  no-console
+      console.log(row.join(','))
     }
   }
-
 }
