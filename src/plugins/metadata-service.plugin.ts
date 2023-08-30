@@ -4,10 +4,9 @@ import path = require('path')
 
 import { FleetApp } from '../fleet-app'
 import { MetadataService } from '../services/studio/metadata.service'
-import { SportradarDatasource } from "../services/studio/datasources/sportradar.datasource"
-import { NvenueDatasource } from "../services/studio/datasources/nvenue.datasource"
+import { SportradarDatasource } from "../datasources/sportradar.datasource"
+import { NvenueDatasource } from "../datasources/nvenue.datasource"
 
-// import { NvenueDatasource } from "../services/studio/datasources/nvenue.datasource"
 
 export function init(parent: FleetApp) {
   // eslint-disable-next-line require-await
@@ -19,8 +18,8 @@ export function init(parent: FleetApp) {
     const nvenue = new NvenueDatasource()
     nvenue.loadGames(
       path.resolve(__dirname, '../../games/nvenue/baseball/games.json'),
-      path.resolve(__dirname, '../../games/nvenue/baseball/players.json'),
-      path.resolve(__dirname, '../../games/nvenue/baseball/teams.json'),
+      path.resolve(__dirname, '../../games/mlb/teams.json'),
+      path.resolve(__dirname, '../../games/mlb/players.json'),
       'baseball')
 
     const service = parent.metadataService = new MetadataService()

@@ -3,11 +3,11 @@ import fs = require('fs');
 
 import _ = require('lodash');
 
-import { Game } from '../../../models/studio/game'
-import { Game as SportradarGame } from '../../../models/sportradar/game'
-import { Team } from '../../../models/studio/team'
-import { Player } from '../../../models/studio/player'
-import { Sport } from "../metadata.service"
+import { Game } from '../models/studio/game'
+import { Game as SportradarGame } from '../models/sportradar/game'
+import { Team } from '../models/studio/team'
+import { Player } from '../models/studio/player'
+import { Sport } from "../models/studio/sport"
 
 export class SportradarDatasource {
 

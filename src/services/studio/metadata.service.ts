@@ -9,12 +9,7 @@ import { StudioInputsProtobuf } from "../../models/studio/studio.inputs.protobuf
 import { EventMetadata } from "../../models/events/event-metadata"
 import { StudioTargetTree } from "../../models/studio/studio.target-tree"
 import { StudioTarget } from "../../models/studio/studio.target"
-
-export interface Datasource {
-  getGame(gameId: string): Game
-}
-
-export type Sport = 'basketball' | 'baseball' | 'football' | 'soccer'
+import { Datasource } from "../../models/studio/datasource"
 
 export class MetadataService {
 

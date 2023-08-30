@@ -40,19 +40,33 @@ export enum AtBatOutcomeState {
   BI = 'BI'
 }
 
+/*
+  "baseball.inningNumber"				situation['subevent']['inning']
+  "baseball.inningHalf"				situation['subevent']['side']
+  "baseball.player.batter"			batter['mlbam_id']
+  "baseball.player.pitcher"			pitcher['mlbam_id']
+  "baseball.team.batter"				batter_team
+  "baseball.team.pitcher"				pitcher_team
+  "baseball.score.home"				situation['subevent']['score_home']
+  "baseball.score.away"				situation['subevent']['score_away']
+  "baseball.game.state.strikes" 		situation['subevent']['strikes']
+  "baseball.game.state.balls"			situation['subevent']['balls']
+  "baseball.game.state.outs"			situation['subevent']['outs']
+  "baseball.game.state.pitches"		situation['subevent']['pitches']
+  "baseball.score.differential"		situation['subevent']['score_home'] - situation['subevent']['score_away'],
+ */
 export enum BaseballEvents {
-  Team = 'baseball.team', // refers team id
-  Player = 'baseball.player', // refers player id
-  PlayerAtBat = 'baseball.player.atbat', // refers player id
-  PlayerPitch = 'baseball.player.pitch', // refers player id
-  TeamAtBat = 'baseball.team.atbat',
-  TeamPitch = 'baseball.team.pitch',
-  GameState = 'baseball.game.state',
-  PitchOutcome = 'baseball.pitch.outcome',
-  BallSpeed = 'baseball.ball.speed',
-  AtBatOutcome = 'baseball.atbat.outcome',
-  Inning = 'baseball.inning',
+  Inning = "baseball.inningNumber",
+  InningHalf = "baseball.inningHalf",
+  PlayerBatter = 'baseball.player.batter',
+  PlayerPitcher = 'baseball.player.pitcher',
+  TeamBatter = 'baseball.team.batter',
+  TeamPitcher = 'baseball.team.pitcher',
+  ScoreHome = 'baseball.score.home',
+  ScoreAway = 'baseball.score.away',
+  GameStateStrikes = 'baseball.game.state.strikes',
+  GameStateBalls = 'baseball.game.state.balls',
+  GameStateOut = 'baseball.game.state.outs',
+  GameStatePitches = 'baseball.game.state.pitches',
   ScoreDifferential = 'baseball.score.differential',
-  HomeScore = 'baseball.score.home',
-  AwayScore = 'baseball.score.away'
 }

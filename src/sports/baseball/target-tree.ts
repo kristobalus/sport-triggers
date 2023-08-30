@@ -2,6 +2,7 @@ import { StudioTargetTree } from '../../models/studio/studio.target-tree'
 
 import { AtBatOutcomeState, GameState, PitchOutcomeState } from './baseball-events'
 import { Sources } from './sources'
+import { InningHalf } from "./inning-half"
 
 export const targetTree: StudioTargetTree = {
 
@@ -137,6 +138,15 @@ export const targetTree: StudioTargetTree = {
       label: 'Inning end',
       description: 'The end of an inning occurs when three outs have been made in the bottom half. After the third out, teams switch roles -- the batting team goes into the field to play defense, and the defensive team comes in to bat.'
     }
+  },
+
+  [Sources.InningHalf]: {
+      [InningHalf.Top]: {
+        label: 'Top'
+      },
+      [InningHalf.Bottom]: {
+        label: 'Bottom'
+      },
   }
 
 }

@@ -1,7 +1,8 @@
-
 // import { MetadataService } from "../src/services/studio/metadata.service"
 import path = require('path')
-import { NvenueDatasource } from "../src/services/studio/datasources/nvenue.datasource"
+import { NvenueDatasource } from "../src/datasources/nvenue.datasource"
+import { MetadataService } from "../src/services/studio/metadata.service"
+import { MlbDatasource } from "../src/datasources/mlb.datasource"
 
 describe('Metadata tests', function () {
 
@@ -19,19 +20,45 @@ describe('Metadata tests', function () {
   //   console.log(JSON.stringify(data, null, 4))
   // })
 
+  it('should fetch mlb data', async () => {
+    const mlb = new MlbDatasource()
+    await mlb.exportPlayersToFile("2023", path.resolve(__dirname, '../games/mlb/players.json'))
+    await mlb.exportTeamsToFile("2023", path.resolve(__dirname, '../games/mlb/teams.json'))
+  })
+
   it('should load nvenue datasource', () => {
     const nvenue = new NvenueDatasource()
+
     nvenue.loadGames(
       path.resolve(__dirname, '../games/nvenue/baseball/games.json'),
-      path.resolve(__dirname, '../games/nvenue/baseball/players.json'),
-      path.resolve(__dirname, '../games/nvenue/baseball/teams.json'),
+      path.resolve(__dirname, '../games/mlb/teams.json'),
+      path.resolve(__dirname, '../games/mlb/players.json'),
       'baseball')
   })
 
   it('should list teams', () => {
     const nvenue = new NvenueDatasource()
-    nvenue.listTeams(path.resolve(__dirname, '../games/nvenue/baseball/teams.json'))
+    nvenue.printTeams(path.resolve(__dirname, '../games/nvenue/baseball/teams.json'))
   })
 
+  it('should get metadata for nvenue', async () => {
+    const nvenue = new NvenueDatasource()
+
+    nvenue.loadGames(
+      path.resolve(__dirname, '../games/nvenue/baseball/games.json'),
+      path.resolve(__dirname, '../games/mlb/teams.json'),
+      path.resolve(__dirname, '../games/mlb/players.json'),
+      'baseball')
+
+    const service = new MetadataService()
+
+    service.addDatasource("nvenue", nvenue)
+
+    const gameId = "42fc102c-99fd-4776-9e57-3c7be71ab5c0"
+    const datasource = "nvenue"
+    const data = service.getConditionData(datasource, gameId, true)
+
+    console.log(JSON.stringify(data, null, 4))
+  })
 
 })

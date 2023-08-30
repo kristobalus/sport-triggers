@@ -3,8 +3,10 @@ import { EventMetadata } from '../../models/events/event-metadata'
 import { StudioInputs } from '../../models/studio/studio.inputs'
 import { CommonSources } from '../common-sources'
 
-import { AtBatOutcomeState, BaseballEvents, GameState, PitchOutcomeState } from './baseball-events'
-import { Sources } from './sources'
+import { BaseballEvents } from './baseball-events'
+import { Sources } from "./sources"
+import { InningHalf } from "./inning-half"
+// import { Sources } from './sources'
 
 export const metadata: Record<string, EventMetadata> = {
 
@@ -24,10 +26,30 @@ export const metadata: Record<string, EventMetadata> = {
     targets: []
   },
 
-  // expects player-id in targets
-  [BaseballEvents.Player]: {
+  [BaseballEvents.InningHalf]: {
     sport: 'baseball',
-    label: 'Player',
+    label: 'Inning-half',
+    input: StudioInputs.Number,
+    type: ConditionType.Number,
+    primary: true,
+    compare: [
+      CompareOp.Equal,
+      CompareOp.GreaterOrEqual,
+      CompareOp.GreaterThan,
+      CompareOp.LessThan,
+      CompareOp.LessOrEqual
+    ],
+    targets: [
+      InningHalf.Top,
+      InningHalf.Bottom
+    ],
+    targetSource: Sources.InningHalf
+  },
+
+  // expects player-id in targets
+  [BaseballEvents.PlayerBatter]: {
+    sport: 'baseball',
+    label: 'Player batter',
     input: StudioInputs.SelectMulti,
     type: ConditionType.String,
     primary: true,
@@ -39,9 +61,9 @@ export const metadata: Record<string, EventMetadata> = {
   },
 
   // expects team-id in targets
-  [BaseballEvents.Team]: {
+  [BaseballEvents.PlayerPitcher]: {
     sport: 'baseball',
-    label: 'Team',
+    label: 'Player pitcher',
     input: StudioInputs.SelectMulti,
     type: ConditionType.String,
     primary: true,
@@ -49,30 +71,41 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.In
     ],
     targets: [],
+    targetSource: CommonSources.GamePlayers
+  },
+
+  [BaseballEvents.TeamBatter]: {
+    sport: 'baseball',
+    label: 'Team of batter',
+    input: StudioInputs.SelectMulti,
+    type: ConditionType.String,
+    primary: true,
+    compare: [
+      CompareOp.In
+    ],
+    preferredOptions: [],
+    targets: [],
     targetSource: CommonSources.GameTeams
   },
 
-  [BaseballEvents.BallSpeed]: {
+  // expects player-id in targets
+  [BaseballEvents.TeamPitcher]: {
     sport: 'baseball',
-    label: 'Ball speed',
-    disabled: false,
-    input: StudioInputs.Number,
-    type: ConditionType.Number,
+    label: 'Team of pitcher',
+    input: StudioInputs.Select,
+    type: ConditionType.String,
     primary: true,
     compare: [
-      CompareOp.Equal,
-      CompareOp.GreaterOrEqual,
-      CompareOp.GreaterThan,
-      CompareOp.LessOrEqual,
-      CompareOp.LessThan
+      CompareOp.In
     ],
-    preferredOptions: []
+    preferredOptions: [],
+    targets: [],
+    targetSource: CommonSources.GameTeams
   },
 
   [BaseballEvents.ScoreDifferential]: {
     sport: 'baseball',
     label: 'Score differential',
-    disabled: false,
     input: StudioInputs.Number,
     type: ConditionType.Number,
     primary: true,
@@ -86,10 +119,9 @@ export const metadata: Record<string, EventMetadata> = {
     preferredOptions: []
   },
 
-  [BaseballEvents.HomeScore]: {
+  [BaseballEvents.ScoreHome]: {
     sport: 'baseball',
     label: 'Home score',
-    disabled: false,
     input: StudioInputs.Number,
     type: ConditionType.Number,
     primary: true,
@@ -103,10 +135,9 @@ export const metadata: Record<string, EventMetadata> = {
     preferredOptions: []
   },
 
-  [BaseballEvents.AwayScore]: {
+  [BaseballEvents.ScoreAway]: {
     sport: 'baseball',
     label: 'Away score',
-    disabled: false,
     input: StudioInputs.Number,
     type: ConditionType.Number,
     primary: true,
@@ -120,152 +151,131 @@ export const metadata: Record<string, EventMetadata> = {
     preferredOptions: []
   },
 
-  [BaseballEvents.GameState]: {
+  [BaseballEvents.GameStateBalls]: {
     sport: 'baseball',
-    label: 'Game state',
-    disabled: false,
-    input: StudioInputs.SelectMulti,
-    type: ConditionType.String,
+    label: 'Game state balls',
+    input: StudioInputs.Number,
+    type: ConditionType.Number,
     primary: true,
     compare: [
-      CompareOp.In
+      CompareOp.Equal,
+      CompareOp.LessOrEqual,
+      CompareOp.GreaterOrEqual,
+      CompareOp.LessThan,
+      CompareOp.GreaterThan,
     ],
-    targets: [
-      GameState.GameStart,
-      GameState.GameEnd,
-      GameState.InningStart,
-      GameState.InningEnd,
-    ],
-    targetSource: Sources.GameStates,
+    targets: [],
     preferredOptions: []
   },
 
   // expects player-id in targets
-  [BaseballEvents.PlayerAtBat]: {
+  [BaseballEvents.GameStateOut]: {
     sport: 'baseball',
-    label: 'Player at Bat',
-    input: StudioInputs.SelectMulti,
-    type: ConditionType.String,
+    label: 'Game state out',
+    input: StudioInputs.Number,
+    type: ConditionType.Number,
     primary: true,
     compare: [
-      CompareOp.In
+      CompareOp.Equal,
+      CompareOp.LessOrEqual,
+      CompareOp.GreaterOrEqual,
+      CompareOp.LessThan,
+      CompareOp.GreaterThan,
     ],
     targets: [],
-    targetSource: CommonSources.GamePlayers,
-    preferredOptions: [
-      BaseballEvents.AtBatOutcome,
-      BaseballEvents.PitchOutcome,
-    ]
-  },
-
-  // expects player-id in targets
-  [BaseballEvents.PlayerPitch]: {
-    sport: 'baseball',
-    label: 'Player pitching',
-    input: StudioInputs.SelectMulti,
-    type: ConditionType.String,
-    primary: true,
-    compare: [
-      CompareOp.In
-    ],
-    targets: [],
-    targetSource: CommonSources.GamePlayers,
-    preferredOptions: [
-      BaseballEvents.PitchOutcome,
-      BaseballEvents.AtBatOutcome,
-    ],
+    preferredOptions: [],
   },
 
   // expects team-id in targets
-  [BaseballEvents.TeamAtBat]: {
+  [BaseballEvents.GameStatePitches]: {
     sport: 'baseball',
-    label: 'Team at Bat',
-    input: StudioInputs.SelectMulti,
-    type: ConditionType.String,
+    label: 'Game state pitches',
+    input: StudioInputs.Number,
+    type: ConditionType.Number,
     primary: true,
     compare: [
-      CompareOp.In
+      CompareOp.Equal,
+      CompareOp.LessOrEqual,
+      CompareOp.GreaterOrEqual,
+      CompareOp.LessThan,
+      CompareOp.GreaterThan,
     ],
     targets: [],
-    targetSource: CommonSources.GameTeams,
-    preferredOptions: [
-      BaseballEvents.AtBatOutcome,
-      BaseballEvents.PitchOutcome,
-    ],
+    preferredOptions: [],
   },
 
   // expects team-id in targets
-  [BaseballEvents.TeamPitch]: {
+  [BaseballEvents.GameStateStrikes]: {
     sport: 'baseball',
-    label: 'Team pitching',
-    input: StudioInputs.SelectMulti,
-    type: ConditionType.String,
+    label: 'Game state strikes',
+    input: StudioInputs.Number,
+    type: ConditionType.Number,
     primary: true,
     compare: [
-      CompareOp.In
+      CompareOp.Equal,
+      CompareOp.LessOrEqual,
+      CompareOp.GreaterOrEqual,
+      CompareOp.LessThan,
+      CompareOp.GreaterThan,
     ],
     targets: [],
-    targetSource: CommonSources.GameTeams,
-    preferredOptions: [
-      BaseballEvents.AtBatOutcome,
-      BaseballEvents.PitchOutcome,
-    ]
+    preferredOptions: []
   },
 
-  [BaseballEvents.PitchOutcome]: {
-    sport: 'baseball',
-    label: 'Pitch outcome',
-    input: StudioInputs.Select,
-    type: ConditionType.String,
-    primary: false,
-    compare: [
-      CompareOp.Equal
-    ],
-    targetSource: Sources.PitchOutcome,
-    targets: [
-      PitchOutcomeState.Ball,
-      PitchOutcomeState.BallInPlay,
-      PitchOutcomeState.GT99,
-      PitchOutcomeState.LT80,
-      PitchOutcomeState.Foul,
-      PitchOutcomeState.StrikeLooking,
-      PitchOutcomeState.StrikeSwinging
-    ]
-  },
+  // [BaseballEvents.PitchOutcome]: {
+  //   sport: 'baseball',
+  //   label: 'Pitch outcome',
+  //   input: StudioInputs.Select,
+  //   type: ConditionType.String,
+  //   primary: false,
+  //   compare: [
+  //     CompareOp.Equal
+  //   ],
+  //   targetSource: Sources.PitchOutcome,
+  //   targets: [
+  //     PitchOutcomeState.Ball,
+  //     PitchOutcomeState.BallInPlay,
+  //     PitchOutcomeState.GT99,
+  //     PitchOutcomeState.LT80,
+  //     PitchOutcomeState.Foul,
+  //     PitchOutcomeState.StrikeLooking,
+  //     PitchOutcomeState.StrikeSwinging
+  //   ]
+  // },
 
-  [BaseballEvents.AtBatOutcome]: {
-    sport: 'baseball',
-    label: 'At Bat outcome',
-    input: StudioInputs.Select,
-    type: ConditionType.String,
-    primary: false,
-    compare: [
-      CompareOp.Equal
-    ],
-    targets: [
-      AtBatOutcomeState.GIDP,
-      AtBatOutcomeState.BB,
-      AtBatOutcomeState.BI,
-      AtBatOutcomeState.ERR,
-      AtBatOutcomeState.FO,
-      AtBatOutcomeState.CI,
-      AtBatOutcomeState.GO,
-      AtBatOutcomeState.XBH,
-      AtBatOutcomeState.X1,
-      AtBatOutcomeState.X2,
-      AtBatOutcomeState.X3,
-      AtBatOutcomeState.REACH,
-      AtBatOutcomeState.RBI,
-      AtBatOutcomeState.OUT,
-      AtBatOutcomeState.KS,
-      AtBatOutcomeState.IPO,
-      AtBatOutcomeState.KL,
-      AtBatOutcomeState.K,
-      AtBatOutcomeState.HIT,
-      AtBatOutcomeState.HR,
-      AtBatOutcomeState.HBP
-    ],
-    targetSource: Sources.AtBatOutcome
-  },
+  // [BaseballEvents.AtBatOutcome]: {
+  //   sport: 'baseball',
+  //   label: 'At Bat outcome',
+  //   input: StudioInputs.Select,
+  //   type: ConditionType.String,
+  //   primary: false,
+  //   compare: [
+  //     CompareOp.Equal
+  //   ],
+  //   targets: [
+  //     AtBatOutcomeState.GIDP,
+  //     AtBatOutcomeState.BB,
+  //     AtBatOutcomeState.BI,
+  //     AtBatOutcomeState.ERR,
+  //     AtBatOutcomeState.FO,
+  //     AtBatOutcomeState.CI,
+  //     AtBatOutcomeState.GO,
+  //     AtBatOutcomeState.XBH,
+  //     AtBatOutcomeState.X1,
+  //     AtBatOutcomeState.X2,
+  //     AtBatOutcomeState.X3,
+  //     AtBatOutcomeState.REACH,
+  //     AtBatOutcomeState.RBI,
+  //     AtBatOutcomeState.OUT,
+  //     AtBatOutcomeState.KS,
+  //     AtBatOutcomeState.IPO,
+  //     AtBatOutcomeState.KL,
+  //     AtBatOutcomeState.K,
+  //     AtBatOutcomeState.HIT,
+  //     AtBatOutcomeState.HR,
+  //     AtBatOutcomeState.HBP
+  //   ],
+  //   targetSource: Sources.AtBatOutcome
+  // },
 
 }
