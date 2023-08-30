@@ -77,11 +77,15 @@ export class NvenueDatasource implements Datasource {
       const awayTeam = teams.get(nvGame.away_abbr)
 
       if (!homeTeam){
-        throw new Error("Team not found: " + nvGame.home_abbr)
+        // throw new Error("Team not found: " + nvGame.home_abbr)
+        console.log(`Team skipped`, nvGame.home_abbr)
+        continue;
       }
 
       if (!awayTeam){
-        throw new Error("Team not found: " + nvGame.away_abbr)
+        // throw new Error("Team not found: " + nvGame.away_abbr)
+        console.log(`Team skipped`, nvGame.away_abbr)
+        continue;
       }
 
       game.teams[nvGame.home_abbr] = {
