@@ -54,7 +54,7 @@ export class NvenueDatasource implements Datasource {
     const nvTeams = require(nvTeamFile) as NVenueTeam[]
     const teams: Map<string, NVenueTeam> = new Map()
     for(const team of nvTeams){
-      // console.log(team.abbr, team.name, team.division)
+      console.log(team.abbr, team.name, team.division)
       teams.set(team.abbr, team)
     }
 
@@ -116,6 +116,19 @@ export class NvenueDatasource implements Datasource {
         nvGame.scheduled,
         nvGame.home_abbr,
         nvGame.away_abbr
+      ]
+      console.log(row.join(","))
+    }
+  }
+
+  listTeams(nvTeamsFile: string) {
+    const nvTeams = require(nvTeamsFile) as NVenueTeam[]
+    for(const nvTeam of nvTeams){
+      const row = [
+        nvTeam.abbr,
+        nvTeam.name,
+        nvTeam.division,
+        nvTeam.league,
       ]
       console.log(row.join(","))
     }

@@ -25,6 +25,7 @@ export function init(parent: FleetApp) {
 
     const service = parent.metadataService = new MetadataService()
     service.addDatasource("sportradar", sportradar)
+    service.addDatasource("nvenue", nvenue)
   })
 
   // eslint-disable-next-line require-await

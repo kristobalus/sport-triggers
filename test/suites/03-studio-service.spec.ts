@@ -272,7 +272,7 @@ describe('StudioService', function () {
 
   it('should get metadata', async () => {
     const prefix = ctx.app.config.routerAmqp.prefix
-    const data = { eventId: '123', sport: 'basketball' }
+    const data = { eventId: '123' }
     const response: ItemResponse = await ctx.app.amqp
       .publishAndWait(`${prefix}.studio.metadata.get`, data)
 

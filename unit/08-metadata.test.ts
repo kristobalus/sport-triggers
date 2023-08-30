@@ -28,5 +28,10 @@ describe('Metadata tests', function () {
       'baseball')
   })
 
+  it('should list teams', () => {
+    const nvenue = new NvenueDatasource()
+    nvenue.listTeams(path.resolve(__dirname, '../games/nvenue/baseball/teams.json'))
+  })
+
 
 })
