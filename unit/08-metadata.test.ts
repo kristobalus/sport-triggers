@@ -21,11 +21,11 @@ describe('Metadata tests', function () {
 
   it('should load nvenue datasource', () => {
     const nvenue = new NvenueDatasource()
-    nvenue.listGames(path.resolve(__dirname, '../games/nvenue/baseball/games.json'))
-      // path.resolve(__dirname, "../games/nvenue/baseball/teams.json"),
-      // path.resolve(__dirname, "../games/nvenue/baseball/players.json"),
-      // 'baseball')
-
+    nvenue.loadGames(
+      path.resolve(__dirname, '../games/nvenue/baseball/games.json'),
+      path.resolve(__dirname, '../games/nvenue/baseball/players.json'),
+      path.resolve(__dirname, '../games/nvenue/baseball/teams.json'),
+      'baseball')
   })
 
 
