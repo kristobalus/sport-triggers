@@ -10,35 +10,47 @@ async function Handler(this: FleetApp, request: ServiceRequest) {
 
   log.debug({  eventId }, 'get metadata request')
 
-  let response
   let datasource
+  let gameId
   try {
     // resolve by amqp request
-    response = await amqp.publishAndWait('sports.events.retrieveProviderId',
+    const response = await amqp.publishAndWait('sports.events.retrieveProviderId',
       { id: eventId, provider: "sportradar" },
       { reuse: true, cache: 600 })
-    datasource = "sportradar"
+
     log.debug({  response }, 'sl-sports response with resolved provider id with sportradar')
+
+    if ( response?.data?.id ) {
+      datasource = "sportradar"
+      gameId = response.data.id
+    }
+
   } catch (err) {
     log.warn({ err, eventId }, 'failed to resolve eventId in sportradar bindings')
   }
 
-  try {
-    // resolve by amqp request
-    response = await amqp.publishAndWait('sports.events.retrieveProviderId',
-      { id: eventId, provider: "nvenue" },
-      { reuse: true, cache: 600 })
-    datasource = "nvenue"
-    log.debug({  response }, 'sl-sports response with resolved provider id with nvenue')
-  } catch (err) {
-    log.warn({ err, eventId }, 'failed to resolve eventId in nvenue bindings')
+  if ( !gameId ) {
+    try {
+      // resolve by amqp request
+      const response = await amqp.publishAndWait('sports.events.retrieveProviderId',
+        { id: eventId, provider: "nvenue" },
+        { reuse: true, cache: 600 })
+
+      log.debug({  response }, 'sl-sports response with resolved provider id with nvenue')
+
+      if ( response?.data?.id ) {
+        datasource = "nvenue"
+        gameId = response.data.id
+      }
+
+    } catch (err) {
+      log.warn({ err, eventId }, 'failed to resolve eventId in nvenue bindings')
+    }
   }
 
-  if (!response) {
-    throw new HttpStatusError(404, "Metadata not found the event")
+  if (!gameId || !datasource) {
+    throw new HttpStatusError(404, "Provider binding not found the event")
   }
-
-  const { id: gameId } = response.data
 
   // create metadata
   const data: StudioConditionData = metadataService.getConditionData(datasource, gameId, true)

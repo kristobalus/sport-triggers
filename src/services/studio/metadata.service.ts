@@ -32,7 +32,7 @@ export class MetadataService {
 
     const game = ds.getGame(gameId)
     if (!game) {
-      throw new Error(`Game ${gameId} not found`)
+      throw new Error(`Game ${gameId} not found in datasource ${datasource}`)
     }
 
     const result: StudioConditionData = {
