@@ -161,6 +161,8 @@ export class QueueService {
       jobs.push({ name: 'evaluate', data: { event, adapterEvent } })
     }
 
+    this.log.debug({ event: adapterEvent }, 'store job completed; adapter event stored, evaluation job scheduled')
+
     await this.eventQueue.addBulk(jobs)
   }
 
@@ -198,6 +200,7 @@ export class QueueService {
     }
 
     this.log.debug({ id: job.id, name: job.name, result }, 'trigger job completed')
+
     this.triggerJobCallback?.({ result, job })
   }
 
@@ -208,6 +211,7 @@ export class QueueService {
     await this.adapterService.notify(triggerId)
 
     this.log.debug({ id: job.id, name: job.name }, 'notification job completed')
+
     this.notificationJobCallback?.({ result: true, job })
   }
 
