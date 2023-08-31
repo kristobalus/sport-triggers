@@ -169,9 +169,9 @@ export function validateOption(
     if (!meta.optionScope) {
       throw new ArgumentError(`Metadata optionScope should be defined for ${option.event} for aggregation`)
     }
-    const { datasource, scopeId, targets } = condition
+    const { datasource, sport, scope, scopeId, targets } = condition
 
-    option.aggregate = meta.aggregate(datasource, scopeId, targets)
+    option.aggregate = meta.aggregate(datasource, sport, scope, scopeId, targets)
   }
 }
 
@@ -185,10 +185,12 @@ export class TriggerConditionCollection {
   async add(
     triggerId: string,
     datasource: string,
+    sport: string,
     scope: string,
     scopeId: string,
     conditions: Partial<TriggerCondition>[]) {
-    if (conditions.length == 0) {
+
+    if (!conditions || conditions.length == 0) {
       throw new ArgumentError('Cannot create trigger without conditions')
     }
 
@@ -203,6 +205,7 @@ export class TriggerConditionCollection {
       }
       condition.datasource = datasource
       condition.scope = scope
+      condition.sport = sport
       condition.scopeId = scopeId
       condition.uri = EventUri.fromCondition(condition)
 

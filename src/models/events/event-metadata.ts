@@ -20,5 +20,5 @@ export interface EventMetadata {
   optionDefaultCompare?: CompareOp
   // list of targets to be used for aggregation
   aggregateTargets?: string[]
-  aggregate?: (datasource: string, scopeId: string, targets: string[]) => string[]
+  aggregate?: (datasource: string, sport: string, scope: string, scopeId: string, targets: string[]) => string[]
 }

@@ -9,7 +9,16 @@ import { TriggerCreateResponse } from '../../../models/dto/trigger-create-respon
 async function CreateHandler(this: FleetApp, request: ServiceRequest): Promise<Response<TriggerCreateResponse>> {
   const { conditions, trigger } = request.params as unknown as TriggerCreateRequest
 
-  const { studioService } = this
+  const { studioService, metadataService, log } = this
+
+  const { datasource, scopeId } = trigger
+  const source = metadataService.getDatasource(datasource)
+  const game = source.getGame(scopeId)
+  if (!game) {
+    log.debug({ game, scopeId, datasource }, 'game not found')
+  }
+
+  trigger.sport = game.sport
 
   // TODO create trigger inside on-going game
   //    check trigger open time

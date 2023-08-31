@@ -40,7 +40,7 @@ interface SuitContext extends TestContext {
 describe('AdapterService', function () {
   const datasource = 'sportradar'
   const scope = Scope.Game
-  const scopeId = randomUUID()
+  const scopeId = '0d996d35-85e5-4913-bd45-ac9cfedbf272'
   const entity = 'moderation'
   const entityId = randomUUID()
 
@@ -263,7 +263,7 @@ describe('AdapterService', function () {
       },
     }), (err) => {
       console.log(err)
-      
+
       return true
     })
   })

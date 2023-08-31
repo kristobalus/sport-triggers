@@ -58,7 +58,7 @@ export class NvenueDatasource implements Datasource {
 
     for (const nvGame of nvGames) {
       // eslint-disable-next-line no-console
-      console.log(nvGame.nv_game_id, nvGame.scheduled, nvGame.home_abbr, nvGame.away_abbr)
+      // console.log(nvGame.nv_game_id, nvGame.scheduled, nvGame.home_abbr, nvGame.away_abbr)
 
       const homeTeam = mlbTeamsMap.get(nvGame.home_abbr)
       const awayTeam = mlbTeamsMap.get(nvGame.away_abbr)
@@ -66,14 +66,14 @@ export class NvenueDatasource implements Datasource {
       if (!homeTeam) {
         // throw new Error(`Team not found ${nvGame.home_abbr}`)
         // eslint-disable-next-line no-console
-        console.log(`Skipped game since team ${nvGame.home_abbr} not found in MLB`)
+        // console.log(`Skipped game since team ${nvGame.home_abbr} not found in MLB`)
         continue
       }
 
       if (!awayTeam) {
         // throw new Error(`Team not found ${nvGame.away_abbr}`)
         // eslint-disable-next-line no-console
-        console.log(`Skipped game since team ${nvGame.away_abbr} not found in MLB`)
+        // console.log(`Skipped game since team ${nvGame.away_abbr} not found in MLB`)
         continue
       }
 
@@ -121,14 +121,14 @@ export class NvenueDatasource implements Datasource {
       if (!homeTeam) {
         // throw new Error("Team not found: " + nvGame.home_abbr)
         // eslint-disable-next-line no-console
-        console.log('Game skipped since home team not found', nvGame.home_abbr)
+        // console.log('Game skipped since home team not found', nvGame.home_abbr)
         continue
       }
 
       if (!awayTeam) {
         // throw new Error("Team not found: " + nvGame.away_abbr)
         // eslint-disable-next-line no-console
-        console.log('Game skipped since away team not found', nvGame.away_abbr)
+        // console.log('Game skipped since away team not found', nvGame.away_abbr)
         continue
       }
 

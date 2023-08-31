@@ -7,7 +7,7 @@ import { filter, escape } from '../util'
 import { BasketballEvents } from './basketball-events'
 import { GameLevel } from './game-level'
 import { Sources } from './sources'
-import { getIndexName } from './redis-index'
+import { getIndexName } from "../../repositories/event.collection"
 
 export const metadata: Record<string, EventMetadata> = {
 
@@ -296,9 +296,9 @@ export const metadata: Record<string, EventMetadata> = {
     compare: [CompareOp.Equal],
     targets: [],
     optionScope: [BasketballEvents.Team],
-    aggregate: (datasource, scopeId, targets) => {
+    aggregate: (datasource, sport, scope, scopeId, targets) => {
       const result = [
-        'ft.aggregate', getIndexName(datasource, scopeId),
+        'ft.aggregate', getIndexName(datasource, sport, scope, scopeId),
         // query tag "events" to be equal "basketball.team.scores.3fg"
         `'@events:{ ${ escape(BasketballEvents.TeamScores3FG) } }'`,
         // group those events by "team" tag
@@ -333,9 +333,9 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     targets: [],
     optionScope: [BasketballEvents.Player],
-    aggregate: (datasource, scopeId, targets) => {
+    aggregate: (datasource, sport, scope, scopeId, targets) => {
       const result = [
-        'ft.aggregate', getIndexName(datasource, scopeId),
+        'ft.aggregate', getIndexName(datasource, sport, scope, scopeId),
         // query tag "events" with PlayerScores3FG option
         `'@events:{ ${ escape(BasketballEvents.PlayerScores3FG) } }'`,
         // group those events by Player option

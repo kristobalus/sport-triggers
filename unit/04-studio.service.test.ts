@@ -15,6 +15,7 @@ import { TriggerSubscriptionCollection } from "../src/repositories/trigger-subsc
 import { Scope } from "../src/models/entities/trigger"
 import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
 import { BasketballEvents } from "../src/sports/basketball/basketball-events"
+import { Microfleet } from "@microfleet/core-types"
 
 describe("StudioService", function () {
 
@@ -51,7 +52,7 @@ describe("StudioService", function () {
     ctx.triggers = new TriggerCollection(ctx.redis)
     ctx.conditions = new TriggerConditionCollection(ctx.redis)
     ctx.subscriptions = new TriggerSubscriptionCollection(ctx.redis)
-    ctx.service = new StudioService(log, ctx.redis)
+    ctx.service = new StudioService(log as Microfleet['log'], ctx.redis)
     ctx.log = log
   })
 

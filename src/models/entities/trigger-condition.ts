@@ -39,6 +39,8 @@ export interface TriggerCondition {
   triggerId: string
   // datasource
   datasource: string
+  // sport
+  sport: string
   // name of event to be compared with
   event: string
   // scope of event

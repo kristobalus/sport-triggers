@@ -11,6 +11,7 @@ export interface Trigger {
   // human-readable name just for description purposes
   description: string
   datasource: string
+  sport?: string
   scope: Scope
   scopeId: string
   activated: boolean

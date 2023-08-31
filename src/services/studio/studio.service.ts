@@ -65,6 +65,7 @@ export class StudioService {
       await this.conditions.add(
         triggerId,
         triggerData.datasource,
+        triggerData.sport,
         triggerData.scope,
         triggerData.scopeId,
         conditionData)
@@ -233,7 +234,7 @@ export class StudioService {
 
     if ( conditionsUpdate.length ) {
       // update or create conditions
-      await this.conditions.add(trigger.id, trigger.datasource, trigger.scope, trigger.scopeId, conditionsUpdate)
+      await this.conditions.add(trigger.id, trigger.datasource, trigger.sport, trigger.scope, trigger.scopeId, conditionsUpdate)
     }
   }
 }
