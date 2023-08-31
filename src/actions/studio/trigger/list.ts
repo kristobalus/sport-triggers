@@ -20,7 +20,7 @@ async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ListRe
   else if (datasource && scope && scopeId) {
     list = await studioService.getTriggerListByScope(datasource, scope, scopeId, { showLog: true, trim: true })
   } else {
-    throw new ArgumentError('Either { entity, entityId } pair or { scope, scopeId } should be defined')
+    throw new ArgumentError('Either { entity, entityId } pair or { datasource, scope, scopeId } should be defined')
   }
 
   const data = list.map(item => {

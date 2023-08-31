@@ -76,6 +76,11 @@ export class StudioService {
       throw new ArgumentError('failed to create trigger', err)
     }
 
+    this.log.debug({
+      triggerId,
+      trigger: triggerData,
+      conditions: conditionData }, 'trigger created')
+
     return triggerId
   }
 

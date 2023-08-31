@@ -8,6 +8,9 @@
         "entityId": {
             "type": "string"
         },
+        "datasource": {
+            "type": "string"
+        },
         "scope": {
             "type": "string"
         },
@@ -18,7 +21,7 @@
     "additionalProperties": false,
     "anyOf": [
         {
-            "required": ["scope","scopeId"]
+            "required": ["datasource","scope","scopeId"]
         },
         {
             "required": ["entity", "entityId"]
