@@ -1,24 +1,16 @@
 import { BasketballEvents } from './basketball-events'
+import { getIndexName, getIndexPrefix } from "../../repositories/event.collection"
 
 const sport = 'basketball'
 const scope = 'game'
 
-export function getIndexName(datasource: string, scopeId: string) {
-  return `index_${datasource}_${sport}_${scopeId}`
-}
 
-export function getIndexPrefix(datasource: string, scopeId: string) {
-  return `json/${datasource}/${sport}/${scope}/${scopeId}/events/`
-}
-
-export function getEventKey(datasource: string, scopeId: string, eventId: string) {
-  return `json/${datasource}/${sport}/${scope}/${scopeId}/events/${eventId}`
-}
 
 export function getIndexQuery(datasource: string, scopeId: string) {
-  const prefix = getIndexPrefix(datasource, scopeId)
-  const name = getIndexName(datasource, scopeId)
-  
+
+  const prefix = getIndexPrefix(datasource, sport, scope, scopeId)
+  const name = getIndexName(datasource, sport, scope, scopeId)
+
   return [
     'ft.create', name, 'on', 'json', 'prefix', '1', prefix,
     'schema', '$.id', 'as', 'id', 'tag',

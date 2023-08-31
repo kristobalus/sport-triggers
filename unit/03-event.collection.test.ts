@@ -2,13 +2,27 @@
 
 import IORedis, { Redis } from "ioredis"
 import { Trigger } from "../src/models/entities/trigger"
-import { EventCollection, parse } from "../src/repositories/event.collection"
+import { AggregateResult, EventCollection } from "../src/repositories/event.collection"
 import { randomUUID } from "crypto"
 import { AdapterEvent } from "../src/models/events/adapter-event"
 import { BasketballEvents } from "../src/sports/basketball/basketball-events"
 import assert = require("assert")
 import { metadata } from "../src/sports"
 import pino, { Logger } from "pino"
+
+export function parse(result): AggregateResult {
+  const [, data] = result
+
+  const reduced = {}
+
+  for (let i = 0; i < data.length; i++) {
+    if ( i % 2 == 0 ) {
+      reduced[data[i]] = data[i + 1]
+    }
+  }
+
+  return reduced
+}
 
 describe("EventCollection", function () {
 
@@ -78,8 +92,9 @@ describe("EventCollection", function () {
   it('should createIndex', async () => {
     const datasource = "sportradar"
     const sport = "basketball"
+    const scope = "game"
     const scopeId = ctx.scopeId
-    const result = await ctx.events.createIndex(datasource, sport, scopeId)
+    const result = await ctx.events.createIndex(datasource, sport, scope, scopeId)
     assert.equal(result, true)
   })
 
@@ -132,8 +147,9 @@ describe("EventCollection", function () {
   it('should get event', async () => {
     const datasource = "sportradar"
     const sport = "basketball"
+    const scope = "game"
 
-    const result = await ctx.events.getItem(datasource, sport, ctx.scopeId, ctx.eventId)
+    const result = await ctx.events.getItem(datasource, sport, scope, ctx.scopeId, ctx.eventId)
     ctx.log.debug(JSON.stringify(result, null ,2))
   })
 

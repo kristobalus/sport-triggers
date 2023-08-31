@@ -7,18 +7,16 @@ export interface AggregateResult {
   [k: string]: string
 }
 
-export function parse(result): AggregateResult {
-  const [, data] = result
+export function getIndexName(datasource: string, sport: string, scope: string, scopeId: string) {
+  return `index_${datasource}_${sport}_${scope}_${scopeId}`
+}
 
-  const reduced = {}
+export function getIndexPrefix(datasource: string, sport: string, scope: string, scopeId: string) {
+  return `json/${datasource}/${sport}/${scope}/${scopeId}/events/`
+}
 
-  for (let i = 0; i < data.length; i++) {
-    if ( i % 2 == 0 ) {
-      reduced[data[i]] = data[i + 1]
-    }
-  }
-
-  return reduced
+export function getEventKey(datasource: string, sport: string, scope: string, scopeId: string, eventId: string) {
+  return `json/${datasource}/${sport}/${scope}/${scopeId}/events/${eventId}`
 }
 
 export class EventCollection {
@@ -41,9 +39,9 @@ export class EventCollection {
     return this.redis.send_command('ft.dropindex', name)
   }
 
-  async createIndex(datasource: string, sport: string, scopeId: string): Promise<boolean> {
+  async createIndex(datasource: string, sport: string, scope: string, scopeId: string): Promise<boolean> {
     if ( sport == 'basketball' ) {
-      const indexName = Basketball.getIndexName(datasource, scopeId)
+      const indexName = getIndexName(datasource, sport, scope, scopeId)
 
       if ( !this.indices.has(indexName) ) {
         const query = Basketball.getIndexQuery(datasource, scopeId)
@@ -63,38 +61,36 @@ export class EventCollection {
       } else {
         return false
       }
-    } else {
+    }
+    else if ( sport == "baseball" ) {
+      // doing nothing
+      return false
+    }
+    else {
       throw new Error(`Unknown sport: ${sport}`)
     }
   }
 
   async append(data: AdapterEvent): Promise<boolean> {
-    const { datasource, sport, scopeId, id } = data
+    const { datasource, sport, scope, scopeId, id } = data
 
-    await this.createIndex(datasource, sport, scopeId)
+    await this.createIndex(datasource, sport, scope, scopeId)
 
     data.events = Object.keys(data.options)
 
-    if ( sport == 'basketball' ) {
-      const key = Basketball.getEventKey(datasource, scopeId, id)
-      const json = JSON.stringify(data)
-      const result = await this.redis.send_command('json.set', key, '$', json)
+    const key = getEventKey(datasource, sport, scope, scopeId, id)
+    const json = JSON.stringify(data)
+    const result = await this.redis.send_command('json.set', key, '$', json)
 
-      return result == 'OK'
-    }
-
-    return false
+    return result == 'OK'
   }
 
-  async getItem(datasource: string, sport: string, scopeId: string, eventId: string): Promise<AdapterEvent> {
-    if ( sport == 'basketball' ) {
-      const key = Basketball.getEventKey(datasource, scopeId, eventId)
+  async getItem(datasource: string, sport: string, scope: string, scopeId: string, eventId: string): Promise<AdapterEvent> {
+
+      const key = getEventKey(datasource, sport, scope, scopeId, eventId)
       const result = await this.redis.send_command('json.get', key, '$')
 
       return JSON.parse(result)
-    }
-
-    return null
   }
 }
 
