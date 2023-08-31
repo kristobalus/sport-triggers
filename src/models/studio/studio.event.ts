@@ -12,5 +12,5 @@ export interface StudioEvent {
   targets?: StudioTarget[]
   preferredOptions?: string[]
   compare?: string[]
-  targetSource: string
+  targetSource?: string
 }

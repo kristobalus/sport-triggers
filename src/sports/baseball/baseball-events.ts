@@ -56,7 +56,7 @@ export enum AtBatOutcomeState {
   "baseball.score.differential"		situation['subevent']['score_home'] - situation['subevent']['score_away'],
  */
 export enum BaseballEvents {
-  Inning = 'baseball.inningNumber',
+  InningNumber = 'baseball.inningNumber',
   InningHalf = 'baseball.inningHalf',
   PlayerBatter = 'baseball.player.batter',
   PlayerPitcher = 'baseball.player.pitcher',

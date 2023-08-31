@@ -10,9 +10,9 @@ import { InningHalf } from './inning-half'
 
 export const metadata: Record<string, EventMetadata> = {
 
-  [BaseballEvents.Inning]: {
+  [BaseballEvents.InningNumber]: {
     sport: 'baseball',
-    label: 'Inning',
+    label: 'Inning number',
     input: StudioInputs.Number,
     type: ConditionType.Number,
     primary: true,
@@ -22,8 +22,7 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterThan,
       CompareOp.LessThan,
       CompareOp.LessOrEqual
-    ],
-    targets: []
+    ]
   },
 
   [BaseballEvents.InningHalf]: {
@@ -49,28 +48,28 @@ export const metadata: Record<string, EventMetadata> = {
   // expects player-id in targets
   [BaseballEvents.PlayerBatter]: {
     sport: 'baseball',
-    label: 'Player batter',
+    label: 'Batter',
+    description: 'Batter stands a few inches to the right or left of home plate and attempt to put the ball in play against an opposing pitcher.',
     input: StudioInputs.SelectMulti,
     type: ConditionType.String,
     primary: true,
     compare: [
       CompareOp.In
     ],
-    targets: [],
     targetSource: CommonSources.GamePlayers
   },
 
   // expects team-id in targets
   [BaseballEvents.PlayerPitcher]: {
     sport: 'baseball',
-    label: 'Player pitcher',
+    label: 'Pitcher',
+    description: 'In baseball, the pitcher is the player who throws ("pitches") the baseball from the pitcher\'s mound toward the catcher to begin each play, with the goal of retiring a batter, who attempts to either make contact with the pitched ball or draw a walk.',
     input: StudioInputs.SelectMulti,
     type: ConditionType.String,
     primary: true,
     compare: [
       CompareOp.In
     ],
-    targets: [],
     targetSource: CommonSources.GamePlayers
   },
 

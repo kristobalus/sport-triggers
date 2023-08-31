@@ -6,7 +6,7 @@ export interface TargetList {
   targets: StudioTarget[]
 }
 
-export interface StudioConditionData {
+export interface StudioConfigData {
   index: string[]
   game: Pick<Game, 'id' | 'datasource' | 'scope' | 'sport' >
   events: Record<string, StudioEvent>

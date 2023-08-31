@@ -56,7 +56,7 @@ describe('Metadata tests', function () {
 
     const gameId = "42fc102c-99fd-4776-9e57-3c7be71ab5c0"
     const datasource = "nvenue"
-    const data = service.getConditionData(datasource, gameId, true)
+    const data = service.getStudioConfigData(datasource, gameId, true)
 
     console.log(JSON.stringify(data, null, 4))
   })

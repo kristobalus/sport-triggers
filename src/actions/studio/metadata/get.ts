@@ -2,7 +2,7 @@ import { ActionTransport, ServiceRequest } from '@microfleet/plugin-router'
 import { HttpStatusError } from '@microfleet/validation'
 
 import { FleetApp } from '../../../fleet-app'
-import { StudioConditionData } from '../../../models/studio/studio.condition-data'
+import { StudioConfigData } from '../../../models/studio/studio-config.data'
 
 async function Handler(this: FleetApp, request: ServiceRequest) {
   const { amqp, metadataService, log } = this
@@ -52,7 +52,7 @@ async function Handler(this: FleetApp, request: ServiceRequest) {
   }
 
   // create metadata
-  const data: StudioConditionData = metadataService.getConditionData(datasource, gameId, true)
+  const data: StudioConfigData = metadataService.getStudioConfigData(datasource, gameId, true)
 
   log.debug({  data }, 'event ui metadata')
 

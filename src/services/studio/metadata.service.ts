@@ -1,5 +1,5 @@
 
-import { StudioConditionData } from '../../models/studio/studio.condition-data'
+import { StudioConfigData } from '../../models/studio/studio-config.data'
 import { metadata, targetTree } from '../../sports'
 import { StudioEvent } from '../../models/studio/studio.event'
 import { CommonSources } from '../../sports/common-sources'
@@ -14,7 +14,7 @@ import { Datasource } from '../../models/studio/datasource'
 export class MetadataService {
   private sources: Map<string, Datasource> = new Map<string, Datasource>()
 
-  getConditionData(
+  getStudioConfigData(
     datasource: string,
     gameId: string,
     shouldMapEnum = false) {
@@ -30,7 +30,7 @@ export class MetadataService {
       throw new Error(`Game ${gameId} not found in datasource ${datasource}`)
     }
 
-    const result: StudioConditionData = {
+    const studioConfig: StudioConfigData = {
       game: {
         id: game.id,
         datasource: game.datasource,
@@ -42,46 +42,46 @@ export class MetadataService {
       sources: {},
     }
 
-    for (const [id, data] of Object.entries(metadata) ) {
-      if ( data.disabled ) { continue }
-      if ( game.sport != data.sport ) { continue }
+    for (const [eventName, eventMeta] of Object.entries(metadata) ) {
+      if ( eventMeta.disabled ) { continue }
+      if ( game.sport != eventMeta.sport ) { continue }
 
-      const item: StudioEvent = {
-        id: id,
-        sport: data.sport,
-        primary: data.primary,
-        input: shouldMapEnum ? this.getStudioInputMapped(data.input) : data.input,
-        label: data.label,
-        compare: data.compare,
-        targetSource: data.targetSource,
-        ...(data.preferredOptions ? { preferredOptions: data.preferredOptions } : {})
+      const studioEvent: StudioEvent = {
+        id: eventName,
+        sport: eventMeta.sport,
+        primary: eventMeta.primary,
+        input: shouldMapEnum ? this.getStudioInputMapped(eventMeta.input) : eventMeta.input,
+        label: eventMeta.label,
+        compare: eventMeta.compare,
+        ...(eventMeta.targetSource ? { targetSource: eventMeta.targetSource } : {}),
+        ...(eventMeta.preferredOptions ? { preferredOptions: eventMeta.preferredOptions } : {})
       }
 
-      if ( data.targetSource ) {
-        if (!result.sources[data.targetSource]) {
+      if ( eventMeta.targetSource ) {
+        if (!studioConfig.sources[eventMeta.targetSource]) {
           let targets
 
-          if ( data.targetSource == CommonSources.GameTeams ) {
+          if ( eventMeta.targetSource == CommonSources.GameTeams ) {
             targets = this.createTeamTargets(game)
           }
-          else if ( data.targetSource == CommonSources.GamePlayers ) {
+          else if ( eventMeta.targetSource == CommonSources.GamePlayers ) {
             targets = this.createPlayerTargets(game)
           }
-          else if ( targetTree[data.targetSource] ) {
-            targets = this.createTargetsBySource(data, targetTree)
+          else if ( targetTree[eventMeta.targetSource] ) {
+            targets = this.createTargetsBySource(eventMeta, targetTree)
           }
 
           if (targets) {
-            result.sources[data.targetSource] = { targets }
+            studioConfig.sources[eventMeta.targetSource] = { targets }
           }
         }
       }
 
-      result.events[item.id] = item
-      result.index.push(item.id)
+      studioConfig.events[studioEvent.id] = studioEvent
+      studioConfig.index.push(studioEvent.id)
     }
 
-    return result
+    return studioConfig
   }
 
   getStudioInputMapped(input: StudioInputs): StudioInputsProtobuf {
