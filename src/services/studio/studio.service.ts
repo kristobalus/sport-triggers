@@ -166,9 +166,13 @@ export class StudioService {
   }
 
   async deleteTrigger(triggerId: string) {
-    await this.triggers.deleteOne(triggerId)
-    await this.conditions.deleteByTriggerId(triggerId)
-    await this.subscriptions.deleteByTriggerId(triggerId)
+    const trigger = await this.triggers.getOne(triggerId)
+
+    if ( trigger && !trigger.activated ) {
+      await this.triggers.deleteOne(triggerId)
+      await this.conditions.deleteByTriggerId(triggerId)
+      await this.subscriptions.deleteByTriggerId(triggerId)
+    }
   }
 
   /**

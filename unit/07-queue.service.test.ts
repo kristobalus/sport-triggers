@@ -163,7 +163,7 @@ describe("QueueService", function () {
     }
 
     ctx.deferred = new Defer<any>()
-    await ctx.queue.addEvent(event)
+    await ctx.queue.addAdapterEvent(event)
     await ctx.deferred.promise
 
     const [ condition1, condition2, condition3 ] = await ctx.conditions.getByTriggerId(ctx.trigger.id)
@@ -187,7 +187,7 @@ describe("QueueService", function () {
     }
 
     ctx.deferred = new Defer<any>()
-    await ctx.queue.addEvent(event)
+    await ctx.queue.addAdapterEvent(event)
     await ctx.deferred.promise
 
     const [ condition1, condition2, condition3 ] = await ctx.conditions.getByTriggerId(ctx.trigger.id)
@@ -213,7 +213,7 @@ describe("QueueService", function () {
     }
 
     ctx.deferred = new Defer<any>()
-    await ctx.queue.addEvent(event)
+    await ctx.queue.addAdapterEvent(event)
     await ctx.deferred.promise
 
     const [ condition1, condition2, condition3 ] = await ctx.conditions.getByTriggerId(ctx.trigger.id)

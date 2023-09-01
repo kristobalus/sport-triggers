@@ -143,34 +143,39 @@ export class QueueService {
       })
   }
 
-  async addEvent(adapterEvent: AdapterEvent) {
-    await this.storeQueue.add('store', { adapterEvent } as StoreJob)
+  async addAdapterEvent(event: AdapterEvent) {
+    await this.storeQueue.add('store', { adapterEvent: event } as StoreJob)
   }
 
   async onStoreJob(job: Job<StoreJob>) {
     const { adapterEvent } = job.data
-
-    // store adapter event in game log
-    await this.adapterService.store(adapterEvent)
+    const { adapterService } = this
 
     const jobs = []
 
     for (const [name, value] of Object.entries(adapterEvent.options)) {
       const event = { ...adapterEvent, name, value } as Event
 
-      jobs.push({ name: 'evaluate', data: { event, adapterEvent } })
+      if (await adapterService.hasTriggers(event)) {
+        jobs.push({ name: 'evaluate', data: { event } as EventJob })
+      }
     }
 
-    this.log.debug({ event: adapterEvent }, 'store job completed; adapter event stored, evaluation job scheduled')
+    if (jobs.length > 0) {
+      // store adapter event in game log
+      await this.adapterService.store(adapterEvent)
+      await this.eventQueue.addBulk(jobs)
+      this.log.debug({ count: jobs.length  }, 'event jobs scheduled')
+    }
 
-    await this.eventQueue.addBulk(jobs)
+    this.log.debug({ adapterEvent }, 'store job completed')
   }
 
   async onEventJob(job: Job<EventJob>) {
     const { adapterService, triggerQueue } = this
     const { event } = job.data
 
-    this.log.debug({ id: job.id }, 'event job started')
+    this.log.debug({ id: job.id }, 'there is definitely a trigger interested in the event, event job started')
 
     // trigger processing
     if (await adapterService.hasTriggers(event)) {
