@@ -9,10 +9,12 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<any> {
   const { event } = request.params as AdapterPushRequest
   const { queueService, log } = this
 
+  log.debug({ event }, `received pushed event from adapter`)
+
   try {
     await queueService.addEvent(event)
   } catch (err) {
-    log.error(err)
+    log.error({ err }, `error while writing to bullmq`)
   }
 
   return { ok: true }
