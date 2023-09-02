@@ -106,6 +106,7 @@ export const metadata: Record<string, EventMetadata> = {
       BaseballEvents.PitchOutcome
     ],
     compare: [
+      // at least one out of...
       CompareOp.In
     ],
     targets: [
@@ -122,6 +123,7 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     primary: true,
     compare: [
+      // at least one out of...
       CompareOp.In
     ],
     preferredOptions: [
