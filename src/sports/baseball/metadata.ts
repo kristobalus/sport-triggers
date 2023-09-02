@@ -3,10 +3,9 @@ import { EventMetadata } from '../../models/events/event-metadata'
 import { StudioInputs } from '../../models/studio/studio.inputs'
 import { CommonSources } from '../common-sources'
 
-import { AtBatOutcomeState, BaseballEvents, PitchOutcomeState } from './baseball-events'
+import { BaseballEvents } from './baseball-events'
 import { Sources } from './sources'
 import { InningHalf } from './inning-half'
-// import { Sources } from './sources'
 
 /*
     Basic scenarios:
@@ -171,7 +170,12 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.LessOrEqual,
       CompareOp.LessThan
     ],
-    preferredOptions: []
+    targets: [
+      // number input expected, no predefined targets
+    ],
+    preferredOptions: [
+      // no preferred options
+    ]
   },
 
   [BaseballEvents.ScoreHome]: {
@@ -187,7 +191,12 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.LessOrEqual,
       CompareOp.LessThan
     ],
-    preferredOptions: []
+    targets: [
+      // number input expected, no predefined targets
+    ],
+    preferredOptions: [
+      // no preferred options
+    ]
   },
 
   [BaseballEvents.ScoreAway]: {
@@ -203,7 +212,12 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.LessOrEqual,
       CompareOp.LessThan
     ],
-    preferredOptions: []
+    targets: [
+      // number input expected, no predefined targets
+    ],
+    preferredOptions: [
+      // no preferred options
+    ]
   },
 
   [BaseballEvents.GameStateBalls]: {
@@ -219,8 +233,12 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.LessThan,
       CompareOp.GreaterThan,
     ],
-    targets: [],
-    preferredOptions: []
+    targets: [
+      // number input expected, no predefined targets
+    ],
+    preferredOptions: [
+      // no preferred options
+    ]
   },
 
   // expects player-id in targets
@@ -237,8 +255,12 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.LessThan,
       CompareOp.GreaterThan,
     ],
-    targets: [],
-    preferredOptions: [],
+    targets: [
+      // number input expected, no predefined targets
+    ],
+    preferredOptions: [
+      // no preferred options
+    ],
   },
 
   // expects team-id in targets
@@ -255,8 +277,12 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.LessThan,
       CompareOp.GreaterThan,
     ],
-    targets: [],
-    preferredOptions: [],
+    targets: [
+      // number input expected, no predefined targets
+    ],
+    preferredOptions: [
+      // no preferred options
+    ],
   },
 
   // expects team-id in targets
@@ -273,8 +299,12 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.LessThan,
       CompareOp.GreaterThan,
     ],
-    targets: [],
-    preferredOptions: []
+    targets: [
+      // number input expected, no predefined targets
+    ],
+    preferredOptions: [
+      // no preferred options
+    ]
   },
 
   [BaseballEvents.PitchOutcome]: {
@@ -289,13 +319,8 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     targetSource: Sources.PitchOutcome,
     targets: [
-      PitchOutcomeState.Ball,
-      PitchOutcomeState.BallInPlay,
-      PitchOutcomeState.GT99,
-      PitchOutcomeState.LT80,
-      PitchOutcomeState.Foul,
-      PitchOutcomeState.StrikeLooking,
-      PitchOutcomeState.StrikeSwinging
+      // deliberately left empty here,
+      // targets will be put by studio from specified targetSource
     ]
   },
 
@@ -346,27 +371,8 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.In
     ],
     targets: [
-      AtBatOutcomeState.GIDP,
-      AtBatOutcomeState.BB,
-      AtBatOutcomeState.BI,
-      AtBatOutcomeState.ERR,
-      AtBatOutcomeState.FO,
-      AtBatOutcomeState.CI,
-      AtBatOutcomeState.GO,
-      AtBatOutcomeState.XBH,
-      AtBatOutcomeState.X1,
-      AtBatOutcomeState.X2,
-      AtBatOutcomeState.X3,
-      AtBatOutcomeState.REACH,
-      AtBatOutcomeState.RBI,
-      AtBatOutcomeState.OUT,
-      AtBatOutcomeState.KS,
-      AtBatOutcomeState.IPO,
-      AtBatOutcomeState.KL,
-      AtBatOutcomeState.K,
-      AtBatOutcomeState.HIT,
-      AtBatOutcomeState.HR,
-      AtBatOutcomeState.HBP
+      // deliberately left empty here,
+      // targets will be put by studio from specified targetSource
     ],
     targetSource: Sources.AtBatOutcome
   },
