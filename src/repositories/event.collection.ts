@@ -62,7 +62,7 @@ export class EventCollection {
         return false
       }
     }
-    else if ( sport == "baseball" ) {
+    else if ( sport == 'baseball' ) {
       // doing nothing
       return false
     }
@@ -86,11 +86,10 @@ export class EventCollection {
   }
 
   async getItem(datasource: string, sport: string, scope: string, scopeId: string, eventId: string): Promise<AdapterEvent> {
+    const key = getEventKey(datasource, sport, scope, scopeId, eventId)
+    const result = await this.redis.send_command('json.get', key, '$')
 
-      const key = getEventKey(datasource, sport, scope, scopeId, eventId)
-      const result = await this.redis.send_command('json.get', key, '$')
-
-      return JSON.parse(result)
+    return JSON.parse(result)
   }
 }
 

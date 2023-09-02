@@ -1,13 +1,11 @@
+import { getIndexName, getIndexPrefix } from '../../repositories/event.collection'
+
 import { BasketballEvents } from './basketball-events'
-import { getIndexName, getIndexPrefix } from "../../repositories/event.collection"
 
 const sport = 'basketball'
 const scope = 'game'
 
-
-
 export function getIndexQuery(datasource: string, scopeId: string) {
-
   const prefix = getIndexPrefix(datasource, sport, scope, scopeId)
   const name = getIndexName(datasource, sport, scope, scopeId)
 

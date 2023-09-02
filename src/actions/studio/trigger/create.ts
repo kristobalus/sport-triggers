@@ -14,6 +14,7 @@ async function CreateHandler(this: FleetApp, request: ServiceRequest): Promise<R
   const { datasource, scopeId } = trigger
   const source = metadataService.getDatasource(datasource)
   const game = source.getGame(scopeId)
+
   if (!game) {
     log.debug({ game, scopeId, datasource }, 'game not found')
   }

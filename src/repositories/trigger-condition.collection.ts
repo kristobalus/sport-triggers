@@ -189,7 +189,6 @@ export class TriggerConditionCollection {
     scope: string,
     scopeId: string,
     conditions: Partial<TriggerCondition>[]) {
-
     if (!conditions || conditions.length == 0) {
       throw new ArgumentError('Cannot create trigger without conditions')
     }

@@ -69,8 +69,8 @@ export enum BaseballEvents {
   GameStateOut = 'baseball.game.state.outs',
   GameStatePitches = 'baseball.game.state.pitches',
   ScoreDifferential = 'baseball.score.differential',
-  AtBatOutcome = "baseball.atbat.outcomes",
-  PitchOutcome = "baseball.pitch.outcomes",
-  PitchSpeed = "baseball.pitch.speed",
-  PitchType = "baseball.pitch.type",
+  AtBatOutcome = 'baseball.atbat.outcomes',
+  PitchOutcome = 'baseball.pitch.outcomes',
+  PitchSpeed = 'baseball.pitch.speed',
+  PitchType = 'baseball.pitch.type',
 }

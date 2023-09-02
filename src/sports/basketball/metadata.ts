@@ -3,11 +3,11 @@ import { EventMetadata } from '../../models/events/event-metadata'
 import { StudioInputs } from '../../models/studio/studio.inputs'
 import { CommonSources } from '../common-sources'
 import { filter, escape } from '../util'
+import { getIndexName } from '../../repositories/event.collection'
 
 import { BasketballEvents } from './basketball-events'
 import { GameLevel } from './game-level'
 import { Sources } from './sources'
-import { getIndexName } from "../../repositories/event.collection"
 
 export const metadata: Record<string, EventMetadata> = {
 

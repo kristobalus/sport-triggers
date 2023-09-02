@@ -158,7 +158,7 @@ export class MetadataService {
     this.sources.set(id, datasource)
   }
 
-  getDatasource(id: string) : Datasource {
+  getDatasource(id: string): Datasource {
     return this.sources.get(id)
   }
 }
