@@ -276,7 +276,7 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     primary: true,
     compare: [
-      CompareOp.Equal,
+      // at least one out of...
       CompareOp.In
     ],
     targetSource: Sources.PitchOutcome,
@@ -324,7 +324,6 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     primary: true,
     compare: [
-      CompareOp.Equal,
       CompareOp.In
     ],
     targets: [
