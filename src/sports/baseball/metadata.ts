@@ -5,7 +5,6 @@ import { CommonSources } from '../common-sources'
 
 import { BaseballEvents } from './baseball-events'
 import { Sources } from './sources'
-import { InningHalf } from './inning-half'
 
 /*
     Basic scenarios:
@@ -57,8 +56,9 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.LessOrEqual
     ],
     targets: [
-      InningHalf.Top,
-      InningHalf.Bottom
+      // deliberately left empty here,
+      // if targets is empty array, it will be filled from specified targetSource with all items
+      // otherwise only specified targets will be included, targetSource is required to add labels, description etc
     ],
     targetSource: Sources.InningHalf
   },
@@ -75,9 +75,7 @@ export const metadata: Record<string, EventMetadata> = {
     primary: true,
     preferredOptions: [
       // see basic scenarios
-      BaseballEvents.PitchOutcome,
-      BaseballEvents.PitchType,
-      BaseballEvents.PitchSpeed
+      BaseballEvents.AtBatOutcome
     ],
     compare: [
       // at least one out of...
@@ -85,7 +83,8 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     targets: [
       // deliberately left empty here,
-      // targets will be put by studio from specified targetSource
+      // if targets is empty array, it will be filled from specified targetSource with all items
+      // otherwise only specified targets will be included, targetSource is required to add labels, description etc
     ],
     targetSource: CommonSources.GamePlayers
   },
@@ -102,7 +101,9 @@ export const metadata: Record<string, EventMetadata> = {
     primary: true,
     preferredOptions: [
       // see basic scenarios
-      BaseballEvents.PitchOutcome
+      BaseballEvents.PitchOutcome,
+      BaseballEvents.PitchType,
+      BaseballEvents.PitchSpeed
     ],
     compare: [
       // at least one out of...
@@ -110,7 +111,8 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     targets: [
       // deliberately left empty here,
-      // targets will be put by studio from specified targetSource
+      // if targets is empty array, it will be filled from specified targetSource with all items
+      // otherwise only specified targets will be included, targetSource is required to add labels, description etc
     ],
     targetSource: CommonSources.GamePlayers
   },
@@ -131,14 +133,15 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     targets: [
       // deliberately left empty here,
-      // targets will be put by studio from specified targetSource
+      // if targets is empty array, it will be filled from specified targetSource with all items
+      // otherwise only specified targets will be included, targetSource is required to add labels, description etc
     ],
     targetSource: CommonSources.GameTeams
   },
 
   [BaseballEvents.TeamPitcher]: {
     sport: 'baseball',
-    label: 'Team of pitcher',
+    label: 'Team Pitching',
     input: StudioInputs.Select,
     type: ConditionType.String,
     primary: true,
@@ -152,7 +155,8 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     targets: [
       // deliberately left empty here,
-      // targets will be put by studio from specified targetSource
+      // if targets is empty array, it will be filled from specified targetSource with all items
+      // otherwise only specified targets will be included, targetSource is required to add labels, description etc
     ],
     targetSource: CommonSources.GameTeams
   },
@@ -169,12 +173,6 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterThan,
       CompareOp.LessOrEqual,
       CompareOp.LessThan
-    ],
-    targets: [
-      // number input expected, no predefined targets
-    ],
-    preferredOptions: [
-      // no preferred options
     ]
   },
 
@@ -190,12 +188,6 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterThan,
       CompareOp.LessOrEqual,
       CompareOp.LessThan
-    ],
-    targets: [
-      // number input expected, no predefined targets
-    ],
-    preferredOptions: [
-      // no preferred options
     ]
   },
 
@@ -211,18 +203,12 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterThan,
       CompareOp.LessOrEqual,
       CompareOp.LessThan
-    ],
-    targets: [
-      // number input expected, no predefined targets
-    ],
-    preferredOptions: [
-      // no preferred options
     ]
   },
 
   [BaseballEvents.GameStateBalls]: {
     sport: 'baseball',
-    label: 'Game state balls',
+    label: 'Game stats, balls',
     input: StudioInputs.Number,
     type: ConditionType.Number,
     primary: true,
@@ -232,19 +218,13 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
       CompareOp.LessThan,
       CompareOp.GreaterThan,
-    ],
-    targets: [
-      // number input expected, no predefined targets
-    ],
-    preferredOptions: [
-      // no preferred options
     ]
   },
 
   // expects player-id in targets
   [BaseballEvents.GameStateOut]: {
     sport: 'baseball',
-    label: 'Game state out',
+    label: 'Game stats, outs',
     input: StudioInputs.Number,
     type: ConditionType.Number,
     primary: true,
@@ -254,19 +234,13 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
       CompareOp.LessThan,
       CompareOp.GreaterThan,
-    ],
-    targets: [
-      // number input expected, no predefined targets
-    ],
-    preferredOptions: [
-      // no preferred options
-    ],
+    ]
   },
 
   // expects team-id in targets
   [BaseballEvents.GameStatePitches]: {
     sport: 'baseball',
-    label: 'Game state pitches',
+    label: 'Game stats, pitches',
     input: StudioInputs.Number,
     type: ConditionType.Number,
     primary: true,
@@ -276,19 +250,13 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
       CompareOp.LessThan,
       CompareOp.GreaterThan,
-    ],
-    targets: [
-      // number input expected, no predefined targets
-    ],
-    preferredOptions: [
-      // no preferred options
-    ],
+    ]
   },
 
   // expects team-id in targets
   [BaseballEvents.GameStateStrikes]: {
     sport: 'baseball',
-    label: 'Game state strikes',
+    label: 'Game stats, strikes',
     input: StudioInputs.Number,
     type: ConditionType.Number,
     primary: true,
@@ -298,12 +266,6 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
       CompareOp.LessThan,
       CompareOp.GreaterThan,
-    ],
-    targets: [
-      // number input expected, no predefined targets
-    ],
-    preferredOptions: [
-      // no preferred options
     ]
   },
 
@@ -320,7 +282,8 @@ export const metadata: Record<string, EventMetadata> = {
     targetSource: Sources.PitchOutcome,
     targets: [
       // deliberately left empty here,
-      // targets will be put by studio from specified targetSource
+      // if targets is empty array, it will be filled from specified targetSource with all items
+      // otherwise only specified targets will be included, targetSource is required to add labels, description etc
     ]
   },
 
@@ -336,9 +299,6 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
       CompareOp.LessThan,
       CompareOp.GreaterThan,
-    ],
-    targets: [
-      // number input expected, no predefined targets
     ]
   },
 
@@ -354,9 +314,6 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
       CompareOp.LessThan,
       CompareOp.GreaterThan,
-    ],
-    targets: [
-      // number input expected, no predefined targets
     ]
   },
 
@@ -372,7 +329,8 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     targets: [
       // deliberately left empty here,
-      // targets will be put by studio from specified targetSource
+      // if targets is empty array, it will be filled from specified targetSource with all items
+      // otherwise only specified targets will be included, targetSource is required to add labels, description etc
     ],
     targetSource: Sources.AtBatOutcome
   },

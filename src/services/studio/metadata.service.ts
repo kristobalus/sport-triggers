@@ -105,15 +105,20 @@ export class MetadataService {
     }
   }
 
-  createTargetsBySource(metas: EventMetadata, targetTree: StudioTargetTree): StudioTarget[] {
+  createTargetsBySource(meta: EventMetadata, targetTree: StudioTargetTree): StudioTarget[] {
     const targets: StudioTarget[] = []
 
-    for (const id of metas.targets) {
+    const branch = targetTree[meta.targetSource]
+    const keys = meta?.targets?.length > 0
+      ? meta.targets
+      : Object.keys(branch)
+
+    for (const id of keys) {
       const target = {
-        label: targetTree[metas.targetSource][id].label,
-        description: targetTree[metas.targetSource][id].description,
+        label: branch[id].label,
+        description: branch[id].description,
         id: id,
-        group: targetTree[metas.targetSource][id].group
+        group: branch[id].group
       } as StudioTarget
 
       targets.push(target)
