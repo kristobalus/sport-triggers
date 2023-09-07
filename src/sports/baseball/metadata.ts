@@ -317,7 +317,7 @@ export const metadata: Record<string, EventMetadata> = {
       // if targets is empty array, it will be filled from specified targetSource with all items
       // otherwise only specified targets will be included, targetSource is required to add labels, description etc
     ],
-    targetSource: Sources.PitchOutcome
+    targetSource: Sources.PitchType
   },
 
   [BaseballEvents.AtBatOutcome]: {
