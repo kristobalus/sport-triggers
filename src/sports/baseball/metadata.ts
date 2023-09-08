@@ -304,17 +304,20 @@ export const metadata: Record<string, EventMetadata> = {
 
   [BaseballEvents.PitchType]: {
     sport: 'baseball',
-    label: 'Pitch type, unknown targets (TODO)',
-    input: StudioInputs.String,
+    label: 'Pitch type',
+    input: StudioInputs.SelectMulti,
     type: ConditionType.String,
     primary: true,
     compare: [
-      CompareOp.Equal,
-      CompareOp.LessOrEqual,
-      CompareOp.GreaterOrEqual,
-      CompareOp.LessThan,
-      CompareOp.GreaterThan,
-    ]
+      // at least one out of...
+      CompareOp.In
+    ],
+    targets: [
+      // deliberately left empty here,
+      // if targets is empty array, it will be filled from specified targetSource with all items
+      // otherwise only specified targets will be included, targetSource is required to add labels, description etc
+    ],
+    targetSource: Sources.PitchType
   },
 
   [BaseballEvents.AtBatOutcome]: {

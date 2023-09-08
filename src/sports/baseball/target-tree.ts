@@ -1,6 +1,6 @@
 import { StudioTargetTree } from '../../models/studio/studio.target-tree'
 
-import { AtBatOutcomeState, GameState, PitchOutcomeState } from './baseball-events'
+import { AtBatOutcomeState, GameState, PitchOutcomeState, PitchTypeState } from './baseball-events'
 import { Sources } from './sources'
 import { InningHalf } from './inning-half'
 
@@ -146,6 +146,43 @@ export const targetTree: StudioTargetTree = {
     },
     [InningHalf.Bottom]: {
       label: 'Bottom'
+    },
+  },
+
+  [Sources.PitchType]: {
+    [PitchTypeState.FA]: {
+      label: 'FA',
+      description: 'fastball'
+    },
+
+    [PitchTypeState.CT]: {
+      label: 'CT',
+      description: 'fastball cutter'
+    },
+
+    [PitchTypeState.FF]: {
+      label: 'FF',
+      description: 'four-seam fastball'
+    },
+
+    [PitchTypeState.SI]: {
+      label: 'SI',
+      description: 'fastball sinker'
+    },
+
+    [PitchTypeState.SL]: {
+      label: 'SL',
+      description: 'off-speed slider'
+    },
+
+    [PitchTypeState.CH]: {
+      label: 'CH',
+      description: 'off-speed changeup'
+    },
+
+    [PitchTypeState.CU]: {
+      label: 'CU',
+      description: 'off-speed curveball'
     },
   }
 

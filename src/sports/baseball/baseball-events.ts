@@ -16,6 +16,23 @@ export enum PitchOutcomeState {
   Foul = 'foul'
 }
 
+export enum PitchTypeState {
+  FA = 'FA',
+  CT = 'CT',
+  FF = 'FF',
+  SI = 'SI ',
+  SL = 'SL',
+  CH = 'CH',
+  CU = 'CU',
+  // Extend for:
+  // check https://library.fangraphs.com/pitch-type-abbreviations-classifications/
+  // KC = knuckle-curve
+  // KN = knuckleball
+  // EP  = eephus
+  // UN / XX = unidentified
+  // PO / FO = pitch out
+}
+
 export enum AtBatOutcomeState {
   HIT = 'HIT',
   X1 = 'X1',
