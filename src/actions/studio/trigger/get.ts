@@ -10,7 +10,7 @@ async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ItemRe
 
   const { studioService } = this
 
-  const trigger = await studioService.getTrigger(id, { showLog: true, trim: true })
+  const trigger = await studioService.getTrigger(id, { showLog: false, trim: true })
 
   this.log.debug({ request: { id }, trigger }, 'get trigger')
 

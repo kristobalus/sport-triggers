@@ -15,10 +15,10 @@ async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ListRe
   let list
 
   if (entity && entityId) {
-    list = await studioService.getTriggerListByEntity(entity, entityId, { showLog: true, trim: true })
+    list = await studioService.getTriggerListByEntity(entity, entityId, { showLog: false, trim: true })
   }
   else if (datasource && scope && scopeId) {
-    list = await studioService.getTriggerListByScope(datasource, scope, scopeId, { showLog: true, trim: true })
+    list = await studioService.getTriggerListByScope(datasource, scope, scopeId, { showLog: false, trim: true })
   } else {
     throw new ArgumentError('Either { entity, entityId } pair or { datasource, scope, scopeId } should be defined')
   }
