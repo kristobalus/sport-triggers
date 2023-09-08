@@ -1,6 +1,6 @@
 local function Debug()
 
-    local enabled = true
+    local enabled = false
     local _debug = {}
 
     local function add(_, data, message)

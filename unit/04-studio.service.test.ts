@@ -129,14 +129,14 @@ describe("StudioService", function () {
   })
 
   it(`studio should get trigger by id`, async () => {
-    const trigger = await ctx.service.getTrigger(ctx.triggerId, { showLog: true, trim: true })
+    const trigger = await ctx.service.getTrigger(ctx.triggerId, { showLog: false, trim: true })
     assert.ok(trigger.trigger.name, "Trigger")
     assert.ok(trigger.trigger.name, "Trigger Description")
     ctx.log.debug({ trigger }, 'trigger by id')
   })
 
   it(`studio should update trigger`, async () => {
-    const document = await ctx.service.getTrigger(ctx.triggerId, { showLog: true, trim: true })
+    const document = await ctx.service.getTrigger(ctx.triggerId, { showLog: false, trim: true })
     assert.ok(document.trigger.name, "Trigger")
     assert.ok(document.trigger.name, "Trigger Description")
     ctx.log.debug({ triggerOriginal: document }, 'trigger by id')
@@ -144,7 +144,7 @@ describe("StudioService", function () {
     document.trigger.name = "Trigger Updated"
     await ctx.service.updateTrigger(document.trigger, document.conditions)
 
-    const documentUpdated = await ctx.service.getTrigger(ctx.triggerId, { showLog: true, trim: true })
+    const documentUpdated = await ctx.service.getTrigger(ctx.triggerId, { showLog: false, trim: true })
     ctx.log.debug({ triggerUpdated: documentUpdated }, 'trigger by id')
     assert.ok(documentUpdated.trigger.name, "Trigger Updated")
   })

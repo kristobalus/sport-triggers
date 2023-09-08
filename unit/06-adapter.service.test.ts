@@ -358,7 +358,7 @@ describe("AdapterService", function () {
       await ctx.studioService.createTrigger(triggerData, triggerConditions)
       console.log(triggerData)
       await ctx.studioService.createTrigger(triggerData, triggerConditions)
-      const triggers = await ctx.studioService.getTriggerListByScope(datasource, scope, scopeId, { showLog: true, trim: true })
+      const triggers = await ctx.studioService.getTriggerListByScope(datasource, scope, scopeId, { showLog: false, trim: true })
       console.log(triggers)
     })
 
