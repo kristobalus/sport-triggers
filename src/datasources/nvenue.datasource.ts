@@ -66,14 +66,14 @@ export class NvenueDatasource implements Datasource {
       if (!homeTeam) {
         // throw new Error(`Team not found ${nvGame.home_abbr}`)
         // eslint-disable-next-line no-console
-        // console.log(`Skipped game since team ${nvGame.home_abbr} not found in MLB`)
+        // console.log(`Skipped game since nVenue game team ${nvGame.home_abbr} not found in MLB`)
         continue
       }
 
       if (!awayTeam) {
         // throw new Error(`Team not found ${nvGame.away_abbr}`)
         // eslint-disable-next-line no-console
-        // console.log(`Skipped game since team ${nvGame.away_abbr} not found in MLB`)
+        // console.log(`Skipped game since nVenue game team ${nvGame.away_abbr} not found in MLB`)
         continue
       }
 
@@ -133,13 +133,13 @@ export class NvenueDatasource implements Datasource {
       }
 
       game.teams[nvGame.home_abbr] = {
-        id: homeTeam.name_abbrev,
+        id: nvGame.home_abbr,
         name: homeTeam.name_display_long,
         home: true,
       } as Team
 
       game.teams[nvGame.away_abbr] = {
-        id: awayTeam.name_abbrev,
+        id: nvGame.away_abbr,
         name: awayTeam.name_display_long,
         home: true,
       } as Team

@@ -3,6 +3,7 @@ import path = require('path')
 import { NvenueDatasource } from "../src/datasources/nvenue.datasource"
 import { MetadataService } from "../src/services/studio/metadata.service"
 import { MlbDatasource } from "../src/datasources/mlb.datasource"
+import assert from "assert"
 
 describe('Metadata tests', function () {
 
@@ -54,11 +55,17 @@ describe('Metadata tests', function () {
 
     service.addDatasource("nvenue", nvenue)
 
-    const gameId = "42fc102c-99fd-4776-9e57-3c7be71ab5c0"
-    const datasource = "nvenue"
-    const data = service.getStudioConfigData(datasource, gameId, true)
+    const gameId = "f870f9db-0775-497a-88b4-9b27dd372358"
+    // const datasource = "nvenue"
+    // const data = service.getStudioConfigData(datasource, gameId, true)
+    //console.log(JSON.stringify(data, null, 4))
 
-    console.log(JSON.stringify(data, null, 4))
+    const game = nvenue.getGame(gameId)
+    const teams = game.teams
+    for(const [id, team] of Object.entries(teams)) {
+      assert(id === team.id)
+    }
+    console.log(game.teams)
   })
 
 })
