@@ -17,7 +17,7 @@ export function init(parent: FleetApp) {
     const nvenue = new NvenueDatasource()
 
     nvenue.loadGames(
-      path.resolve(__dirname, '../../games/nvenue/baseball/games.json'),
+      path.resolve(__dirname, '../../games/nvenue/baseball/games'),
       path.resolve(__dirname, '../../games/mlb/teams.json'),
       path.resolve(__dirname, '../../games/mlb/players.json'),
       'baseball')

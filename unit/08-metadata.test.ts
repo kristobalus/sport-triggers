@@ -31,7 +31,7 @@ describe('Metadata tests', function () {
     const nvenue = new NvenueDatasource()
 
     nvenue.loadGames(
-      path.resolve(__dirname, '../games/nvenue/baseball/games.json'),
+      path.resolve(__dirname, '../games/nvenue/baseball/games'),
       path.resolve(__dirname, '../games/mlb/teams.json'),
       path.resolve(__dirname, '../games/mlb/players.json'),
       'baseball')
@@ -42,11 +42,16 @@ describe('Metadata tests', function () {
     nvenue.printTeams(path.resolve(__dirname, '../games/nvenue/baseball/teams.json'))
   })
 
+  it('should list games', () => {
+    const nvenue = new NvenueDatasource()
+    nvenue.printGames(path.resolve(__dirname, '../games/nvenue/baseball/games/games_2023_2.json'))
+  })
+
   it('should get metadata for nvenue', async () => {
     const nvenue = new NvenueDatasource()
 
     nvenue.loadGames(
-      path.resolve(__dirname, '../games/nvenue/baseball/games.json'),
+      path.resolve(__dirname, '../games/nvenue/baseball/games'),
       path.resolve(__dirname, '../games/mlb/teams.json'),
       path.resolve(__dirname, '../games/mlb/players.json'),
       'baseball')
@@ -55,12 +60,14 @@ describe('Metadata tests', function () {
 
     service.addDatasource("nvenue", nvenue)
 
-    const gameId = "f870f9db-0775-497a-88b4-9b27dd372358"
+    const gameId = "1bb653b1-2bf4-418b-bf9e-fc53c29a28b5"
     // const datasource = "nvenue"
     // const data = service.getStudioConfigData(datasource, gameId, true)
     //console.log(JSON.stringify(data, null, 4))
 
     const game = nvenue.getGame(gameId)
+    assert(game, 'should find game by gameId')
+
     const teams = game.teams
     for(const [id, team] of Object.entries(teams)) {
       assert(id === team.id)

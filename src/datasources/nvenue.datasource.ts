@@ -9,6 +9,7 @@ import { PlayerMlb } from '../models/mlb/player.mlb'
 import { Datasource } from '../models/studio/datasource'
 import { Sport } from '../models/studio/sport'
 import { Player } from '../models/studio/player'
+import path from 'path'
 
 export class NvenueDatasource implements Datasource {
   private games: Map<string, Game> = new Map<string, Game>
@@ -18,12 +19,14 @@ export class NvenueDatasource implements Datasource {
   }
 
   loadGames(
-    nvGamesFile: string,
+    nvGamesDir: string,
     mlbTeamFile: string,
     mlbPlayerFile: string,
     sport: Sport) {
-    if (!fs.existsSync(nvGamesFile)) {
-      throw new Error(`${nvGamesFile} not found`)
+
+
+    if (!fs.existsSync(nvGamesDir)) {
+      throw new Error(`${nvGamesDir} not found`)
     }
 
     if (!fs.existsSync(mlbTeamFile)) {
@@ -54,7 +57,19 @@ export class NvenueDatasource implements Datasource {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const nvGames = require(nvGamesFile) as NVenueGame[]
+    // List all files in the directory
+    const nvGameFiles = fs.readdirSync(nvGamesDir);
+
+    const nvGames: NVenueGame[] = []
+    for (let fileName of nvGameFiles) {
+      const filePath = path.join(nvGamesDir, fileName);
+      // Check if the item is a file
+      const stat = fs.statSync(filePath);
+      if (stat.isFile()) {
+        const content = require(filePath)
+        nvGames.push(...content)
+      }
+    }
 
     for (const nvGame of nvGames) {
       // eslint-disable-next-line no-console
@@ -66,14 +81,14 @@ export class NvenueDatasource implements Datasource {
       if (!homeTeam) {
         // throw new Error(`Team not found ${nvGame.home_abbr}`)
         // eslint-disable-next-line no-console
-        // console.log(`Skipped game since nVenue game team ${nvGame.home_abbr} not found in MLB`)
+        // console.log(`Skipped game ${nvGame.nv_game_id} since nVenue game team ${nvGame.home_abbr} not found in MLB`)
         continue
       }
 
       if (!awayTeam) {
         // throw new Error(`Team not found ${nvGame.away_abbr}`)
         // eslint-disable-next-line no-console
-        // console.log(`Skipped game since nVenue game team ${nvGame.away_abbr} not found in MLB`)
+        // console.log(`Skipped game ${nvGame.nv_game_id} since nVenue game team ${nvGame.away_abbr} not found in MLB`)
         continue
       }
 
@@ -121,14 +136,14 @@ export class NvenueDatasource implements Datasource {
       if (!homeTeam) {
         // throw new Error("Team not found: " + nvGame.home_abbr)
         // eslint-disable-next-line no-console
-        // console.log('Game skipped since home team not found', nvGame.home_abbr)
+        // console.log(`Game ${nvGame.nv_game_id} skipped since home team not found`, nvGame.home_abbr)
         continue
       }
 
       if (!awayTeam) {
         // throw new Error("Team not found: " + nvGame.away_abbr)
         // eslint-disable-next-line no-console
-        // console.log('Game skipped since away team not found', nvGame.away_abbr)
+        // console.log(`Game ${nvGame.nv_game_id} skipped since away team not found`, nvGame.away_abbr)
         continue
       }
 
