@@ -290,15 +290,17 @@ export const metadata: Record<string, EventMetadata> = {
   [BaseballEvents.PitchSpeed]: {
     sport: 'baseball',
     label: 'Pitch speed',
-    input: StudioInputs.Number,
-    type: ConditionType.Number,
+    input: StudioInputs.SelectMulti,
+    type: ConditionType.String,
     primary: true,
     compare: [
-      CompareOp.Equal,
-      CompareOp.LessOrEqual,
-      CompareOp.GreaterOrEqual,
-      CompareOp.LessThan,
-      CompareOp.GreaterThan,
+      CompareOp.In
+    ],
+    targetSource: Sources.PitchSpeed,
+    targets: [
+      // deliberately left empty here,
+      // if targets is empty array, it will be filled from specified targetSource with all items
+      // otherwise only specified targets will be included, targetSource is required to add labels, description etc
     ]
   },
 

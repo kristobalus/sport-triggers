@@ -1,10 +1,33 @@
 import { StudioTargetTree } from '../../models/studio/studio.target-tree'
 
-import { AtBatOutcomeState, GameState, PitchOutcomeState, PitchTypeState } from './baseball-events'
+import { AtBatOutcomeState, GameState, PitchOutcomeState, PitchSpeedState, PitchTypeState } from './baseball-events'
 import { Sources } from './sources'
 import { InningHalf } from './inning-half'
 
 export const targetTree: StudioTargetTree = {
+
+  [Sources.PitchSpeed]: {
+
+    [PitchSpeedState.GT99]: {
+      label: 'Ball speed > 99 mph',
+    },
+
+    [PitchSpeedState.B96_99]: {
+      label: 'Ball speed 96-99 mph',
+    },
+
+    [PitchSpeedState.B90_95]: {
+      label: 'Ball seed 90-95 mph',
+    },
+
+    [PitchSpeedState.B80_89]: {
+      label: 'Ball speed 80-89 mph',
+    },
+
+    [PitchSpeedState.LT80]: {
+      label: 'Ball speed < 80 mph',
+    },
+  },
 
   [Sources.PitchOutcome]: {
 
@@ -28,7 +51,7 @@ export const targetTree: StudioTargetTree = {
       label: 'Foul',
     },
 
-    [PitchOutcomeState.GT99]: {
+    [PitchOutcomeState.GT90]: {
       label: 'Greater than 99mph',
     },
 
@@ -160,10 +183,10 @@ export const targetTree: StudioTargetTree = {
       description: 'fastball cutter'
     },
 
-    [PitchTypeState.FF]: {
-      label: 'FF',
-      description: 'four-seam fastball'
-    },
+    // [PitchTypeState.FF]: {
+    //   label: 'FF',
+    //   description: 'four-seam fastball'
+    // },
 
     [PitchTypeState.SI]: {
       label: 'SI',

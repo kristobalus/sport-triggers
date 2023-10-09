@@ -7,7 +7,7 @@ export enum GameState {
 }
 
 export enum PitchOutcomeState {
-  GT99 = 'gt.90',
+  GT90 = 'gt.90',
   LT80 = 'lt.80',
   Ball = 'ball',
   StrikeLooking = 'strike_looking',
@@ -16,11 +16,20 @@ export enum PitchOutcomeState {
   Foul = 'foul'
 }
 
+export enum PitchSpeedState {
+  GT99 = 'GT99',
+  B96_99 = 'B96-99',
+  B90_95 = 'B90-95',
+  B80_89 = 'B80-89',
+  LT80 = 'LT80'
+}
+
+// FA,CU,CH,CT,SI,SL,OTHER
 export enum PitchTypeState {
   FA = 'FA',
   CT = 'CT',
-  FF = 'FF',
-  SI = 'SI ',
+  // FF = 'FF',
+  SI = 'SI',
   SL = 'SL',
   CH = 'CH',
   CU = 'CU',
