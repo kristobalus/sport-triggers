@@ -52,7 +52,7 @@ export enum AtBatOutcomeState {
   BB = 'BB',
   HBP = 'HBP',
   REACH = 'REACH',
-  ERR = 'ERR',
+  // ERR = 'ERR',
   CI = 'CI',
   RBI = 'RBI',
   OUT = 'OUT',

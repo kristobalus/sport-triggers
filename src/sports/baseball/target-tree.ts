@@ -73,9 +73,9 @@ export const targetTree: StudioTargetTree = {
       label: 'BI'
     },
 
-    [AtBatOutcomeState.ERR]: {
-      label: 'ERR'
-    },
+    // [AtBatOutcomeState.ERR]: {
+    //   label: 'ERR'
+    // },
 
     [AtBatOutcomeState.FO]: {
       label: 'FO'
@@ -118,7 +118,8 @@ export const targetTree: StudioTargetTree = {
     },
 
     [AtBatOutcomeState.KS]: {
-      label: 'KS'
+      label: 'KS',
+      description: 'Strikeout swinging'
     },
 
     [AtBatOutcomeState.IPO]: {
@@ -126,11 +127,13 @@ export const targetTree: StudioTargetTree = {
     },
 
     [AtBatOutcomeState.KL]: {
-      label: 'KL'
+      label: 'KL',
+      description: 'Strikeout looking'
     },
 
     [AtBatOutcomeState.K]: {
-      label: 'K'
+      label: 'K',
+      description: 'All strikeouts'
     },
 
     [AtBatOutcomeState.HIT]: {

@@ -6,11 +6,13 @@ import { TriggerWithConditions } from '../../../models/dto/trigger-with-conditio
 import { TriggerGetRequest } from '../../../models/dto/trigger-get-request'
 
 async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ItemResponse<TriggerWithConditions>> {
-  const { id } = request.params as TriggerGetRequest
+  const { id, options } = request.params as TriggerGetRequest
 
   const { studioService } = this
 
-  const trigger = await studioService.getTrigger(id, { showLog: false, trim: true })
+  const shouldShowLog = options?.includes("log")
+  const shouldTrim = !options?.includes("notrim")
+  const trigger = await studioService.getTrigger(id, { showLog: shouldShowLog, trim: shouldTrim })
 
   this.log.debug({ request: { id }, trigger }, 'get trigger')
 
@@ -20,7 +22,7 @@ async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ItemRe
 }
 
 Handler.schema = 'studio.trigger.get'
-Handler.transports = [ActionTransport.amqp]
+Handler.transports = [ActionTransport.amqp, ActionTransport.http]
 
 export = Handler
 

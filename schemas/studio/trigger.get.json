@@ -4,6 +4,9 @@
     "properties": {
         "id": {
             "type": "string"
+        },
+        "options": {
+            "type": "string"
         }
     },
     "additionalProperties": false,
