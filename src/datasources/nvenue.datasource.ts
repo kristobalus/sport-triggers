@@ -62,6 +62,7 @@ export class NvenueDatasource implements Datasource {
 
     const nvGames: NVenueGame[] = []
     for (let fileName of nvGameFiles) {
+      // console.log(fileName)
       const filePath = path.join(nvGamesDir, fileName);
       // Check if the item is a file
       const stat = fs.statSync(filePath);
