@@ -11,10 +11,12 @@ export function allowSignedRequest(this: FleetApp, request: ServiceRequest) {
   const { config } = this
   const { headers } = request
 
-  const token = headers[config.signedRequest.tokenHeader]
+  if ( request.transport === "http" ) {
+    const token = headers[config.signedRequest.tokenHeader]
 
-  if (!token) {
-    throw Boom.unauthorized()
+    if (!token) {
+      throw Boom.unauthorized()
+    }
   }
 }
 
