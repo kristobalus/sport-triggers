@@ -52,7 +52,7 @@ export const targetTree: StudioTargetTree = {
     },
 
     [PitchOutcomeState.GT90]: {
-      label: 'Greater than 99mph',
+      label: 'Greater than 90mph',
     },
 
     [PitchOutcomeState.LT80]: {
