@@ -68,6 +68,20 @@ describe("TriggerCollection", function () {
     assert.ok(trigger.name === name)
   })
 
+  it('should be able to disable trigger', async () => {
+    await ctx.triggers.updateOne(ctx.triggerId, { disabled: true } as Partial<Trigger>)
+    const trigger = await ctx.triggers.getOne(ctx.triggerId)
+
+    assert.ok(trigger.disabled)
+  })
+
+  it('should be able to enable trigger', async () => {
+    await ctx.triggers.updateOne(ctx.triggerId, { disabled: false } as Partial<Trigger>)
+    const trigger = await ctx.triggers.getOne(ctx.triggerId)
+
+    assert.ok(!trigger.disabled)
+  })
+
   it('should be able to delete trigger', async () => {
     const result = await ctx.triggers.deleteOne(ctx.triggerId)
 

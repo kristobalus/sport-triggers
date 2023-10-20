@@ -22,8 +22,9 @@ import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { Defer } from '../../src/utils/defer'
 import { BasketballEvents } from '../../src/sports/basketball/basketball-events'
 import { sign } from '../../src/plugins/signed-request.plugin'
+import { TriggerDisableRequest } from "../../src/models/dto/trigger-disable-request"
 
-interface SuitContext extends TestContext {
+interface SuiteContext extends TestContext {
   amqpPrefix?: string
   triggerId?: string
   subscriptionId?: string
@@ -37,7 +38,7 @@ interface SuitContext extends TestContext {
   }
 }
 
-describe('AdapterService', function () {
+describe('Disabled triggers', function () {
   const datasource = 'sportradar'
   const scope = Scope.Game
   const scopeId = '0d996d35-85e5-4913-bd45-ac9cfedbf272'
@@ -100,7 +101,7 @@ describe('AdapterService', function () {
     },
   }
 
-  const ctx: SuitContext = {
+  const ctx: SuiteContext = {
     receiver: {
       route: 'trigger.receiver',
       payload: { id: 1 },
@@ -109,7 +110,7 @@ describe('AdapterService', function () {
     },
   }
 
-  async function createTrigger(ctx: SuitContext) {
+  async function createTrigger(ctx: SuiteContext) {
     const { amqpPrefix } = ctx
 
     const triggerData: EssentialTriggerData = {
@@ -169,7 +170,7 @@ describe('AdapterService', function () {
     ctx.triggerId = response.data.id
   }
 
-  async function createSubscription(ctx: SuitContext) {
+  async function createSubscription(ctx: SuiteContext) {
     const { amqpPrefix } = ctx
 
     const response: ItemResponse = await ctx.app.amqp
@@ -186,7 +187,7 @@ describe('AdapterService', function () {
     ctx.subscriptionId = response.data.id
   }
 
-  async function createConsumer(ctx: SuitContext) {
+  async function createConsumer(ctx: SuiteContext) {
     const { amqp } = ctx.app
 
     await amqp.createConsumedQueue((message) => {
@@ -195,6 +196,16 @@ describe('AdapterService', function () {
     }, [ctx.receiver.route], { queue: 'service', noAck: true })
 
     ctx.pendingSubscriberMessage = new Defer<any>()
+  }
+
+  async function getTriggerWithConditions(triggerId: string): Promise<TriggerWithConditions> {
+    const response: ItemResponse<TriggerWithConditions> =
+      await ctx.app.amqp.publishAndWait(`${ctx.amqpPrefix}.studio.trigger.get`,
+        { id: triggerId } as TriggerGetRequest)
+
+    const item = response.data
+
+    return item.attributes
   }
 
   async function isTriggerActivated(triggerId: string): Promise<boolean> {
@@ -234,6 +245,13 @@ describe('AdapterService', function () {
     })
   }
 
+  async function disableTrigger(ctx: SuiteContext, triggerId: string) {
+    const { amqpPrefix } = ctx
+    await ctx.app.amqp.publishAndWait(`${amqpPrefix}.studio.trigger.disable`, {
+      id: triggerId
+    } as TriggerDisableRequest)
+  }
+
   before(async () => {
     await startContext(ctx, {
       logger: {
@@ -246,7 +264,7 @@ describe('AdapterService', function () {
     } as Partial<CoreOptions>)
 
     ctx.amqpPrefix = ctx.app.config.routerAmqp.prefix
-    await ctx.app.redis.flushall()
+
     await createConsumer(ctx)
     await createTrigger(ctx)
     await createSubscription(ctx)
@@ -256,16 +274,11 @@ describe('AdapterService', function () {
     await stopContext(ctx)
   })
 
-  it('push unsigned request', async () => {
-    await assert.rejects(ctx.request.post('adapter/event/push', {
-      json: {
-        event: events[BasketballEvents.GameLevel]
-      },
-    }), (err) => {
-      console.log(err)
-
-      return true
-    })
+  it('should disable trigger', async () => {
+    await disableTrigger(ctx, ctx.triggerId)
+    const { trigger } = await getTriggerWithConditions(ctx.triggerId)
+    ctx.app.log.debug({ trigger }, 'trigger status')
+    assert.equal(trigger.disabled, true)
   })
 
   it('push game level event', async () => {
@@ -280,6 +293,7 @@ describe('AdapterService', function () {
     const { activated } = await defer.promise
 
     assert.equal(activated, false)
+    assert.equal(await isTriggerActivated(ctx.triggerId), false)
   })
 
   it('push team scores points event', async () => {
@@ -293,6 +307,7 @@ describe('AdapterService', function () {
     const { activated } = await defer.promise
 
     assert.equal(activated, false)
+    assert.equal(await isTriggerActivated(ctx.triggerId), false)
   })
 
   it('push team shooting foul event', async () => {
@@ -307,13 +322,8 @@ describe('AdapterService', function () {
 
     const { activated } = await defer.promise
 
-    assert.equal(activated, true)
+    assert.equal(activated, false)
+    assert.equal(await isTriggerActivated(ctx.triggerId), false)
   })
 
-  it('should receive notification', async () => {
-    const message = await ctx.pendingSubscriberMessage.promise
-
-    ctx.app.log.debug({ message }, 'message received by subscriber')
-    assert.equal(await isTriggerActivated(ctx.triggerId), true)
-  })
 })

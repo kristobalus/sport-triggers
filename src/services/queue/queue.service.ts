@@ -198,15 +198,16 @@ export class QueueService {
     const { triggerId, event } = job.data
 
     this.log.debug({ id: job.id, name: job.name, triggerId, event }, 'trigger job started')
-    const result = await this.adapterService.evaluateTrigger(event, triggerId)
 
-    if ( result ) {
+    const activated = await this.adapterService.evaluateTrigger(event, triggerId)
+
+    if ( activated ) {
       await this.notificationQueue.add('notify', { triggerId } as NotificationJob)
     }
 
-    this.log.debug({ id: job.id, name: job.name, result }, 'trigger job completed')
+    this.log.debug({ id: job.id, name: job.name, activated }, 'trigger job completed')
 
-    this.triggerJobCallback?.({ result, job })
+    this.triggerJobCallback?.({ activated, job })
   }
 
   async onNotificationJob(job: Job<NotificationJob>) {

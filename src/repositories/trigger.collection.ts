@@ -61,6 +61,7 @@ export class TriggerCollection {
     const data = await this.redis.hgetall(triggerKey(id)) as unknown as Trigger
 
     data.activated = (data.activated as unknown as string) == 'true'
+    data.disabled = (data.disabled as unknown as string) == 'true'
 
     return data.id ? data : null
   }

@@ -21,6 +21,7 @@ import { FootballEvents } from "../src/sports/football/football-events"
 import { GameLevel } from "../src/sports/football/game-level"
 import { EssentialSubscriptionData } from "../src/models/dto/trigger-subscribe-request"
 import { BasketballEvents } from "../src/sports/basketball/basketball-events"
+import { Microfleet } from "@microfleet/core-types"
 
 describe("AdapterService", function () {
 
@@ -56,7 +57,7 @@ describe("AdapterService", function () {
       levelFirst: true,
       colorize: true,
       ignore: "time,hostname,pid",
-    }))
+    })) as Microfleet['log']
 
     const amqp = {
       async publishAndWait<T = any>(route: string, message: any, options?: Publish): Promise<T> {
@@ -382,6 +383,71 @@ describe("AdapterService", function () {
           console.log(triggers)
       }
 
+    })
+  })
+
+  describe('disabled trigger', function () {
+
+    before(async () => {
+      await ctx.redis.flushall()
+
+      const triggerData: EssentialTriggerData = {
+        name: "...",
+        description: "...",
+        datasource,
+        scope,
+        scopeId,
+        entity,
+        entityId
+      }
+
+      const conditionData: EssentialConditionData[] = [
+        {
+          event: BasketballEvents.TeamShootingFoul,
+          compare: CompareOp.In,
+          targets: [ homeId ],
+          options: [
+            {
+              event: BasketballEvents.Sequence,
+              compare: CompareOp.Equal,
+              targets: [ "2" ],
+            },
+          ],
+        },
+      ]
+
+      const triggerId = await ctx.studioService.createTrigger(triggerData, conditionData)
+      const result = await ctx.studioService.getTrigger(triggerId)
+      ctx.trigger = result.trigger
+
+      const subscriptionData = {
+        route: "some.route",
+        payload: { id: 1 }
+      } as EssentialSubscriptionData
+
+      await ctx.studioService.subscribeTrigger(triggerId, subscriptionData)
+      await ctx.studioService.disableTrigger(triggerId)
+    })
+
+    it(`adapter pushes event with value above threshold, trigger should be activated, but disabled`, async () => {
+
+      const event: Event = {
+        name: BasketballEvents.TeamShootingFoul,
+        value: homeId,
+        id: randomUUID(),
+        datasource,
+        scope,
+        scopeId,
+        sport: "basketball",
+        timestamp: Date.now(),
+        options: {
+          [BasketballEvents.TeamShootingFoul]: homeId,
+          [BasketballEvents.Sequence]: 2
+        }
+      }
+
+      const result = await ctx.adapterService.evaluateTrigger(event, ctx.trigger.id)
+      assert.equal(result, false)
     })
   })
 

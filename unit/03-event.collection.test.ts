@@ -155,7 +155,10 @@ describe("EventCollection", function () {
 
   it('should aggregate', async () => {
     const datasource = "sportradar"
-    const query = metadata[BasketballEvents.PlayerScores3FG].aggregate(datasource, ctx.scopeId, [ ctx.playerId, ctx.playerId2 ])
+    const sport = "basketball"
+    const scope = "game"
+    const query = metadata[BasketballEvents.PlayerScores3FG]
+      .aggregate(datasource, sport, scope, ctx.scopeId, [ ctx.playerId, ctx.playerId2 ])
 
     ctx.log.debug(query)
 

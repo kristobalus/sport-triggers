@@ -112,6 +112,10 @@ export function validateCondition(
   } else {
     condition.options.forEach(option => validateOption(option, condition))
   }
+
+  if(condition.chainOperation === ChainOp.OR) {
+    throw new ArgumentError(`Condition OR chaining operation not allowed.`)
+  }
 }
 
 export function validateOption(

@@ -15,6 +15,7 @@ import pino, { Logger } from "pino"
 
 describe("ConditionCollection", function () {
 
+  const sport = "basketball"
   const datasource = "sportradar"
   const scope = Scope.Game
   const scopeId = randomUUID()
@@ -80,7 +81,7 @@ describe("ConditionCollection", function () {
       },
     ]
 
-    await ctx.conditions.add(ctx.triggerId, datasource, scope, scopeId, data)
+    await ctx.conditions.add(ctx.triggerId, datasource, sport, scope, scopeId, data)
 
     const conditions = await ctx.conditions.getByTriggerId(ctx.triggerId)
 
@@ -113,7 +114,7 @@ describe("ConditionCollection", function () {
     ]
 
     await assert.rejects(
-      ctx.conditions.add(ctx.triggerId, datasource, scope, scopeId, data),
+      ctx.conditions.add(ctx.triggerId, datasource, sport, scope, scopeId, data),
       (err: Error) => {
         ctx.log.debug({ err }, "adding condition raised error")
         assert(err)

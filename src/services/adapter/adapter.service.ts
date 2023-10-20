@@ -32,7 +32,10 @@ export class AdapterService {
     private readonly log: Microfleet['log'],
     private readonly redis: Redis,
     private readonly amqp: AMQPTransport,
-    options?: { triggerLifetimeSeconds?: number },
+    options?: {
+      triggerLifetimeSeconds?: number,
+      concurrentConditions?: boolean
+    },
   ) {
     this.triggerCollection = new TriggerCollection(this.redis, options?.triggerLifetimeSeconds)
     this.conditionCollection = new TriggerConditionCollection(this.redis, options?.triggerLifetimeSeconds)
@@ -52,6 +55,17 @@ export class AdapterService {
    */
   async evaluateTrigger(event: Event, triggerId: string): Promise<boolean> {
     const trigger = await this.triggerCollection.getOne(triggerId)
+
+    if ( trigger.disabled ) {
+      this.log.debug({ triggerId }, 'trigger skipped as disabled')
+      return false
+    }
+
+    if ( trigger.activated ) {
+      this.log.debug({ triggerId }, 'trigger skipped as activated')
+      return false
+    }
+
     const uri = fromEvent(event)
     const conditions = await this.conditionCollection.getByTriggerId(trigger.id)
 
@@ -71,29 +85,29 @@ export class AdapterService {
       }
     }
 
-    let result = conditions.length > 0
+    let activated = conditions.length > 0
 
     for (const condition of conditions) {
       // combine a chain of conditions into single result
       // each condition is preset by Studio with chaining operator (AND, OR)
       // for sake of simplicity assume no grouping and just apply logical operators in sequence
       if (condition.chainOperation == ChainOp.AND) {
-        result = (result && condition.activated)
+        activated = (activated && condition.activated)
       } else if (condition.chainOperation == ChainOp.OR) {
-        result = (result || condition.activated)
+        activated = (activated || condition.activated)
       }
     }
 
-    if ( result ) {
+    // store trigger status
+    await this.triggerCollection.updateOne(trigger.id, { activated: activated })
+
+    if ( activated ) {
       await this.conditionCollection.unsubscribeTriggerFromEvents(trigger.id)
     }
 
-    // store trigger status
-    await this.triggerCollection.updateOne(trigger.id, { activated: result })
+    this.log.debug({ activated, triggerId }, 'trigger evaluation result')
 
-    this.log.debug({ result, triggerId }, 'trigger evaluation result')
-
-    return result
+    return activated
   }
 
   /**

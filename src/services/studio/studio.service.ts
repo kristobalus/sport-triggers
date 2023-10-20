@@ -241,4 +241,24 @@ export class StudioService {
       await this.conditions.add(trigger.id, trigger.datasource, trigger.sport, trigger.scope, trigger.scopeId, conditionsUpdate)
     }
   }
+
+  async enableTrigger(id: string) {
+    assert(id)
+
+    const trigger = await this.triggers.getOne(id)
+
+    assert(trigger)
+
+    await this.triggers.updateOne(id, { disabled: false })
+  }
+
+  async disableTrigger(id: string) {
+    assert(id)
+
+    const trigger = await this.triggers.getOne(id)
+
+    assert(trigger)
+
+    await this.triggers.updateOne(id, { disabled: true })
+  }
 }
