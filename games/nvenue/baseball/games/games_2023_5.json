@@ -1,0 +1,72 @@
+[
+    {
+        "scheduled": "2023-11-04T00:03:00",
+        "nv_game_id": "621b3a68-85ad-4059-ac92-c86b28bf3cb0",
+        "mlb_game_id": 748533,
+        "away_abbr": "ARI",
+        "home_abbr": "TEX",
+        "season": 2023,
+        "season_type": "PST",
+        "status": "if-necessary"
+    },
+    {
+        "scheduled": "2023-11-05T00:03:00",
+        "nv_game_id": "85d8b274-0d4a-4e32-ac15-15613810c6af",
+        "mlb_game_id": 748536,
+        "away_abbr": "ARI",
+        "home_abbr": "TEX",
+        "season": 2023,
+        "season_type": "PST",
+        "status": "if-necessary"
+    },
+    {
+        "scheduled": "2023-11-02T00:03:00",
+        "nv_game_id": "62e3dc89-ad3b-4ca5-a50a-c00658cc7e36",
+        "mlb_game_id": 748534,
+        "away_abbr": "TEX",
+        "home_abbr": "ARI",
+        "season": 2023,
+        "season_type": "PST",
+        "status": "if-necessary"
+    },
+    {
+        "scheduled": "2023-10-29T00:03:00",
+        "nv_game_id": "6c215611-d45c-4840-ae81-e7590700df5a",
+        "mlb_game_id": 748541,
+        "away_abbr": "ARI",
+        "home_abbr": "TEX",
+        "season": 2023,
+        "season_type": "PST",
+        "status": "scheduled"
+    },
+    {
+        "scheduled": "2023-10-31T00:03:00",
+        "nv_game_id": "f64191ce-a7c3-4eee-87fb-84fa04a863fb",
+        "mlb_game_id": 748540,
+        "away_abbr": "TEX",
+        "home_abbr": "ARI",
+        "season": 2023,
+        "season_type": "PST",
+        "status": "scheduled"
+    },
+    {
+        "scheduled": "2023-11-01T00:03:00",
+        "nv_game_id": "fe70aa5d-0187-45c4-a730-636342e4f184",
+        "mlb_game_id": 748535,
+        "away_abbr": "TEX",
+        "home_abbr": "ARI",
+        "season": 2023,
+        "season_type": "PST",
+        "status": "scheduled"
+    },
+    {
+        "scheduled": "2023-10-28T00:03:00",
+        "nv_game_id": "cf14c6d9-ab6f-4682-bd5d-7c1a1da62e5d",
+        "mlb_game_id": 748542,
+        "away_abbr": "ARI",
+        "home_abbr": "TEX",
+        "season": 2023,
+        "season_type": "PST",
+        "status": "scheduled"
+    }
+]
