@@ -29,6 +29,7 @@ describe("set_and_compare.lua", function () {
   const entity = "moderation"
   const entityId = randomUUID()
   const playerId = randomUUID()
+  const sport = "basketball"
 
   const ctx: {
     redis?: Redis
@@ -77,7 +78,7 @@ describe("set_and_compare.lua", function () {
       },
     ]
 
-    await ctx.conditions.add(ctx.triggerId, datasource, scope, scopeId, conditionData)
+    await ctx.conditions.add(ctx.triggerId, datasource, sport, scope, scopeId, conditionData)
 
     const [ condition ] = await ctx.conditions.getByTriggerId(ctx.triggerId)
     ctx.conditionKey = conditionKey(condition.id)

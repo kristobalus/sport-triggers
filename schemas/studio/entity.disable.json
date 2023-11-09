@@ -2,13 +2,22 @@
     "$id": "studio.entity.disable",
     "type": "object",
     "properties": {
-        "entity": {
-            "type": "string"
-        },
-        "entityId": {
-            "type": "string"
+        "entities": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "entity": {
+                        "type": "string"
+                    },
+                    "entityId": {
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false
+            }
         }
     },
     "additionalProperties": false,
-    "required": ["entity", "entityId"]
+    "required": ["entities"]
 }
