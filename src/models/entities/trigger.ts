@@ -20,5 +20,6 @@ export interface Trigger {
   // mark trigger as deleted by user
   deleted?: boolean
   disabled?: boolean
+  disabledEntity?: boolean
 }
 

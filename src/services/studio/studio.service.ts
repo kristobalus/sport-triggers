@@ -261,4 +261,22 @@ export class StudioService {
 
     await this.triggers.updateOne(id, { disabled: true })
   }
+
+  async disableEntity(entity: string, entityId: string) {
+    const triggerIds = await this.triggers.getListByEntity(entity, entityId)
+
+    for(const triggerId of triggerIds) {
+      const trigger = await this.triggers.getOne(triggerId)
+      await this.triggers.updateOne(trigger.id, { disabledEntity: true })
+    }
+  }
+
+  async enableEntity(entity: string, entityId: string) {
+    const triggerIds = await this.triggers.getListByEntity(entity, entityId)
+
+    for(const triggerId of triggerIds) {
+      const trigger = await this.triggers.getOne(triggerId)
+      await this.triggers.updateOne(trigger.id, { disabledEntity: false })
+    }
+  }
 }

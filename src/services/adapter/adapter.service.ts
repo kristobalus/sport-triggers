@@ -56,6 +56,11 @@ export class AdapterService {
   async evaluateTrigger(event: Event, triggerId: string): Promise<boolean> {
     const trigger = await this.triggerCollection.getOne(triggerId)
 
+    if ( trigger.disabledEntity ) {
+      this.log.debug({ triggerId }, 'trigger skipped since entity is disabled')
+      return false
+    }
+
     if ( trigger.disabled ) {
       this.log.debug({ triggerId }, 'trigger skipped as disabled')
       return false
