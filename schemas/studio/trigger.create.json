@@ -25,6 +25,12 @@
                 },
                 "entityId": {
                     "type": "string"
+                },
+                "disabled": {
+                    "type": "boolean"
+                },
+                "disabledEntity": {
+                    "type": "boolean"
                 }
             },
             "additionalProperties": false,
