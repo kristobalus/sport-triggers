@@ -6,10 +6,12 @@ import { Response } from '../../../models/dto/response'
 
 
 async function Handler(this: FleetApp, request: ServiceRequest): Promise<any> {
-  const { entity, entityId } = request.params as any
+  const { entities } = request.params as any
   const { studioService } = this
 
-  await studioService.enableEntity(entity, entityId)
+  for(const { entity, entityId } of entities) {
+    await studioService.enableEntity(entity, entityId)
+  }
 
   return {} as Response
 }
