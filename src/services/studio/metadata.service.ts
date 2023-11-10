@@ -1,6 +1,6 @@
 
 import { StudioConfigData } from '../../models/studio/studio-config.data'
-import { metadata, targetTree } from '../../sports'
+import { limits, metadata, targetTree } from '../../sports'
 import { StudioEvent } from '../../models/studio/studio.event'
 import { CommonSources } from '../../sports/common-sources'
 import { Game } from '../../models/studio/game'
@@ -10,6 +10,7 @@ import { EventMetadata } from '../../models/events/event-metadata'
 import { StudioTargetTree } from '../../models/studio/studio.target-tree'
 import { StudioTarget } from '../../models/studio/studio.target'
 import { Datasource } from '../../models/studio/datasource'
+import { StudioLimit } from '../../models/studio/studio.limit'
 
 export class MetadataService {
   private sources: Map<string, Datasource> = new Map<string, Datasource>()
@@ -17,7 +18,7 @@ export class MetadataService {
   getStudioConfigData(
     datasource: string,
     gameId: string,
-    shouldMapEnum = false) {
+    shouldMapEnum = false) : StudioConfigData {
     const ds = this.sources.get(datasource)
 
     if (!ds) {
@@ -40,6 +41,7 @@ export class MetadataService {
       index: [],
       events: {},
       sources: {},
+      limits: []
     }
 
     for (const [eventName, eventMeta] of Object.entries(metadata) ) {
@@ -80,6 +82,9 @@ export class MetadataService {
       studioConfig.events[studioEvent.id] = studioEvent
       studioConfig.index.push(studioEvent.id)
     }
+
+    studioConfig.limits = this.getLimitsBySport(game.sport)
+
 
     return studioConfig
   }
@@ -165,5 +170,19 @@ export class MetadataService {
 
   getDatasource(id: string): Datasource {
     return this.sources.get(id)
+  }
+
+  getLimitsBySport(sport: string) : StudioLimit[] {
+      const data = []
+      for(const [id, limit] of Object.entries(limits)) {
+        if ( limit.sport == sport || limit.common ) {
+          data.push({
+            limit: id,
+            label: limit.label,
+            description: limit.description
+          } as StudioLimit)
+        }
+      }
+      return data
   }
 }

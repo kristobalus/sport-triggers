@@ -5,6 +5,10 @@ import { metadata as basketballMetadata } from './basketball/metadata'
 import { targetTree as baseballTargetTree } from './baseball/target-tree'
 import { targetTree as basketballTargetTree } from './basketball/target-tree'
 
+import { limits as basketballLimits } from './basketball/limits'
+import { limits as baseballLimits } from './baseball/limits'
+import { limits as commonLimits } from './common-limits'
+
 export const metadata = {
   ...footballMetadata,
   ...basketballMetadata,
@@ -15,3 +19,10 @@ export const targetTree = {
   ...baseballTargetTree,
   ...basketballTargetTree
 }
+
+export const limits = {
+  ...basketballLimits,
+  ...baseballLimits,
+  ...commonLimits
+}
+

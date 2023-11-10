@@ -14,25 +14,39 @@ import { EssentialSubscriptionData } from '../../models/dto/trigger-subscribe-re
 import { TriggerSubscription } from '../../models/entities/trigger-subscription'
 import { Trigger } from '../../models/entities/trigger'
 import { TriggerCondition } from '../../models/entities/trigger-condition'
+import { TriggerLimitCollection } from "../../repositories/trigger-limit.collection"
+import { EntityLimitCollection } from "../../repositories/entity-limit.collection"
 
 export interface TriggerOptions {
   showLog?: boolean
   trim?: boolean
 }
 
-export class StudioService {
-  private triggers: TriggerCollection
-  private conditions: TriggerConditionCollection
-  private subscriptions: TriggerSubscriptionCollection
+export interface StudioServiceOptions {
+  log: Microfleet['log']
+  redis: Redis
+  triggerCollection: TriggerCollection
+  conditionCollection: TriggerConditionCollection
+  subscriptionCollection: TriggerSubscriptionCollection
+  triggerLimitCollection: TriggerLimitCollection
+  entityLimitCollection: EntityLimitCollection
+}
 
-  constructor(
-    private log: Microfleet['log'],
-    private redis: Redis,
-    options?: { triggerLifetimeSeconds?: number }
-  ) {
-    this.triggers = new TriggerCollection(this.redis, options?.triggerLifetimeSeconds)
-    this.conditions = new TriggerConditionCollection(this.redis, options?.triggerLifetimeSeconds)
-    this.subscriptions = new TriggerSubscriptionCollection(this.redis, options?.triggerLifetimeSeconds)
+export class StudioService {
+  private log: Microfleet['log']
+  private triggerCollection: TriggerCollection
+  private conditionCollection: TriggerConditionCollection
+  private subscriptionCollection: TriggerSubscriptionCollection
+  private triggerLimitCollection: TriggerLimitCollection
+  private entityLimitCollection: EntityLimitCollection
+
+  constructor(options: StudioServiceOptions) {
+    this.log = options.log
+    this.triggerCollection = options.triggerCollection
+    this.conditionCollection = options.conditionCollection
+    this.subscriptionCollection = options.subscriptionCollection
+    this.triggerLimitCollection = options.triggerLimitCollection
+    this.entityLimitCollection = options.entityLimitCollection
   }
 
   /**
@@ -45,8 +59,9 @@ export class StudioService {
    *
    * @param triggerData
    * @param conditionData
+   * @return triggerId
    */
-  async createTrigger(triggerData: EssentialTriggerData, conditionData: EssentialConditionData[]) {
+  async createTrigger(triggerData: EssentialTriggerData, conditionData: EssentialConditionData[]) : Promise<string> {
     this.log.debug({
       trigger: triggerData,
       conditions: conditionData
@@ -55,14 +70,14 @@ export class StudioService {
     let triggerId
 
     try {
-      triggerId = await this.triggers.add(triggerData)
+      triggerId = await this.triggerCollection.add(triggerData)
     } catch (err) {
       this.log.fatal({ err }, 'failed to create trigger instance')
       throw new ArgumentError('failed to create trigger', err)
     }
 
     try {
-      await this.conditions.add(
+      await this.conditionCollection.add(
         triggerId,
         triggerData.datasource,
         triggerData.sport,
@@ -71,7 +86,7 @@ export class StudioService {
         conditionData)
     } catch (err) {
       if (triggerId) {
-        await this.triggers.deleteOne(triggerId)
+        await this.triggerCollection.deleteOne(triggerId)
       }
       this.log.fatal({ err }, 'failed to create condition instance')
       throw new ArgumentError('failed to create trigger', err)
@@ -95,7 +110,7 @@ export class StudioService {
     entity: string,
     entityId: string,
     options: TriggerOptions = {}): Promise<TriggerWithConditions[]> {
-    const ids = await this.triggers.getListByEntity(entity, entityId)
+    const ids = await this.triggerCollection.getListByEntity(entity, entityId)
     const items = []
 
     for (const id of ids) {
@@ -116,7 +131,7 @@ export class StudioService {
     scope: string,
     scopeId: string,
     options: TriggerOptions = {}): Promise<TriggerWithConditions[]> {
-    const ids = await this.triggers.getListByScope(datasource, scope, scopeId)
+    const ids = await this.triggerCollection.getListByScope(datasource, scope, scopeId)
     const items = []
 
     for (const id of ids) {
@@ -137,11 +152,11 @@ export class StudioService {
    * @param entityId
    */
   async getSubscriptionListByEntity(entity: string, entityId: string): Promise<TriggerSubscription[]> {
-    const ids = await this.subscriptions.getListByEntity(entity, entityId)
+    const ids = await this.subscriptionCollection.getListByEntity(entity, entityId)
     const items = []
 
     for (const id of ids) {
-      const item = await this.subscriptions.getOne(id)
+      const item = await this.subscriptionCollection.getOne(id)
 
       items.push(item)
     }
@@ -153,11 +168,11 @@ export class StudioService {
    * @description returns a list of subscriptions for a trigger activation
    */
   async getSubscriptionListByTrigger(triggerId: string): Promise<TriggerSubscription[]> {
-    const ids = await this.subscriptions.getListByTrigger(triggerId)
+    const ids = await this.subscriptionCollection.getListByTrigger(triggerId)
     const items = []
 
     for (const id of ids) {
-      const item = await this.subscriptions.getOne(id)
+      const item = await this.subscriptionCollection.getOne(id)
 
       items.push(item)
     }
@@ -166,12 +181,12 @@ export class StudioService {
   }
 
   async deleteTrigger(triggerId: string) {
-    const trigger = await this.triggers.getOne(triggerId)
-
+    const trigger = await this.triggerCollection.getOne(triggerId)
+    // TODO change for checking statistics
     if ( trigger && !trigger.activated ) {
-      await this.triggers.deleteOne(triggerId)
-      await this.conditions.deleteByTriggerId(triggerId)
-      await this.subscriptions.deleteByTriggerId(triggerId)
+      await this.triggerCollection.deleteOne(triggerId)
+      await this.conditionCollection.deleteByTriggerId(triggerId)
+      await this.subscriptionCollection.deleteByTriggerId(triggerId)
     }
   }
 
@@ -184,15 +199,15 @@ export class StudioService {
    * @param triggerId
    * @param data
    */
-  subscribeTrigger(triggerId: string, data: EssentialSubscriptionData): Promise<string> {
-    return this.subscriptions.create(triggerId, data)
+  async subscribeTrigger(triggerId: string, data: EssentialSubscriptionData): Promise<string> {
+    return this.subscriptionCollection.create(triggerId, data)
   }
 
   /**
    * @description cancels existing subscription for trigger
    */
   cancelSubscription(subscriptionId: string) {
-    return this.subscriptions.deleteOne(subscriptionId)
+    return this.subscriptionCollection.deleteOne(subscriptionId)
   }
 
   /**
@@ -200,9 +215,10 @@ export class StudioService {
    *              option "showLog" attaches event log to conditions
    *              options "trim" removes redundant information to reduce response size
    */
-  async getTrigger(id: string, options: TriggerOptions = {}): Promise<TriggerWithConditions> {
-    const trigger = await this.triggers.getOne(id)
-    const conditions = await this.conditions.getByTriggerId(id, { showLog: options.showLog })
+  async getTrigger(triggerId: string, options: TriggerOptions = {}): Promise<TriggerWithConditions> {
+    const trigger = await this.triggerCollection.getOne(triggerId)
+    const conditions = await this.conditionCollection.getByTriggerId(triggerId, { showLog: options.showLog })
+    const limits = await this.triggerLimitCollection.getByTriggerId(triggerId)
 
     if (options.trim) {
       for (const condition of conditions) {
@@ -213,70 +229,88 @@ export class StudioService {
       }
     }
 
-    return { trigger, conditions } as TriggerWithConditions
+    return { trigger, conditions, limits } as TriggerWithConditions
   }
 
-  async updateTrigger(triggerUpdate: Trigger, conditionsUpdate: TriggerCondition[]) {
-    assert(triggerUpdate.id)
+  async updateTrigger(
+    triggerUpdate: Trigger,
+    conditionsUpdate: TriggerCondition[],
+    limits?: Record<string, number>) {
 
-    const trigger = await this.triggers.getOne(triggerUpdate.id)
+    assert(triggerUpdate.id)
+    const trigger = await this.triggerCollection.getOne(triggerUpdate.id)
 
     assert(trigger)
 
     // update trigger
-    await this.triggers.updateOne(triggerUpdate.id, triggerUpdate)
+    await this.triggerCollection.updateOne(triggerUpdate.id, triggerUpdate)
 
     // diff clean up obsolete conditions (which are present in db but not present in update)
     const updatedIds = conditionsUpdate.map(v => v.id).filter(id => id !== undefined)
-    const currentIds = await this.conditions.getListByTriggerId(triggerUpdate.id)
+    const currentIds = await this.conditionCollection.getListByTriggerId(triggerUpdate.id)
 
     for (const id of currentIds) {
       if ( updatedIds.indexOf(id) == -1 ) {
-        await this.conditions.deleteById(id)
+        await this.conditionCollection.deleteById(id)
       }
     }
 
     if ( conditionsUpdate.length ) {
       // update or create conditions
-      await this.conditions.add(trigger.id, trigger.datasource, trigger.sport, trigger.scope, trigger.scopeId, conditionsUpdate)
+      await this.conditionCollection.add(trigger.id, trigger.datasource, trigger.sport, trigger.scope, trigger.scopeId, conditionsUpdate)
+    }
+
+    if (limits) {
+      await this.triggerLimitCollection.setLimits(trigger.id, limits)
     }
   }
 
-  async enableTrigger(id: string) {
-    assert(id)
+  async enableTrigger(triggerId: string) {
+    assert(triggerId)
 
-    const trigger = await this.triggers.getOne(id)
+    const trigger = await this.triggerCollection.getOne(triggerId)
 
     assert(trigger)
 
-    await this.triggers.updateOne(id, { disabled: false })
+    await this.triggerCollection.updateOne(triggerId, { disabled: false })
   }
 
-  async disableTrigger(id: string) {
-    assert(id)
+  async disableTrigger(triggerId: string) {
+    assert(triggerId)
 
-    const trigger = await this.triggers.getOne(id)
+    const trigger = await this.triggerCollection.getOne(triggerId)
 
     assert(trigger)
 
-    await this.triggers.updateOne(id, { disabled: true })
+    await this.triggerCollection.updateOne(triggerId, { disabled: true })
+  }
+
+  async setTriggerLimits(triggerId: string, limits: Record<string, number | string>) : Promise<boolean> {
+    await this.triggerLimitCollection.setLimits(triggerId, limits)
+    return true
+  }
+
+  async setEntityLimits(entity: string, entityId: string, limits: Record<string, number | string>) : Promise<boolean> {
+    await this.entityLimitCollection.setLimits(entity, entityId, limits)
+    return true
   }
 
   async disableEntity(entity: string, entityId: string) {
-    const triggerIds = await this.triggers.getListByEntity(entity, entityId)
+    const triggerIds = await this.triggerCollection.getListByEntity(entity, entityId)
 
     for(const triggerId of triggerIds) {
-      const trigger = await this.triggers.getOne(triggerId)
-      await this.triggers.updateOne(trigger.id, { disabledEntity: true })
+      const trigger = await this.triggerCollection.getOne(triggerId)
+      await this.triggerCollection.updateOne(trigger.id, { disabledEntity: true })
     }
   }
 
   async enableEntity(entity: string, entityId: string) {
-    const triggerIds = await this.triggers.getListByEntity(entity, entityId)
+    const triggerIds = await this.triggerCollection.getListByEntity(entity, entityId)
 
     for(const triggerId of triggerIds) {
-      const trigger = await this.triggers.getOne(triggerId)
-      await this.triggers.updateOne(trigger.id, { disabledEntity: false })
+      const trigger = await this.triggerCollection.getOne(triggerId)
+      await this.triggerCollection.updateOne(trigger.id, { disabledEntity: false })
     }
   }
+
 }

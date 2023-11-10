@@ -7,7 +7,7 @@ import { Team } from '../models/studio/team'
 import { TeamMlb } from '../models/mlb/team.mlb'
 import { PlayerMlb } from '../models/mlb/player.mlb'
 import { Datasource } from '../models/studio/datasource'
-import { Sport } from '../models/studio/sport'
+import { Sport } from '../models/events/sport'
 import { Player } from '../models/studio/player'
 import path from 'path'
 

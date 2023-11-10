@@ -1,15 +1,15 @@
 import { TriggerCondition } from '../entities/trigger-condition'
 
-import { Event } from './event'
+import { EventSnapshot } from './event-snapshot'
 
-export function fromEvent(event: Partial<Event>) {
+export function getUriFromEvent(event: Partial<EventSnapshot>) {
   const { datasource, scope, scopeId, name } = event
-  
-  return `event://${datasource}/${scope}/${scopeId}/${name}`
+
+  return `${datasource}/${scope}/${scopeId}/${name}`
 }
 
-export function fromCondition(condition: Partial<TriggerCondition>) {
+export function getUriFromCondition(condition: Partial<TriggerCondition>) {
   const { scope, scopeId, event, datasource } = condition
-  
-  return `event://${datasource}/${scope}/${scopeId}/${event}`
+
+  return `${datasource}/${scope}/${scopeId}/${event}`
 }

@@ -6,6 +6,7 @@ export async function initStandaloneRedis(options?: RedisOptions) : Promise<Redi
   if(!options) {
     options = { keyPrefix: "{triggers}" } as RedisOptions
   }
+
   const redis = new IORedis(options)
 
   redis.defineCommand("set_and_compare", {

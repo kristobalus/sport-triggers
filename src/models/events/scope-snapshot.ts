@@ -1,6 +1,7 @@
+import { Sport } from './sport'
 
-export interface AdapterEvent {
-  // unique raw event identifier from datasource
+export interface ScopeSnapshot {
+  // datasource snapshot's id
   id: string
   // datasource
   datasource: string
@@ -11,7 +12,7 @@ export interface AdapterEvent {
   // event timestamp
   timestamp: number
   // type of sport
-  sport: string
+  sport: string | Sport
   // event name -> event value
   options: Record<string, string | number>
   events?: string[]

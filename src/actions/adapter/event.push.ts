@@ -12,7 +12,7 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<any> {
   log.debug({ event }, 'received pushed event from adapter')
 
   try {
-    await queueService.addAdapterEvent(event)
+    await queueService.addScopeSnapshot(event)
   } catch (err) {
     log.error({ err }, 'error while writing to bullmq')
   }

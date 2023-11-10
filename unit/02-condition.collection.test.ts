@@ -12,10 +12,11 @@ import { CompareOp } from "../src/models/entities/trigger-condition"
 import { EssentialConditionData, EssentialTriggerData } from "../src/models/dto/trigger-create-request"
 import { BasketballEvents } from "../src/sports/basketball/basketball-events"
 import pino, { Logger } from "pino"
+import { Sport } from "../src/models/events/sport"
 
 describe("ConditionCollection", function () {
 
-  const sport = "basketball"
+  const sport = Sport.Basketball
   const datasource = "sportradar"
   const scope = Scope.Game
   const scopeId = randomUUID()
@@ -52,6 +53,7 @@ describe("ConditionCollection", function () {
       name: "...trigger...",
       description: "...description of trigger...",
       datasource,
+      sport,
       scope,
       scopeId,
       entity,

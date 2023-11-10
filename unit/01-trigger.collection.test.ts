@@ -9,9 +9,11 @@ import { TriggerCollection } from "../src/repositories/trigger.collection"
 import { Scope, Trigger } from "../src/models/entities/trigger"
 import { initStandaloneRedis } from "./helper/init-standalone-redis"
 import { EssentialTriggerData } from "../src/models/dto/trigger-create-request"
+import { Sport } from "../src/models/events/sport"
 
 describe("TriggerCollection", function () {
 
+  const sport = Sport.Basketball
   const scope = Scope.Game
   const scopeId = randomUUID()
   const datasource = "sportradar"
@@ -38,6 +40,7 @@ describe("TriggerCollection", function () {
       name: "home points 30+",
       description: "should trigger when home points reach 30 or more",
       datasource,
+      sport,
       scope,
       scopeId,
       entity,

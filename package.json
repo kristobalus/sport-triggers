@@ -12,7 +12,7 @@
     "pretest": "pnpm lint && pnpm compile",
     "test": "pnpm clean && pnpm compile && mdep test run",
     "test:unit": "mocha unit/**/*.test.ts",
-    "test:meta": "ts-mocha unit/08-metadata.test.ts",
+    "test:meta": "ts-mocha unit/07-metadata-service.test.ts",
     "semantic-release": "semantic-release",
     "release": "pnpm i && pnpm run semantic-release",
     "prepublishOnly": "pnpm run compile",

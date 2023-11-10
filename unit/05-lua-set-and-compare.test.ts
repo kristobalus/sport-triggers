@@ -1,24 +1,25 @@
 // start local redis instance (dir helper) to start test from IDE, faster than full integration tests via mdep
 
-import { Redis } from "ioredis"
-import assert from "assert"
-import { randomUUID } from "crypto"
+import { Redis } from 'ioredis'
+import assert from 'assert'
+import { randomUUID } from 'crypto'
 
 import {
   conditionKey,
   conditionLogKey,
   TriggerConditionCollection,
-} from "../src/repositories/trigger-condition.collection"
-import { TriggerCollection } from "../src/repositories/trigger.collection"
-import { Scope, Trigger } from "../src/models/entities/trigger"
-import { Event } from "../src/models/events/event"
-import { CompareOp } from "../src/models/entities/trigger-condition"
-import { initStandaloneRedis } from "./helper/init-standalone-redis"
-import { EssentialConditionData, EssentialTriggerData } from "../src/models/dto/trigger-create-request"
-import { BasketballEvents } from "../src/sports/basketball/basketball-events"
-import {  pino } from "pino"
-import { EventCollection } from "../src/repositories/event.collection"
-import { AdapterEvent } from "../src/models/events/adapter-event"
+} from '../src/repositories/trigger-condition.collection'
+import { TriggerCollection } from '../src/repositories/trigger.collection'
+import { Scope, Trigger } from '../src/models/entities/trigger'
+import { EventSnapshot } from '../src/models/events/event-snapshot'
+import { CompareOp } from '../src/models/entities/trigger-condition'
+import { initStandaloneRedis } from './helper/init-standalone-redis'
+import { EssentialConditionData, EssentialTriggerData } from '../src/models/dto/trigger-create-request'
+import { BasketballEvents } from '../src/sports/basketball/basketball-events'
+import { pino } from 'pino'
+import { ScopeSnapshotCollection } from '../src/repositories/scope-snapshot.collection'
+import { ScopeSnapshot } from '../src/models/events/scope-snapshot'
+import { Sport } from '../src/models/events/sport'
 
 describe("set_and_compare.lua", function () {
 
@@ -27,9 +28,9 @@ describe("set_and_compare.lua", function () {
   const scope = Scope.Game
   const scopeId = randomUUID()
   const entity = "moderation"
+  const sport = Sport.Basketball
   const entityId = randomUUID()
   const playerId = randomUUID()
-  const sport = "basketball"
 
   const ctx: {
     redis?: Redis
@@ -37,7 +38,7 @@ describe("set_and_compare.lua", function () {
     trigger?: Trigger
     triggers?: TriggerCollection
     conditions?: TriggerConditionCollection
-    events?: EventCollection
+    events?: ScopeSnapshotCollection
     conditionKey?: string
     conditionLogKey?: string
   } = {}
@@ -49,12 +50,13 @@ describe("set_and_compare.lua", function () {
 
     ctx.triggers = new TriggerCollection(ctx.redis)
     ctx.conditions = new TriggerConditionCollection(ctx.redis)
-    ctx.events = new EventCollection(ctx.redis)
+    ctx.events = new ScopeSnapshotCollection(ctx.redis)
 
     const triggerData: EssentialTriggerData = {
       name: "...",
       description: "...",
       datasource,
+      sport,
       scope,
       scopeId,
       entity,
@@ -97,19 +99,19 @@ describe("set_and_compare.lua", function () {
       datasource: datasource,
       scope: scope,
       scopeId: scopeId,
-      sport: "basketball",
+      sport: Sport.Basketball,
       timestamp: Date.now(),
       options: {
         [BasketballEvents.Team]: playerId,
         [BasketballEvents.PlayerScores3FG]: playerId
       },
-    } as AdapterEvent)
+    } as ScopeSnapshot)
 
-    const event: Event = {
+    const event: EventSnapshot = {
       id: randomUUID(),
       datasource: datasource,
       scope: scope,
-      sport: "basketball",
+      sport: Sport.Basketball,
       scopeId: scopeId,
       timestamp: Date.now(),
       name: BasketballEvents.Team,
@@ -139,20 +141,20 @@ describe("set_and_compare.lua", function () {
       datasource: datasource,
       scope: scope,
       scopeId: scopeId,
-      sport: "basketball",
+      sport: Sport.Basketball,
       timestamp: Date.now(),
       options: {
         [BasketballEvents.Player]: playerId,
         [BasketballEvents.TeamScores3FG]: playerId
       },
-    } as AdapterEvent)
+    } as ScopeSnapshot)
 
-    const event: Event = {
+    const event: EventSnapshot = {
       id: randomUUID(),
       datasource: datasource,
       scope: scope,
       scopeId: scopeId,
-      sport: "basketball",
+      sport: Sport.Basketball,
       timestamp: Date.now(),
       name: BasketballEvents.Player,
       value: playerId,
@@ -179,20 +181,20 @@ describe("set_and_compare.lua", function () {
       datasource: datasource,
       scope: scope,
       scopeId: scopeId,
-      sport: "basketball",
+      sport: Sport.Basketball,
       timestamp: Date.now(),
       options: {
         [BasketballEvents.Player]: playerId,
         [BasketballEvents.PlayerScores3FG]: playerId
       },
-    } as AdapterEvent)
+    } as ScopeSnapshot)
 
-    const event: Event = {
+    const event: EventSnapshot = {
       id: randomUUID(),
       datasource: datasource,
       scope: scope,
       scopeId: scopeId,
-      sport: "basketball",
+      sport: Sport.Basketball,
       timestamp: Date.now(),
       name: BasketballEvents.Player,
       value: playerId,
@@ -221,20 +223,20 @@ describe("set_and_compare.lua", function () {
       datasource: datasource,
       scope: scope,
       scopeId: scopeId,
-      sport: "basketball",
+      sport: Sport.Basketball,
       timestamp: Date.now(),
       options: {
         [BasketballEvents.Player]: playerId,
         [BasketballEvents.PlayerScores3FG]: playerId
       },
-    } as AdapterEvent)
+    } as ScopeSnapshot)
 
-    const event: Event = {
+    const event: EventSnapshot = {
       id: randomUUID(),
       datasource: datasource,
       scope: scope,
       scopeId: scopeId,
-      sport: "basketball",
+      sport: Sport.Basketball,
       timestamp: Date.now(),
       name: BasketballEvents.Player,
       value: playerId,

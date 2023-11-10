@@ -6,7 +6,6 @@ import { ArgumentError } from 'common-errors'
 
 import { ChainOp, ConditionType, TriggerCondition, TriggerConditionOption } from '../models/entities/trigger-condition'
 import { assertNoError, createArrayFromHGetAll } from '../utils/pipeline-utils'
-import { AdapterEvent } from '../models/events/adapter-event'
 import { metadata as basketballMeta } from '../sports/basketball/metadata'
 import { metadata as baseballMeta } from '../sports/baseball/metadata'
 import { metadata as footballMeta } from '../sports/football/metadata'
@@ -41,7 +40,7 @@ export function subscribedToUri(uri: string) {
 }
 
 export function conditionLogKey(conditionId: string) {
-  return `conditions/${conditionId}/logs`
+  return `conditions/${conditionId}/log`
 }
 
 function intersection(array1: any[], array2: any[]): any[] {
@@ -210,7 +209,7 @@ export class TriggerConditionCollection {
       condition.scope = scope
       condition.sport = sport
       condition.scopeId = scopeId
-      condition.uri = EventUri.fromCondition(condition)
+      condition.uri = EventUri.getUriFromCondition(condition)
 
       validateCondition(condition)
 
@@ -276,6 +275,16 @@ export class TriggerConditionCollection {
     return condition as unknown as TriggerCondition
   }
 
+  async update(id: string, updated: Partial<TriggerCondition>) {
+    const data = { ...updated } as any
+
+    if (data.activated !== undefined ){
+      data.activated = data.activated == 1 || data.activated == "1" || data.activated == "true" ? 1 : 0
+    }
+
+    await this.redis.hmset(conditionKey(id), data)
+  }
+
   async deleteByTriggerId(triggerId: string) {
     const conditions = await this.getByTriggerId(triggerId)
     const pipe = this.redis.pipeline()
@@ -285,7 +294,7 @@ export class TriggerConditionCollection {
       pipe.del(conditionLogKey(condition.id))
       pipe.srem(conditionSetByTriggerKey(triggerId), condition.id)
       pipe.zrem(subscribedToScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
-      pipe.zrem(subscribedToUri(EventUri.fromCondition(condition)), triggerId)
+      pipe.zrem(subscribedToUri(EventUri.getUriFromCondition(condition)), triggerId)
     }
 
     await pipe.exec()
@@ -302,7 +311,7 @@ export class TriggerConditionCollection {
     // TODO consider changing for zincrby since zrem
     //   is valid only if there is just 1 condition of certain type of event in a trigger
     pipe.zrem(subscribedToScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
-    pipe.zrem(subscribedToUri(EventUri.fromCondition(condition)), triggerId)
+    pipe.zrem(subscribedToUri(EventUri.getUriFromCondition(condition)), triggerId)
 
     await pipe.exec()
   }
@@ -346,24 +355,14 @@ export class TriggerConditionCollection {
     } while (cursor !== '0')
   }
 
-  // moved into lua script
-  // async appendToEventLog(conditionId: string, event: AdapterEvent): Promise<boolean> {
-  //   const logKey = conditionLogKey(conditionId)
-  //   const result = await this.redis.hset(logKey, event.id, JSON.stringify(event))
-  //
-  //   return result > 0
-  // }
+  async appendToEventLog(conditionId: string, uniqueId: string): Promise<boolean> {
+    const logKey = conditionLogKey(conditionId)
+    const result = await this.redis.zadd(logKey, "NX", Date.now(), uniqueId)
+    return !!result
+  }
 
-  async getEventLog(conditionId: string): Promise<AdapterEvent[]> {
-    const log = await this.redis.hgetall(conditionLogKey(conditionId))
-    const result = []
-
-    for (const doc of Object.values(log)) {
-      result.push(JSON.parse(doc))
-    }
-    inPlaceSort(result).asc('timestamp')
-
-    return result
+  async getEventLog(conditionId: string): Promise<string[]> {
+    return await this.redis.zrange(conditionLogKey(conditionId), 0, -1)
   }
 
   async cleanByTriggerId(triggerId: string) {

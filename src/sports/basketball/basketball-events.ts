@@ -19,7 +19,7 @@ export enum BasketballEvents {
     TeamScores3FG = 'basketball.team.scores.3fg', // refers to team id
     TeamShootingFoul = 'basketball.team.shooting.foul', // refers to team id
     Team2FTMade = 'basketball.team.2ft.made', // refers to team id
-    TeamScoresPoints = 'basketball.team.scores.points', // refers to team id
+    TeamScoresPoints = 'basketball.team.scores.points', // equals to points
     TeamTimeout = 'basketball.team.timeout', // refers to team id
     TeamWin = 'basketball.team.win', // refers to team id
     TeamLoss = 'basketball.team.loss', // refers to team id

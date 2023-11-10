@@ -1,4 +1,4 @@
-import { getIndexName, getIndexPrefix } from '../../repositories/event.collection'
+import { getIndexName, getIndexPrefix } from '../../repositories/scope-snapshot.collection'
 
 import { BasketballEvents } from './basketball-events'
 

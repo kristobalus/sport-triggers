@@ -1,0 +1,15 @@
+{
+    "$id": "studio.trigger.set-limits",
+    "type": "object",
+    "properties": {
+        "triggerId": {
+            "type": "string"
+        },
+        "limits": {
+            "type": "object",
+            "additionalProperties": true
+        }
+    },
+    "additionalProperties": false,
+    "required": ["triggerId", "limits"]
+}

@@ -1,0 +1,11 @@
+{
+    "$id": "studio.limits.get",
+    "type": "object",
+    "properties": {
+        "sport": {
+            "type": "string"
+        }
+    },
+    "additionalProperties": false,
+    "required": ["sport"]
+}

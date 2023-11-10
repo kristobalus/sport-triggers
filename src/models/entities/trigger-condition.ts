@@ -1,4 +1,3 @@
-import { AdapterEvent } from '../events/adapter-event'
 
 export enum ConditionType {
   Number = 'number',
@@ -69,7 +68,7 @@ export interface TriggerCondition {
   // stringified unique event identifier
   uri: string
   // log of events consumed by condition
-  log?: AdapterEvent[]
+  log?: string[]
   // order of occurrence of condition in array of conditions
   chainOrder?: number
   // logical operation on condition when combining multiple conditions together

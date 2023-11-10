@@ -2,8 +2,8 @@ import { CompareOp, ConditionType } from '../../models/entities/trigger-conditio
 import { EventMetadata } from '../../models/events/event-metadata'
 import { StudioInputs } from '../../models/studio/studio.inputs'
 import { CommonSources } from '../common-sources'
-import { filter, escape } from '../util'
-import { getIndexName } from '../../repositories/event.collection'
+import { escape, filter } from '../util'
+import { getIndexName } from '../../repositories/scope-snapshot.collection'
 
 import { BasketballEvents } from './basketball-events'
 import { GameLevel } from './game-level'
@@ -151,6 +151,7 @@ export const metadata: Record<string, EventMetadata> = {
     description: 'should be number',
     type: ConditionType.Number,
     compare: [
+      CompareOp.In,
       CompareOp.Equal,
       CompareOp.LessOrEqual,
       CompareOp.LessThan,
@@ -275,6 +276,7 @@ export const metadata: Record<string, EventMetadata> = {
     description: 'Number of points scored from start of game',
     type: ConditionType.Number,
     compare: [
+      CompareOp.In,
       CompareOp.Equal,
       CompareOp.LessOrEqual,
       CompareOp.LessThan,
@@ -292,13 +294,21 @@ export const metadata: Record<string, EventMetadata> = {
     primary: false,
     label: 'Team Scores X 3FG',
     description: 'e.g. Red Socks hits 5th 3FG',
-    type: ConditionType.String,
-    compare: [CompareOp.Equal],
+    type: ConditionType.Number,
+    compare: [
+      CompareOp.Equal,
+      CompareOp.GreaterOrEqual,
+      CompareOp.LessOrEqual,
+      CompareOp.In,
+      CompareOp.LessThan,
+      CompareOp.GreaterThan,
+    ],
     targets: [],
     optionScope: [BasketballEvents.Team],
     aggregate: (datasource, sport, scope, scopeId, targets) => {
       const result = [
-        'ft.aggregate', getIndexName(datasource, sport, scope, scopeId),
+        'ft.aggregate',
+        getIndexName(datasource, sport, scope, scopeId),
         // query tag "events" to be equal "basketball.team.scores.3fg"
         `'@events:{ ${ escape(BasketballEvents.TeamScores3FG) } }'`,
         // group those events by "team" tag

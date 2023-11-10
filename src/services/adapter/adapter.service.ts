@@ -8,154 +8,222 @@ import {
   conditionLogKey,
   TriggerConditionCollection,
 } from '../../repositories/trigger-condition.collection'
-import { AdapterEvent } from '../../models/events/adapter-event'
-import { ChainOp, TriggerCondition } from '../../models/entities/trigger-condition'
+import { ScopeSnapshot } from '../../models/events/scope-snapshot'
+import { TriggerCondition } from '../../models/entities/trigger-condition'
 import { TriggerSubscriptionCollection } from '../../repositories/trigger-subscription.collection'
 import { TriggerCollection } from '../../repositories/trigger.collection'
-import { fromEvent } from '../../models/events/event-uri'
+import { getUriFromEvent } from '../../models/events/event-uri'
 import { Trigger } from '../../models/entities/trigger'
-import { Event } from '../../models/events/event'
-import { EventCollection } from '../../repositories/event.collection'
+import { EventSnapshot } from '../../models/events/event-snapshot'
+import {
+  getSnapshotKeyByEntity,
+  ScopeSnapshotCollection,
+} from '../../repositories/scope-snapshot.collection'
+import { TriggerLimitCollection } from '../../repositories/trigger-limit.collection'
+import { SubscriptionNotification } from '../../models/dto/subscription-notification'
+import { EntityLimitCollection } from '../../repositories/entity-limit.collection'
+import { ConditionEvaluator } from './condition-evaluator'
+import { limits as limitDictionary } from '../../sports'
+import { CommonLimit } from '../../sports/common-limits'
 
 export interface CompareResult {
   activated: boolean
   error?: Error
 }
 
+export interface AdapterServiceOptions {
+  log: Microfleet['log'],
+  redis: Redis,
+  amqp: AMQPTransport,
+  conditionCollection: TriggerConditionCollection
+  subscriptionCollection: TriggerSubscriptionCollection
+  triggerCollection: TriggerCollection
+  scopeSnapshotCollection: ScopeSnapshotCollection
+  triggerLimitCollection: TriggerLimitCollection
+  entityLimitCollection: EntityLimitCollection
+}
+
 export class AdapterService {
+  private readonly log: Microfleet['log']
+  private readonly redis: Redis
+  private readonly amqp: AMQPTransport
   private readonly conditionCollection: TriggerConditionCollection
   private readonly subscriptionCollection: TriggerSubscriptionCollection
   private readonly triggerCollection: TriggerCollection
-  private readonly eventCollection: EventCollection
+  private readonly snapshotCollection: ScopeSnapshotCollection
+  private readonly triggerLimitCollection: TriggerLimitCollection
+  // @ts-ignore
+  private readonly entityCollection: EntityCollection
+  private readonly entityLimitCollection: EntityLimitCollection
 
-  constructor(
-    private readonly log: Microfleet['log'],
-    private readonly redis: Redis,
-    private readonly amqp: AMQPTransport,
-    options?: {
-      triggerLifetimeSeconds?: number,
-      concurrentConditions?: boolean
-    },
-  ) {
-    this.triggerCollection = new TriggerCollection(this.redis, options?.triggerLifetimeSeconds)
-    this.conditionCollection = new TriggerConditionCollection(this.redis, options?.triggerLifetimeSeconds)
-    this.subscriptionCollection = new TriggerSubscriptionCollection(this.redis, options?.triggerLifetimeSeconds)
-    this.eventCollection = new EventCollection(this.redis)
+  constructor(options: AdapterServiceOptions) {
+    this.log = options.log
+    this.redis = options.redis
+    this.amqp = options.amqp
+    this.triggerCollection = options.triggerCollection
+    this.conditionCollection = options.conditionCollection
+    this.subscriptionCollection = options.subscriptionCollection
+    this.triggerLimitCollection = options.triggerLimitCollection
+    this.snapshotCollection = options.scopeSnapshotCollection
+    this.entityLimitCollection = options.entityLimitCollection
   }
 
   /**
-   * executed in queue "
+   * executed in queue "store"
    */
-  async store(adapterEvent: AdapterEvent) {
-    await this.eventCollection.append(adapterEvent)
+  async storeScopeSnapshot(snapshot: ScopeSnapshot) {
+    await this.snapshotCollection.append(snapshot)
   }
 
   /**
    * executed in queue "triggers"
+   * atomic in respect of the flow of events
    */
-  async evaluateTrigger(event: Event, triggerId: string): Promise<boolean> {
+  async evaluateTrigger(eventSnapshot: EventSnapshot, triggerId: string): Promise<boolean> {
     const trigger = await this.triggerCollection.getOne(triggerId)
 
-    if ( trigger.disabledEntity ) {
-      this.log.debug({ triggerId }, 'trigger skipped since entity is disabled')
-      return false
-    }
-
-    if ( trigger.disabled ) {
+    if (trigger.disabled) {
       this.log.debug({ triggerId }, 'trigger skipped as disabled')
       return false
     }
 
-    if ( trigger.activated ) {
-      this.log.debug({ triggerId }, 'trigger skipped as activated')
+    if (trigger.disabledEntity) {
+      this.log.debug({ triggerId }, 'trigger skipped since entity is disabled')
       return false
     }
 
-    const uri = fromEvent(event)
-    const conditions = await this.conditionCollection.getByTriggerId(trigger.id)
+    // if (trigger.activated) {
+    //   this.log.debug({ triggerId, eventSnapshotId: eventSnapshot.id}, 'trigger skipped since it was activated before')
+    //   return false
+    // }
 
-    this.log.debug({ event, uri, trigger, conditions }, 'evaluating trigger')
+    const skipped = await this.shouldTriggerSkipRun(trigger, eventSnapshot)
+    if (skipped) {
+      this.log.debug({ triggerId }, 'evaluating trigger skipped')
+      return false
+    }
+
+    const uri = getUriFromEvent(eventSnapshot)
+    const conditions = await this.conditionCollection.getByTriggerId(trigger.id)
+    const triggerLimits = await this.triggerLimitCollection.getLimits(trigger.id)
+    const entityLimits = await this.entityLimitCollection.getLimits(trigger.entity, trigger.entityId)
+
+    this.log.debug({
+      eventSnapshot,
+      uri,
+      trigger,
+      conditions,
+      triggerLimits,
+      entityLimits,
+    }, 'evaluating trigger')
+
+    let conditionCount = 0
 
     for (const condition of conditions) {
-      if (condition.activated) {
-        // skip activated condition
-        continue
+      if (!condition.activated && condition.uri === uri) {
+        // condition was not activated by previous snapshots
+        // and condition uri matched the event uri
+        const result = await this.evaluateConditionUsingEvaluator(condition, eventSnapshot)
+
+        condition.activated = result.activated
+        condition.current = eventSnapshot.value
+
+        await this.conditionCollection.update(condition.id, {
+          activated: result.activated,
+          current: eventSnapshot.value,
+        })
+
+      } else {
+        this.log.trace({
+          'condition.id': condition.id,
+          'condition.activated': condition.activated,
+          'condition.uri': condition.uri,
+          uri,
+        }, `condition skipped`)
       }
-
-      if (condition.uri === uri) {
-        // condition event matched
-        const { activated } = await this.evaluateCondition(condition, event)
-
-        condition.activated = activated
+      if (condition.activated) {
+        conditionCount = conditionCount + 1
       }
     }
 
-    let activated = conditions.length > 0
+    const triggerActivated = trigger.threshold ? conditionCount >= trigger.threshold : conditionCount == conditions.length
+    const next = await this.shouldTriggerRunNext(trigger)
 
-    for (const condition of conditions) {
-      // combine a chain of conditions into single result
-      // each condition is preset by Studio with chaining operator (AND, OR)
-      // for sake of simplicity assume no grouping and just apply logical operators in sequence
-      if (condition.chainOperation == ChainOp.AND) {
-        activated = (activated && condition.activated)
-      } else if (condition.chainOperation == ChainOp.OR) {
-        activated = (activated || condition.activated)
+    if (triggerActivated) {
+      // if trigger is activated should increment count of all events inside snapshot options
+      await this.incrementCounters(trigger, eventSnapshot)
+
+      if (!next) {
+        await this.conditionCollection.unsubscribeTriggerFromEvents(trigger.id)
+      } else {
+        for (const condition of conditions) {
+          await this.conditionCollection.update(condition.id, { activated: false })
+        }
       }
     }
 
     // store trigger status
-    await this.triggerCollection.updateOne(trigger.id, { activated: activated })
+    await this.triggerCollection.updateOne(trigger.id, { next: next })
 
-    if ( activated ) {
-      await this.conditionCollection.unsubscribeTriggerFromEvents(trigger.id)
-    }
+    const counts = await this.triggerLimitCollection.getCounts(triggerId)
+    this.log.debug({ triggerId, triggerActivated, conditionCount, next, counts }, 'trigger evaluation result')
 
-    this.log.debug({ activated, triggerId }, 'trigger evaluation result')
-
-    return activated
+    return triggerActivated
   }
 
   /**
    * executed in queue "notifications"
    * separate queue for notifications (with retries)
    */
-  async notify(triggerId: string) {
+  async notify(triggerId: string, reason: string) {
     const trigger = await this.triggerCollection.getOne(triggerId)
 
-    if (trigger.activated) {
-      this.log.debug({ triggerId }, 'sending subscriptions')
+    this.log.debug({ triggerId }, 'sending subscriptions')
 
-      // TODO
-      //  add limitations on notification routes [whitelist] and payloads [json schema] and exclude options?
-      const ids = await this.subscriptionCollection.getListByTrigger(trigger.id)
+    const ids = await this.subscriptionCollection.getListByTrigger(triggerId)
+    const limits = await this.triggerLimitCollection.getLimits(triggerId)
+    const counts = await this.triggerLimitCollection.getCounts(triggerId)
 
-      for (const id of ids) {
-        const subscription = await this.subscriptionCollection.getOne(id)
+    for (const id of ids) {
+      const count = await this.subscriptionCollection.addReason(id, reason)
+      if (count == 0) {
+        // skipped, subscription was already notified
+        continue
+      }
 
-        if ( !subscription.sent ) {
-          const { route, payload } = subscription
+      const subscription = await this.subscriptionCollection.getOne(id)
 
-          await this.amqp.publish(route, { ...payload }, {
+      if (!subscription.sent) {
+        const { route, payload } = subscription
+        await this.amqp.publish(route,
+          {
+            payload,
+            limits,
+            counts,
+            next: trigger.next,
+            triggerId: trigger.id,
+            entity: trigger.entityId,
+            entityId: trigger.entityId,
+            scopeId: trigger.scopeId,
+            scope: trigger.scope
+          } as SubscriptionNotification, {
             confirm: true,
-            mandatory: true
+            mandatory: true,
           } as Publish)
 
-          await this.subscriptionCollection.updateOne(subscription.id, { sent: true })
+        await this.subscriptionCollection.updateOne(subscription.id, { sent: true })
 
-          this.log.debug({ trigger, subscription }, 'message sent')
-        }
+        this.log.debug({ trigger, subscription }, 'message sent')
       }
-    } else {
-      this.log.warn({ trigger }, 'trying to send notification on trigger w/o activation')
     }
   }
 
   /**
    * @description shows if any trigger is interested in this event
    */
-  async hasTriggers(event: Event): Promise<boolean> {
+  async hasTriggers(event: EventSnapshot): Promise<boolean> {
     const { conditionCollection } = this
-    const uri = fromEvent(event)
+    const uri = getUriFromEvent(event)
     const count = await conditionCollection.countSubscribedToUri(uri)
 
     return count > 0
@@ -164,8 +232,8 @@ export class AdapterService {
   /**
    * @description get triggers subscribed to event by their conditions
    */
-  async * getTriggers(event: AdapterEvent): AsyncGenerator<Trigger[], void, void>  {
-    const uri = fromEvent(event)
+  async* getTriggersBySnapshot(snapshot: ScopeSnapshot): AsyncGenerator<Trigger[], void, void> {
+    const uri = getUriFromEvent(snapshot)
     const { triggerCollection, conditionCollection } = this
 
     const triggerIdGenerator = conditionCollection.getSubscribedToUri(uri)
@@ -183,16 +251,17 @@ export class AdapterService {
     }
   }
 
-  private async evaluateCondition(
+  // @ts-ignore
+  private async evaluateConditionUsingLuaScript(
     condition: TriggerCondition,
-    event: Event,
+    event: EventSnapshot,
   ): Promise<CompareResult> {
-    this.log.debug({ event, condition }, 'evaluating condition')
+    this.log.debug({ event, condition }, 'evaluating condition using lua script')
 
     const key = conditionKey(condition.id)
     const logKey = conditionLogKey(condition.id)
     const result: CompareResult = {
-      activated: false
+      activated: false,
     }
 
     // TODO now logic is moved into lua script
@@ -205,6 +274,125 @@ export class AdapterService {
     result.activated = !!activated
     this.log.debug({ key, debug: debug ? JSON.parse(debug) : {}, result }, 'condition evaluation result')
 
+    // const evaluator = new ConditionEvaluator(this.redis, this.log)
+    // await evaluator.evaluate(condition, event)
+
     return result
+  }
+
+  // @ts-ignore
+  private async evaluateConditionUsingEvaluator(
+    condition: TriggerCondition,
+    eventSnapshot: EventSnapshot,
+  ): Promise<CompareResult> {
+    this.log.trace({ eventSnapshot, condition }, 'evaluating condition using evaluator class')
+
+    const result: CompareResult = {
+      activated: condition.activated,
+    }
+
+    const snapshotKey = getSnapshotKeyByEntity(eventSnapshot)
+    const allowed = await this.conditionCollection.appendToEventLog(condition.id, snapshotKey)
+    if (!allowed) {
+      this.log.trace({ result }, 'condition evaluation not allowed')
+      return result
+    }
+
+    const evaluator = new ConditionEvaluator(this.redis, this.log)
+    const activated = await evaluator.evaluate(condition, eventSnapshot)
+
+    result.activated = !!activated
+    this.log.trace({ result }, 'condition evaluation result')
+
+    return result
+  }
+
+  private getLimitFactories() {
+    return [
+      {
+        limits: async (trigger: Trigger) => {
+          return this.entityLimitCollection.getLimits(trigger.entity, trigger.entityId)
+        },
+        count: async (trigger: Trigger, eventName: string, eventValue: any) => {
+          return this.entityLimitCollection.getCount(trigger.entity, trigger.entityId, eventName, eventValue)
+        },
+      },
+      {
+        limits: async (trigger: Trigger) => {
+          return this.triggerLimitCollection.getLimits(trigger.id)
+        },
+        count: async (trigger: Trigger, eventName: string, eventValue: any) => {
+          return this.triggerLimitCollection.getCount(trigger.id, eventName, eventValue)
+        },
+      },
+    ]
+  }
+
+  private async shouldTriggerSkipRun(trigger: Trigger, eventSnapshot: EventSnapshot): Promise<boolean> {
+    const factories = this.getLimitFactories()
+
+    for (const factory of factories) {
+      const limits = await factory.limits(trigger)
+      for (const [limitEvent, limitCount] of Object.entries(limits)) {
+
+        if (limitCount == 0) {
+          // limit essentially disabled
+          this.log.debug({ limitCount, limitEvent }, `limit disabled`)
+          continue
+        }
+
+        // seek for limiting game event in the adapter event options
+        if (eventSnapshot.options[limitEvent]) {
+          const eventValue = eventSnapshot.options[limitEvent]
+          const activationCount = await factory.count(trigger, limitEvent, eventValue)
+
+          this.log.debug({ limitCount, limitEvent, activationCount, eventValue }, `limit being compared`)
+
+          if (limitCount <= activationCount) {
+            // limit reached, should skip looping
+            return true
+          }
+        }
+      }
+    }
+
+    return false
+  }
+
+  private async shouldTriggerRunNext(trigger: Trigger): Promise<boolean> {
+    const factories = this.getLimitFactories()
+
+    for (const factory of factories) {
+      const limits = await factory.limits(trigger)
+      for (const [limitEvent, limitCount] of Object.entries(limits)) {
+
+        if (limitCount == 0) {
+          // limit essentially disabled
+          this.log.debug({ limitCount, limitEvent }, `limit disabled`)
+          continue
+        }
+
+        const limit = limitDictionary[limitEvent]
+        if (limit && limit.finite) {
+          // finite limit ignores current event value
+          const count = await factory.count(trigger, limitEvent, null)
+          if (limitCount <= count) {
+            // limit reached, should stop looping
+            return false
+          }
+        }
+      }
+    }
+
+    return true
+  }
+
+  private async incrementCounters(trigger: Trigger, eventSnapshot: EventSnapshot) {
+    await this.triggerLimitCollection.incrCount(trigger.id, eventSnapshot.id, CommonLimit.Scope, eventSnapshot.scopeId)
+
+    for (const [eventName, eventValue] of Object.entries(eventSnapshot.options)) {
+      await this.triggerLimitCollection.incrCount(trigger.id, eventSnapshot.id, eventName, eventValue)
+      await this.entityLimitCollection.incrCount(trigger.entity, trigger.entityId, eventSnapshot.id, eventName, eventValue)
+    }
   }
 }

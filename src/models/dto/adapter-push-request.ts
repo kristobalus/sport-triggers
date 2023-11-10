@@ -1,5 +1,5 @@
-import { AdapterEvent } from '../events/adapter-event'
+import { ScopeSnapshot } from '../events/scope-snapshot'
 
 export interface AdapterPushRequest {
-  event: AdapterEvent
+  event: ScopeSnapshot
 }

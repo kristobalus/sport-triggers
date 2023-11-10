@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import * as assert from 'assert'
+import assert from 'assert'
 
 import { Redis } from 'ioredis'
 
@@ -18,6 +18,15 @@ export function triggerSetByEntityKey(entity: string, entityId: string) {
   return `entities/${entity}/${entityId}/triggers`
 }
 
+export function validateOnCreate(data: Partial<Trigger>) {
+  assert(data.entity, `entity should be defined`)
+  assert(data.entityId, `entityId should be defined`)
+  assert(data.sport, `sport should be defined`)
+  assert(data.datasource, `datasource should be defined`)
+  assert(data.scope, `scope should be defined`)
+  assert(data.scopeId, `scopeId should be defined`)
+}
+
 export class TriggerCollection {
   constructor(
     private redis: Redis,
@@ -25,6 +34,9 @@ export class TriggerCollection {
   ) { }
 
   async add(data: Partial<Trigger>): Promise<string> {
+
+    validateOnCreate(data)
+
     const item = {
       ...data
     }
@@ -62,6 +74,7 @@ export class TriggerCollection {
 
     data.activated = (data.activated as unknown as string) == 'true'
     data.disabled = (data.disabled as unknown as string) == 'true'
+    data.disabledEntity = (data.disabledEntity as unknown as string) == 'true'
 
     return data.id ? data : null
   }

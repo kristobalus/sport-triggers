@@ -7,7 +7,7 @@ import { Game } from '../models/studio/game'
 import { Game as SportradarGame } from '../models/sportradar/game'
 import { Team } from '../models/studio/team'
 import { Player } from '../models/studio/player'
-import { Sport } from '../models/studio/sport'
+import { Sport } from '../models/events/sport'
 
 export class SportradarDatasource {
   private games: Map<string, Game> = new Map<string, Game>

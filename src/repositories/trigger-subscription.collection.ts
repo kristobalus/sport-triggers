@@ -1,5 +1,6 @@
 // import * as assert from "assert"
 import { randomUUID } from 'crypto'
+import assert from 'assert'
 
 import { Redis } from 'ioredis'
 
@@ -27,6 +28,18 @@ export function subscriptionByEntityKey(entity: string, entityId: string) {
   return `entities/${entity}/${entityId}/subscriptions`
 }
 
+/**
+ * set
+ */
+export function subscriptionReasons(subscriptionId: string) {
+  return `subscriptions/${subscriptionId}/reasons`
+}
+
+export function validateOnCreate(data: Partial<TriggerSubscription>) {
+  assert(data.entity, `entity should be defined`)
+  assert(data.entityId, `entityId should be defined`)
+}
+
 export class TriggerSubscriptionCollection {
   constructor(
     private redis: Redis,
@@ -35,6 +48,9 @@ export class TriggerSubscriptionCollection {
   }
 
   async create(triggerId: string, item: Partial<TriggerSubscription>): Promise<string> {
+
+    validateOnCreate(item)
+
     const data = { ...item } as unknown as SerializedTriggerSubscription
 
     data.id = randomUUID()
@@ -119,5 +135,9 @@ export class TriggerSubscriptionCollection {
 
   updateOne(id: string, data: Partial<TriggerSubscription>): Promise<number> {
     return this.redis.hset(subscriptionKey(id), data as unknown as Record<string, any>)
+  }
+
+  async addReason(subscriptionId: string, reason: string) : Promise<number> {
+    return await this.redis.sadd(subscriptionReasons(subscriptionId), reason)
   }
 }

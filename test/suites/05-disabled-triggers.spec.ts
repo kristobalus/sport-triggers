@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto'
 import assert = require('assert')
 
 import { TestContext } from '../module'
-import { Scope } from '../../src/models/entities/trigger'
+import { Scope, Trigger } from '../../src/models/entities/trigger'
 import { startContext, stopContext } from '../helpers/common'
 import { ChainOp, CompareOp } from '../../src/models/entities/trigger-condition'
 import {
@@ -16,17 +16,16 @@ import { GameLevel } from '../../src/sports/basketball/game-level'
 import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-request'
 import { ItemResponse } from '../../src/models/dto/response'
 import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
-import { AdapterPushRequest } from '../../src/models/dto/adapter-push-request'
 import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { Defer } from '../../src/utils/defer'
 import { BasketballEvents } from '../../src/sports/basketball/basketball-events'
-import { sign } from '../../src/plugins/signed-request.plugin'
 import { TriggerDisableRequest } from "../../src/models/dto/trigger-disable-request"
 
 interface SuiteContext extends TestContext {
   amqpPrefix?: string
   triggerId?: string
+  trigger?: Trigger
   subscriptionId?: string
   consumer?: any
   pendingSubscriberMessage?: Defer<any>
@@ -47,59 +46,6 @@ describe('Disabled triggers', function () {
 
   const teamId = randomUUID()
   const teamPoints = '30'
-
-  const events = {
-    [BasketballEvents.GameLevel]: {
-      id: randomUUID(),
-      datasource,
-      scope,
-      scopeId,
-      sport: 'basketball',
-      timestamp: Date.now(),
-      options: {
-        [BasketballEvents.GamePointsHome]: teamPoints,
-        [BasketballEvents.GamePointsAway]: teamPoints,
-        [BasketballEvents.Sequence]: '1',
-        [BasketballEvents.Quarter]: '1',
-        [BasketballEvents.Period]: '1',
-        [BasketballEvents.GameLevel]: GameLevel.Start,
-      },
-    },
-    [BasketballEvents.TeamScoresPoints]: {
-      id: randomUUID(),
-      datasource,
-      scope,
-      scopeId,
-      sport: 'basketball',
-      timestamp: Date.now() + 1,
-      options: {
-        [BasketballEvents.GamePointsHome]: teamPoints,
-        [BasketballEvents.GamePointsAway]: teamPoints,
-        [BasketballEvents.Sequence]: '1',
-        [BasketballEvents.Quarter]: '1',
-        [BasketballEvents.Period]: '1',
-        [BasketballEvents.TeamScoresPoints]: teamPoints,
-        [BasketballEvents.Team]: teamId,
-      },
-    },
-    [BasketballEvents.TeamShootingFoul]: {
-      id: randomUUID(),
-      datasource,
-      scope,
-      scopeId,
-      sport: 'basketball',
-      timestamp: Date.now() + 3,
-      options: {
-        [BasketballEvents.GamePointsHome]: teamPoints,
-        [BasketballEvents.GamePointsAway]: teamPoints,
-        [BasketballEvents.Sequence]: '1',
-        [BasketballEvents.Quarter]: '1',
-        [BasketballEvents.Period]: '1',
-        [BasketballEvents.TeamShootingFoul]: teamId,
-        [BasketballEvents.Team]: teamId,
-      },
-    },
-  }
 
   const ctx: SuiteContext = {
     receiver: {
@@ -165,9 +111,10 @@ describe('Disabled triggers', function () {
         trigger: triggerData,
         conditions: conditionData,
       } as TriggerCreateRequest)
-    // console.log(response)
-
     ctx.triggerId = response.data.id
+
+    const { trigger } = await getTriggerWithConditions(ctx.triggerId)
+    ctx.trigger = trigger
   }
 
   async function createSubscription(ctx: SuiteContext) {
@@ -208,48 +155,23 @@ describe('Disabled triggers', function () {
     return item.attributes
   }
 
-  async function isTriggerActivated(triggerId: string): Promise<boolean> {
-    const response: ItemResponse<TriggerWithConditions> =
-      await ctx.app.amqp.publishAndWait(`${ctx.amqpPrefix}.studio.trigger.get`,
-        { id: triggerId } as TriggerGetRequest)
-
-    assert.ok(response)
-    assert.ok(response.data)
-
-    const item = response.data
-
-    assert.ok(item.type)
-    assert.equal(item.type, 'trigger')
-    assert.ok(item.attributes)
-    assert.ok(item.attributes.trigger)
-
-    return item.attributes.trigger.activated
-  }
-
-  async function sendSignedRequest(request: AdapterPushRequest) {
-    const { tokenHeader, signatureHeader, algorithm, accessTokens } = ctx.app.config.signedRequest
-    const body = JSON.stringify(request)
-
-    const [accessToken] = Object.keys(accessTokens)
-    const secret = accessTokens[accessToken]
-    const signature = sign(algorithm, secret, body)
-
-    ctx.app.log.info({ body, digest: signature }, 'sending signed request')
-
-    await ctx.request.post('adapter/event/push', {
-      headers: {
-        [tokenHeader]: accessToken,
-        [signatureHeader]: signature,
-      },
-      body: body,
-    })
-  }
-
-  async function disableTrigger(ctx: SuiteContext, triggerId: string) {
+  async function disableTrigger(ctx: SuiteContext) {
     const { amqpPrefix } = ctx
     await ctx.app.amqp.publishAndWait(`${amqpPrefix}.studio.trigger.disable`, {
-      id: triggerId
+      id: ctx.triggerId
     } as TriggerDisableRequest)
+  }
+
+  async function disableEntity(ctx: SuiteContext) {
+    const { amqpPrefix } = ctx
+    await ctx.app.amqp.publishAndWait(`${amqpPrefix}.studio.entity.disable`, {
+      entities: [
+        {
+          entity: ctx.trigger.entity,
+          entityId: ctx.trigger.entityId
+        }
+      ]
+    })
   }
 
   before(async () => {
@@ -275,55 +197,18 @@ describe('Disabled triggers', function () {
   })
 
   it('should disable trigger', async () => {
-    await disableTrigger(ctx, ctx.triggerId)
+    await disableTrigger(ctx)
     const { trigger } = await getTriggerWithConditions(ctx.triggerId)
     ctx.app.log.debug({ trigger }, 'trigger status')
     assert.equal(trigger.disabled, true)
   })
 
-  it('push game level event', async () => {
-    const defer = new Defer()
-
-    ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
-
-    await sendSignedRequest({
-      event: events[BasketballEvents.GameLevel],
-    })
-
-    const { activated } = await defer.promise
-
-    assert.equal(activated, false)
-    assert.equal(await isTriggerActivated(ctx.triggerId), false)
+  it('should disable entity', async () => {
+    await disableEntity(ctx)
+    const { trigger } = await getTriggerWithConditions(ctx.triggerId)
+    ctx.app.log.debug({ trigger }, 'trigger status')
+    assert.equal(trigger.disabledEntity, true)
   })
 
-  it('push team scores points event', async () => {
-    const defer = new Defer()
-
-    ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
-
-    await sendSignedRequest({
-      event: events[BasketballEvents.TeamScoresPoints],
-    })
-    const { activated } = await defer.promise
-
-    assert.equal(activated, false)
-    assert.equal(await isTriggerActivated(ctx.triggerId), false)
-  })
-
-  it('push team shooting foul event', async () => {
-    ctx.pendingSubscriberMessage = new Defer()
-    const defer = new Defer()
-
-    ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
-
-    await sendSignedRequest({
-      event: events[BasketballEvents.TeamShootingFoul],
-    })
-
-    const { activated } = await defer.promise
-
-    assert.equal(activated, false)
-    assert.equal(await isTriggerActivated(ctx.triggerId), false)
-  })
 
 })

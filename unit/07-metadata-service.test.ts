@@ -3,6 +3,7 @@ import path = require('path')
 import { NvenueDatasource } from "../src/datasources/nvenue.datasource"
 import { MetadataService } from "../src/services/studio/metadata.service"
 import { MlbDatasource } from "../src/datasources/mlb.datasource"
+import { Sport } from "../src/models/events/sport"
 import assert from "assert"
 
 describe('Metadata tests', function () {
@@ -34,7 +35,7 @@ describe('Metadata tests', function () {
       path.resolve(__dirname, '../games/nvenue/baseball/games'),
       path.resolve(__dirname, '../games/mlb/teams.json'),
       path.resolve(__dirname, '../games/mlb/players.json'),
-      'baseball')
+      Sport.Baseball)
   })
 
   it('should list teams', () => {
@@ -44,7 +45,7 @@ describe('Metadata tests', function () {
 
   it('should list games', () => {
     const nvenue = new NvenueDatasource()
-    nvenue.printGames(path.resolve(__dirname, '../games/nvenue/baseball/games/games_2023_2.json'))
+    nvenue.printGames(path.resolve(__dirname, '../games/nvenue/baseball/games/games_2023_3.json'))
   })
 
   it('should get metadata for nvenue', async () => {
@@ -54,7 +55,7 @@ describe('Metadata tests', function () {
       path.resolve(__dirname, '../games/nvenue/baseball/games'),
       path.resolve(__dirname, '../games/mlb/teams.json'),
       path.resolve(__dirname, '../games/mlb/players.json'),
-      'baseball')
+      Sport.Baseball)
 
     const service = new MetadataService()
 

@@ -1,4 +1,4 @@
-import { CoreOptions } from '@microfleet/core-types'
+import { CoreOptions, Microfleet } from '@microfleet/core-types'
 
 import assert = require('assert')
 import { randomUUID } from 'crypto'
@@ -29,11 +29,13 @@ import { TriggerUpdateRequest } from '../../src/models/dto/trigger-update-reques
 const sinon = require('sinon')
 
 interface SuitContext extends TestContext {
+  log?: Microfleet['log']
   triggerId?: string
   subscriptionId?: string
 }
 
 describe('StudioService', function () {
+
   const datasource = 'sportradar'
   const scope = Scope.Game
   const scopeId = '0d996d35-85e5-4913-bd45-ac9cfedbf272'
@@ -57,8 +59,7 @@ describe('StudioService', function () {
 
     await ctx.app.redis.flushall()
 
-    const amqpService = ctx.app.amqp
-    const stub = sinon.stub(amqpService, 'publishAndWait')
+    const stub = sinon.stub(ctx.app.amqp, 'publishAndWait')
 
     stub.withArgs('sports.events.retrieveProviderId').resolves({
       data: {

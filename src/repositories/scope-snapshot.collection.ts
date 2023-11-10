@@ -1,6 +1,6 @@
 import { Redis } from 'ioredis'
 
-import { AdapterEvent } from '../models/events/adapter-event'
+import { ScopeSnapshot } from '../models/events/scope-snapshot'
 import * as Basketball from '../sports/basketball/redis-index'
 
 export interface AggregateResult {
@@ -15,17 +15,21 @@ export function getIndexPrefix(datasource: string, sport: string, scope: string,
   return `json/${datasource}/${sport}/${scope}/${scopeId}/events/`
 }
 
-export function getEventKey(datasource: string, sport: string, scope: string, scopeId: string, eventId: string) {
+export function getSnapshotKey(datasource: string, sport: string, scope: string, scopeId: string, eventId: string) {
   return `json/${datasource}/${sport}/${scope}/${scopeId}/events/${eventId}`
 }
 
-export class EventCollection {
+export function getSnapshotKeyByEntity(snapshot: ScopeSnapshot) {
+  const { datasource, sport, scope, scopeId, id: eventId } = snapshot
+  return getSnapshotKey(datasource, sport, scope, scopeId, eventId)
+}
+
+export class ScopeSnapshotCollection {
   private indices: Map<string, boolean> = new Map()
 
   constructor(
     private redis: Redis
-  ) {
-  }
+  ) {}
 
   // eslint-disable-next-line require-await
   async execute(query: string[]) {
@@ -37,6 +41,10 @@ export class EventCollection {
   // eslint-disable-next-line require-await
   async dropIndex(name: string) {
     return this.redis.send_command('ft.dropindex', name)
+  }
+
+  clearIndices() {
+    this.indices.clear()
   }
 
   async createIndex(datasource: string, sport: string, scope: string, scopeId: string): Promise<boolean> {
@@ -71,22 +79,22 @@ export class EventCollection {
     }
   }
 
-  async append(data: AdapterEvent): Promise<boolean> {
+  async append(data: ScopeSnapshot): Promise<boolean> {
     const { datasource, sport, scope, scopeId, id } = data
 
     await this.createIndex(datasource, sport, scope, scopeId)
 
     data.events = Object.keys(data.options)
 
-    const key = getEventKey(datasource, sport, scope, scopeId, id)
+    const key = getSnapshotKey(datasource, sport, scope, scopeId, id)
     const json = JSON.stringify(data)
     const result = await this.redis.send_command('json.set', key, '$', json)
 
     return result == 'OK'
   }
 
-  async getItem(datasource: string, sport: string, scope: string, scopeId: string, eventId: string): Promise<AdapterEvent> {
-    const key = getEventKey(datasource, sport, scope, scopeId, eventId)
+  async getItem(datasource: string, sport: string, scope: string, scopeId: string, eventId: string): Promise<ScopeSnapshot> {
+    const key = getSnapshotKey(datasource, sport, scope, scopeId, eventId)
     const result = await this.redis.send_command('json.get', key, '$')
 
     return JSON.parse(result)

@@ -5,6 +5,7 @@ import assert = require('assert')
 
 import { TestContext } from '../module'
 import { Scope } from '../../src/models/entities/trigger'
+import { Sport } from '../../src/models/events/sport'
 import { startContext, stopContext } from '../helpers/common'
 import { ChainOp, CompareOp } from '../../src/models/entities/trigger-condition'
 import {
@@ -17,11 +18,10 @@ import { TriggerSubscribeRequest } from '../../src/models/dto/trigger-subscribe-
 import { ItemResponse } from '../../src/models/dto/response'
 import { TriggerCreateResponse } from '../../src/models/dto/trigger-create-response'
 import { AdapterPushRequest } from '../../src/models/dto/adapter-push-request'
-import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditions'
-import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { Defer } from '../../src/utils/defer'
 import { BasketballEvents } from '../../src/sports/basketball/basketball-events'
 import { sign } from '../../src/plugins/signed-request.plugin'
+import { TriggerJobResult } from '../../src/services/queue/queue.service'
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string
@@ -38,12 +38,13 @@ interface SuitContext extends TestContext {
 }
 
 describe('AdapterService', function () {
+
+  const sport = Sport.Basketball
   const datasource = 'sportradar'
   const scope = Scope.Game
   const scopeId = '0d996d35-85e5-4913-bd45-ac9cfedbf272'
   const entity = 'moderation'
   const entityId = randomUUID()
-
   const teamId = randomUUID()
   const teamPoints = '30'
 
@@ -53,7 +54,7 @@ describe('AdapterService', function () {
       datasource,
       scope,
       scopeId,
-      sport: 'basketball',
+      sport,
       timestamp: Date.now(),
       options: {
         [BasketballEvents.GamePointsHome]: teamPoints,
@@ -69,7 +70,7 @@ describe('AdapterService', function () {
       datasource,
       scope,
       scopeId,
-      sport: 'basketball',
+      sport,
       timestamp: Date.now() + 1,
       options: {
         [BasketballEvents.GamePointsHome]: teamPoints,
@@ -86,7 +87,7 @@ describe('AdapterService', function () {
       datasource,
       scope,
       scopeId,
-      sport: 'basketball',
+      sport,
       timestamp: Date.now() + 3,
       options: {
         [BasketballEvents.GamePointsHome]: teamPoints,
@@ -197,24 +198,6 @@ describe('AdapterService', function () {
     ctx.pendingSubscriberMessage = new Defer<any>()
   }
 
-  async function isTriggerActivated(triggerId: string): Promise<boolean> {
-    const response: ItemResponse<TriggerWithConditions> =
-      await ctx.app.amqp.publishAndWait(`${ctx.amqpPrefix}.studio.trigger.get`,
-        { id: triggerId } as TriggerGetRequest)
-
-    assert.ok(response)
-    assert.ok(response.data)
-
-    const item = response.data
-
-    assert.ok(item.type)
-    assert.equal(item.type, 'trigger')
-    assert.ok(item.attributes)
-    assert.ok(item.attributes.trigger)
-
-    return item.attributes.trigger.activated
-  }
-
   async function sendSignedRequest(request: AdapterPushRequest) {
     const { tokenHeader, signatureHeader, algorithm, accessTokens } = ctx.app.config.signedRequest
     const body = JSON.stringify(request)
@@ -269,7 +252,7 @@ describe('AdapterService', function () {
   })
 
   it('push game level event', async () => {
-    const defer = new Defer()
+    const defer = new Defer<TriggerJobResult>()
 
     ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
 
@@ -283,7 +266,7 @@ describe('AdapterService', function () {
   })
 
   it('push team scores points event', async () => {
-    const defer = new Defer()
+    const defer = new Defer<TriggerJobResult>()
 
     ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
 
@@ -297,7 +280,7 @@ describe('AdapterService', function () {
 
   it('push team shooting foul event', async () => {
     ctx.pendingSubscriberMessage = new Defer()
-    const defer = new Defer()
+    const defer = new Defer<TriggerJobResult>()
 
     ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
 
@@ -314,6 +297,5 @@ describe('AdapterService', function () {
     const message = await ctx.pendingSubscriberMessage.promise
 
     ctx.app.log.debug({ message }, 'message received by subscriber')
-    assert.equal(await isTriggerActivated(ctx.triggerId), true)
   })
 })

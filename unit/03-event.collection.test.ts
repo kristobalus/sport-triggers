@@ -2,9 +2,9 @@
 
 import IORedis, { Redis } from "ioredis"
 import { Trigger } from "../src/models/entities/trigger"
-import { AggregateResult, EventCollection } from "../src/repositories/event.collection"
+import { AggregateResult, ScopeSnapshotCollection } from "../src/repositories/scope-snapshot.collection"
 import { randomUUID } from "crypto"
-import { AdapterEvent } from "../src/models/events/adapter-event"
+import { ScopeSnapshot } from "../src/models/events/scope-snapshot"
 import { BasketballEvents } from "../src/sports/basketball/basketball-events"
 import assert = require("assert")
 import { metadata } from "../src/sports"
@@ -37,7 +37,7 @@ describe("EventCollection", function () {
     triggerId?: string
     trigger?: Trigger
     redis?: Redis
-    events?: EventCollection
+    events?: ScopeSnapshotCollection
     eventId?: string
     scopeId?: string
     playerId? :string
@@ -48,7 +48,7 @@ describe("EventCollection", function () {
   before(async () => {
     ctx.log = pino({ name: "test", level: "trace" })
     ctx.redis = new IORedis()
-    ctx.events = new EventCollection(ctx.redis)
+    ctx.events = new ScopeSnapshotCollection(ctx.redis)
     ctx.scopeId = randomUUID()
     ctx.playerId = randomUUID()
     ctx.teamId = randomUUID()
@@ -119,7 +119,7 @@ describe("EventCollection", function () {
         [BasketballEvents.PlayerScores3FG]: player,
         [BasketballEvents.TeamScores3FG]: team
       }
-    } as AdapterEvent)
+    } as ScopeSnapshot)
     assert.equal(result1, true)
 
     ctx.playerId2 = randomUUID()
@@ -136,7 +136,7 @@ describe("EventCollection", function () {
         [BasketballEvents.PlayerScores3FG]: randomUUID(),
         [BasketballEvents.TeamScores3FG]: team
       }
-    } as AdapterEvent)
+    } as ScopeSnapshot)
     assert.equal(result2, true)
 
     const result3 = await ctx.events.execute(["ft._list"])
