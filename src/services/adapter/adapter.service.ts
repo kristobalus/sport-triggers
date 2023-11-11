@@ -292,9 +292,9 @@ export class AdapterService {
     }
 
     const snapshotKey = getSnapshotKeyByEntity(eventSnapshot)
-    const allowed = await this.conditionCollection.appendToEventLog(condition.id, snapshotKey)
-    if (!allowed) {
-      this.log.trace({ result }, 'condition evaluation not allowed')
+    const appended = await this.conditionCollection.appendToEventLog(condition.id, snapshotKey)
+    if (!appended) {
+      this.log.trace({ result, snapshotKey }, 'condition has already processed this event')
       return result
     }
 
@@ -388,6 +388,7 @@ export class AdapterService {
   }
 
   private async incrementCounters(trigger: Trigger, eventSnapshot: EventSnapshot) {
+    // regardless of the limits established, we count number of activation of trigger per scope (e.g. game)
     await this.triggerLimitCollection.incrCount(trigger.id, eventSnapshot.id, CommonLimit.Scope, eventSnapshot.scopeId)
 
     for (const [eventName, eventValue] of Object.entries(eventSnapshot.options)) {
