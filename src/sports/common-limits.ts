@@ -20,7 +20,7 @@ export const limits: Record<string, EventLimit> = {
   }
 }
 
-export const IntervalLimitList = [
+export const CommonLimitList = [
   CommonLimit.Minute,
   CommonLimit.Scope
 ]

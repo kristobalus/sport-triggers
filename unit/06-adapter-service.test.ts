@@ -25,6 +25,7 @@ import { ScopeSnapshotCollection } from '../src/repositories/scope-snapshot.coll
 import { EntityLimitCollection } from '../src/repositories/entity-limit.collection'
 import { ScopeSnapshot } from '../src/models/events/scope-snapshot'
 import { Sport } from '../src/models/events/sport'
+import { CommonLimit, limits as CommonLimits } from '../src/sports/common-limits'
 
 interface TestContext {
   redis?: Redis,
@@ -43,6 +44,8 @@ interface TestContext {
 }
 
 describe("AdapterService", function () {
+
+  this.timeout(120_000)
 
   const datasource = "sportradar"
   const sport = Sport.Basketball
@@ -795,6 +798,249 @@ describe("AdapterService", function () {
         const result = await processScopeSnapshot(ctx, snapshot)
         assert.equal(result, false)
       }
+    })
+  })
+
+  describe('single condition loop with limit "1 per scope"', function () {
+    before(async () => {
+
+      await ctx.redis.flushall()
+      ctx.snapshotCollection.clearIndices()
+
+      const triggerData: EssentialTriggerData = {
+        name: "...",
+        description: "...",
+        datasource,
+        scope,
+        sport,
+        scopeId,
+        entity,
+        entityId,
+      }
+
+      const conditionData: EssentialConditionData[] = [
+        {
+          event: BasketballEvents.Team,
+          compare: CompareOp.In,
+          targets: [homeId],
+          options: [
+            {
+              event: BasketballEvents.TeamDunk,
+              compare: CompareOp.In,
+              targets: [ homeId ],
+            },
+          ],
+        },
+      ]
+
+      ctx.triggerId = await ctx.studioService.createTrigger(triggerData, conditionData)
+      const { trigger } = await ctx.studioService.getTrigger(ctx.triggerId)
+
+      ctx.trigger = trigger
+
+      const subscriptionData = {
+        route: "some.route",
+        payload: { id: 1 },
+        entity: trigger.entity,
+        entityId: trigger.entityId
+      } as EssentialSubscriptionData
+
+      await ctx.studioService.subscribeTrigger(ctx.triggerId, subscriptionData)
+      await ctx.studioService.setTriggerLimits(ctx.triggerId, {
+        [CommonLimit.Scope]: 1
+      })
+    })
+
+    it(`should be activated once on first run`, async () => {
+
+      const snapshots = [
+        {
+          id: randomUUID(),
+          datasource,
+          scope,
+          scopeId,
+          sport: Sport.Basketball,
+          timestamp: Date.now(),
+          options: {
+            [BasketballEvents.TeamDunk]: homeId,
+            [BasketballEvents.Team]: homeId,
+            [BasketballEvents.Sequence]: 1,
+          },
+        }
+      ]
+
+      const results = []
+      for(const snapshot of snapshots) {
+        const result = await processScopeSnapshot(ctx, snapshot)
+        results.push(result)
+      }
+
+      const [result] = results
+      assert.equal(result, true)
+    })
+
+    it(`should be skipped on next run`, async () => {
+
+      const snapshots = [
+        {
+          id: randomUUID(),
+          datasource,
+          scope,
+          scopeId,
+          sport: Sport.Basketball,
+          timestamp: Date.now(),
+          options: {
+            [BasketballEvents.TeamDunk]: homeId,
+            [BasketballEvents.Team]: homeId,
+            [BasketballEvents.Sequence]: 1
+          },
+        }
+      ]
+
+      for(const snapshot of snapshots) {
+        const result = await processScopeSnapshot(ctx, snapshot)
+        assert.equal(result, false)
+      }
+    })
+
+    it(`should be finite`, async () => {
+      const { trigger } = await ctx.studioService.getTrigger(ctx.triggerId)
+      assert.equal(trigger.next, false)
+    })
+  })
+
+  describe('single condition loop with limit "1 per minute"', function () {
+    before(async () => {
+
+      await ctx.redis.flushall()
+      ctx.snapshotCollection.clearIndices()
+
+      const triggerData: EssentialTriggerData = {
+        name: "...",
+        description: "...",
+        datasource,
+        scope,
+        sport,
+        scopeId,
+        entity,
+        entityId,
+      }
+
+      const conditionData: EssentialConditionData[] = [
+        {
+          event: BasketballEvents.Team,
+          compare: CompareOp.In,
+          targets: [homeId],
+          options: [
+            {
+              event: BasketballEvents.TeamDunk,
+              compare: CompareOp.In,
+              targets: [ homeId ],
+            },
+          ],
+        },
+      ]
+
+      const triggerId = await ctx.studioService.createTrigger(triggerData, conditionData)
+      const { trigger } = await ctx.studioService.getTrigger(triggerId)
+
+      ctx.trigger = trigger
+
+      const subscriptionData = {
+        route: "some.route",
+        payload: { id: 1 },
+        entity: trigger.entity,
+        entityId: trigger.entityId
+      } as EssentialSubscriptionData
+
+      await ctx.studioService.subscribeTrigger(triggerId, subscriptionData)
+      await ctx.studioService.setTriggerLimits(triggerId, {
+        [CommonLimit.Minute]: 1
+      })
+
+      CommonLimits[CommonLimit.Minute].interval = 10
+    })
+
+    it(`should be activated once on first run`, async () => {
+
+      const snapshots = [
+        {
+          id: randomUUID(),
+          datasource,
+          scope,
+          scopeId,
+          sport: Sport.Basketball,
+          timestamp: Date.now(),
+          options: {
+            [BasketballEvents.TeamDunk]: homeId,
+            [BasketballEvents.Team]: homeId,
+            [BasketballEvents.Sequence]: 1,
+          },
+        }
+      ]
+
+      const results = []
+      for(const snapshot of snapshots) {
+        const result = await processScopeSnapshot(ctx, snapshot)
+        results.push(result)
+      }
+
+      const [result] = results
+      assert.equal(result, true)
+    })
+
+    it(`should be skipped on next run`, async () => {
+
+      const snapshots = [
+        {
+          id: randomUUID(),
+          datasource,
+          scope,
+          scopeId,
+          sport: Sport.Basketball,
+          timestamp: Date.now(),
+          options: {
+            [BasketballEvents.TeamDunk]: homeId,
+            [BasketballEvents.Team]: homeId,
+            [BasketballEvents.Sequence]: 1
+          },
+        }
+      ]
+
+      for(const snapshot of snapshots) {
+        const result = await processScopeSnapshot(ctx, snapshot)
+        assert.equal(result, false)
+      }
+    })
+
+    it(`should be activated after interval`, async () => {
+
+      await new Promise((resolve) => setTimeout(resolve, 10000))
+
+      const snapshots = [
+        {
+          id: randomUUID(),
+          datasource,
+          scope,
+          scopeId,
+          sport: Sport.Basketball,
+          timestamp: Date.now(),
+          options: {
+            [BasketballEvents.TeamDunk]: homeId,
+            [BasketballEvents.Team]: homeId,
+            [BasketballEvents.Sequence]: 1
+          },
+        }
+      ]
+
+      const results = []
+      for(const snapshot of snapshots) {
+        const result = await processScopeSnapshot(ctx, snapshot)
+        results.push(result)
+      }
+
+      const [result] = results
+      assert.equal(result, true)
     })
   })
 

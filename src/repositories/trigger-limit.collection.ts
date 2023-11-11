@@ -1,9 +1,9 @@
 import { Redis } from 'ioredis'
 import { TriggerLimit } from "../models/entities/trigger-limit"
 import { isNaN } from "lodash"
-import { createArrayFromHGetAll } from "../utils/pipeline-utils"
+import { createArrayFromHGetAll, PipelineResult } from '../utils/pipeline-utils'
 import { limits as limitDictionary } from "../sports"
-import { redis as redisConfig } from '../configs/redis'
+// import { redis as redisConfig } from '../configs/redis'
 
 export function keyLimitHashTable(triggerId: string) {
   return `trigger-limits/${triggerId}/limit`
@@ -114,8 +114,14 @@ export class TriggerLimitCollection {
       await this.redis.hset(countTable, countField, count)
 
       if ( limit.interval ) {
-        await this.redis.send_command("expire", redisConfig.options.keyPrefix ?? "" + countSet, limit.interval, "NX")
-        await this.redis.send_command("expire", redisConfig.options.keyPrefix ?? "" + countTable, limit.interval, "NX")
+        // await this.redis.send_command("expire", redisConfig.options.keyPrefix ?? "" + countSet, limit.interval, "NX")
+        // await this.redis.send_command("expire", redisConfig.options.keyPrefix ?? "" + countTable, limit.interval, "NX")
+        if ( await this.redis.ttl(countSet) < 1 ) {
+          await this.redis.expire(countSet, limit.interval)
+        }
+        if ( await this.redis.ttl(countTable) < 1 ) {
+          await this.redis.expire(countTable, limit.interval)
+        }
       }
     }
   }
@@ -127,7 +133,7 @@ export class TriggerLimitCollection {
     pipe.hgetall(keyCountHashTable(triggerId))
     pipe.hgetall(keyTimeHashTable(triggerId))
 
-    const [ limits, counts, times ] = createArrayFromHGetAll<Record<string, string>>(await pipe.exec())
+    const [ limits, counts, times ] = createArrayFromHGetAll<Record<string, string>>(await pipe.exec() as PipelineResult[])
 
     const result: Record<string, TriggerLimit> = {} as Record<string, TriggerLimit>
 

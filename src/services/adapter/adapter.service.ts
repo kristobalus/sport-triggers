@@ -147,23 +147,23 @@ export class AdapterService {
     }
 
     const triggerActivated = trigger.threshold ? conditionCount >= trigger.threshold : conditionCount == conditions.length
-    const next = await this.shouldTriggerRunNext(trigger)
 
     if (triggerActivated) {
       // if trigger is activated should increment count of all events inside snapshot options
       await this.incrementCounters(trigger, eventSnapshot)
-
-      if (!next) {
-        await this.conditionCollection.unsubscribeTriggerFromEvents(trigger.id)
-      } else {
-        for (const condition of conditions) {
-          await this.conditionCollection.update(condition.id, { activated: false })
-        }
+      for (const condition of conditions) {
+        await this.conditionCollection.update(condition.id, { activated: false })
       }
     }
 
+    const next = await this.shouldTriggerRunNext(trigger)
+
     // store trigger status
     await this.triggerCollection.updateOne(trigger.id, { next: next })
+
+    if (!next) {
+      await this.conditionCollection.unsubscribeTriggerFromEvents(trigger.id)
+    }
 
     const counts = await this.triggerLimitCollection.getCounts(triggerId)
     this.log.debug({ triggerId, triggerActivated, conditionCount, next, counts }, 'trigger evaluation result')
@@ -341,6 +341,18 @@ export class AdapterService {
           continue
         }
 
+        if ( limitDictionary[limitEvent]?.common ) {
+          // scope
+          // minute
+          // finite limit ignores current event value
+          const activationCount = await factory.count(trigger, limitEvent, null)
+          this.log.debug({ limitCount, limitEvent, activationCount }, `common limit being compared`)
+          if (limitCount <= activationCount) {
+            // limit reached, should stop looping
+            return true
+          }
+        }
+
         // seek for limiting game event in the adapter event options
         if (eventSnapshot.options[limitEvent]) {
           const eventValue = eventSnapshot.options[limitEvent]
@@ -375,8 +387,11 @@ export class AdapterService {
         const limit = limitDictionary[limitEvent]
         if (limit && limit.finite) {
           // finite limit ignores current event value
-          const count = await factory.count(trigger, limitEvent, null)
-          if (limitCount <= count) {
+          const activationCount = await factory.count(trigger, limitEvent, null)
+
+          this.log.debug({ limitCount, limitEvent, activationCount }, `limit estimate`)
+
+          if (limitCount <= activationCount) {
             // limit reached, should stop looping
             return false
           }
@@ -390,6 +405,7 @@ export class AdapterService {
   private async incrementCounters(trigger: Trigger, eventSnapshot: EventSnapshot) {
     // regardless of the limits established, we count number of activation of trigger per scope (e.g. game)
     await this.triggerLimitCollection.incrCount(trigger.id, eventSnapshot.id, CommonLimit.Scope, eventSnapshot.scopeId)
+    await this.triggerLimitCollection.incrCount(trigger.id, eventSnapshot.id, CommonLimit.Minute, null)
 
     for (const [eventName, eventValue] of Object.entries(eventSnapshot.options)) {
       await this.triggerLimitCollection.incrCount(trigger.id, eventSnapshot.id, eventName, eventValue)

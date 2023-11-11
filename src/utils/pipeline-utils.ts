@@ -1,6 +1,6 @@
 import { data as CommonErrors } from 'common-errors'
 
-export type PipelineResult<T> = [Error, T]
+export type PipelineResult<T = any> = [Error, T]
 
 export function getStr(pipeRes: PipelineResult<string>): string {
   const [err, value] = pipeRes
@@ -49,6 +49,7 @@ export function createObjectFromHmGet(pipeRes: PipelineResult<string[]>, fields:
 
   return data
 }
+
 
 export function createArrayFromHGetAll<T>(results: PipelineResult<T>[]) {
   for (const [err] of results) {
