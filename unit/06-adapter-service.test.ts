@@ -144,12 +144,14 @@ describe("AdapterService", function () {
       ]
 
       ctx.triggerId = await ctx.studioService.createTrigger(triggerData, conditionData)
-      const result = await ctx.studioService.getTrigger(ctx.triggerId)
-      ctx.trigger = result.trigger
+      const { trigger } = await ctx.studioService.getTrigger(ctx.triggerId)
+      ctx.trigger = trigger
 
       const subscriptionData = {
         route: "some.route",
         payload: { id: 1 },
+        entity: trigger.entity,
+        entityId: trigger.entityId
       } as EssentialSubscriptionData
 
       await ctx.studioService.subscribeTrigger(ctx.triggerId, subscriptionData)
@@ -272,13 +274,15 @@ describe("AdapterService", function () {
       ]
 
       ctx.triggerId = await ctx.studioService.createTrigger(triggerData, conditionData)
-      const result = await ctx.studioService.getTrigger(ctx.triggerId)
+      const { trigger } = await ctx.studioService.getTrigger(ctx.triggerId)
 
-      ctx.trigger = result.trigger
+      ctx.trigger = trigger
 
       const subscriptionData = {
         route: "some.route",
         payload: { id: 1 },
+        entity: trigger.entity,
+        entityId: trigger.entityId
       } as EssentialSubscriptionData
 
       await ctx.studioService.subscribeTrigger(ctx.triggerId, subscriptionData)
@@ -516,13 +520,15 @@ describe("AdapterService", function () {
       ]
 
       const triggerId = await ctx.studioService.createTrigger(triggerData, conditionData)
-      const result = await ctx.studioService.getTrigger(triggerId)
+      const { trigger } = await ctx.studioService.getTrigger(triggerId)
 
-      ctx.trigger = result.trigger
+      ctx.trigger = trigger
 
       const subscriptionData = {
         route: "some.route",
         payload: { id: 1 },
+        entity: trigger.entity,
+        entityId: trigger.entityId
       } as EssentialSubscriptionData
 
       await ctx.studioService.subscribeTrigger(triggerId, subscriptionData)
