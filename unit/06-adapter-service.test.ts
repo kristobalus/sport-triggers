@@ -78,6 +78,10 @@ describe("AdapterService", function () {
         ctx.notifications.push({ route, message, options })
         return {} as T
       },
+      async publish<T = any>(route: string, message: any, options?: Publish): Promise<T> {
+        ctx.notifications.push({ route, message, options })
+        return {} as T
+      },
     } as AMQPTransport
 
     ctx.log = log
@@ -234,6 +238,10 @@ describe("AdapterService", function () {
       }
 
       const result = await ctx.adapterService.evaluateTrigger(eventSnapshot, ctx.trigger.id)
+
+      if (result) {
+        await ctx.adapterService.notify(ctx.triggerId, eventSnapshot.id)
+      }
 
       if (result) {
         return result
@@ -806,6 +814,7 @@ describe("AdapterService", function () {
 
       await ctx.redis.flushall()
       ctx.snapshotCollection.clearIndices()
+      ctx.notifications = []
 
       const triggerData: EssentialTriggerData = {
         name: "...",
@@ -903,9 +912,14 @@ describe("AdapterService", function () {
       }
     })
 
-    it(`should be finite`, async () => {
+    it(`should set next to false`, async () => {
       const { trigger } = await ctx.studioService.getTrigger(ctx.triggerId)
       assert.equal(trigger.next, false)
+
+      const [ notification ] = ctx.notifications
+      const { message } = notification ?? {}
+      assert.notEqual(message.next, undefined)
+      assert.equal(message.next, false)
     })
   })
 
