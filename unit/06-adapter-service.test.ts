@@ -917,6 +917,8 @@ describe("AdapterService", function () {
       assert.equal(trigger.next, false)
 
       const [ notification ] = ctx.notifications
+      ctx.log.debug({ notification }, 'trigger sent notification to subscribers')
+
       const { message } = notification ?? {}
       assert.notEqual(message.next, undefined)
       assert.equal(message.next, false)
