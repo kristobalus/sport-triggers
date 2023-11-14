@@ -219,6 +219,7 @@ export class StudioService {
     const trigger = await this.triggerCollection.getOne(triggerId)
     const conditions = await this.conditionCollection.getByTriggerId(triggerId, { showLog: options.showLog })
     const limits = await this.triggerLimitCollection.getByTriggerId(triggerId)
+    const counts = await this.triggerLimitCollection.getCounts(triggerId)
 
     if (options.trim) {
       for (const condition of conditions) {
@@ -229,7 +230,7 @@ export class StudioService {
       }
     }
 
-    return { trigger, conditions, limits } as TriggerWithConditions
+    return { trigger, conditions, limits, counts } as TriggerWithConditions
   }
 
   async updateTrigger(

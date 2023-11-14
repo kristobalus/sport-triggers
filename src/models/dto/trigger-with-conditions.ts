@@ -7,4 +7,5 @@ export interface TriggerWithConditions {
   trigger: Trigger
   conditions: TriggerCondition[]
   limits: Record<string, TriggerLimit>
+  counts: Record<string, number>
 }

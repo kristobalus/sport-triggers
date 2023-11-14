@@ -211,12 +211,13 @@ export class QueueService {
     const { adapterService, triggerQueue } = this
     const { eventSnapshot } = job.data
 
-    this.log.debug({ id: job.id }, 'there is definitely a trigger interested in the event, event job started')
+    this.log.debug({ id: job.id, snapshot: eventSnapshot }, 'there is definitely a trigger interested in the event, event job started')
 
     // trigger processing
     if (await adapterService.hasTriggers(eventSnapshot)) {
       for await (const triggers of adapterService.getTriggersBySnapshot(eventSnapshot)) {
-        this.log.debug({ triggers }, 'trigger list from db')
+        this.log.debug({ triggers, eventSnapshot }, 'trigger list from db')
+
         const jobs = triggers.map((trigger) => ({
           name: 'evaluate',
           data: { triggerId: trigger.id, eventSnapshot } as TriggerJob }))
