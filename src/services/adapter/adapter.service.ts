@@ -166,6 +166,7 @@ export class AdapterService {
     }
 
     const counts = await this.triggerLimitCollection.getCounts(triggerId)
+
     this.log.debug({ triggerId, triggerActivated, conditionCount, next, counts }, 'trigger evaluation result')
 
     return triggerActivated
@@ -192,29 +193,25 @@ export class AdapterService {
       }
 
       const subscription = await this.subscriptionCollection.getOne(id)
+      const { route, payload } = subscription
 
-      if (!subscription.sent) {
-        const { route, payload } = subscription
-        await this.amqp.publish(route,
-          {
-            payload,
-            limits,
-            counts,
-            next: trigger.next,
-            triggerId: trigger.id,
-            entity: trigger.entityId,
-            entityId: trigger.entityId,
-            scopeId: trigger.scopeId,
-            scope: trigger.scope
-          } as SubscriptionNotification, {
-            confirm: true,
-            mandatory: true,
-          } as Publish)
+      await this.amqp.publish(route,
+        {
+          payload,
+          limits,
+          counts,
+          next: trigger.next,
+          triggerId: trigger.id,
+          entity: trigger.entityId,
+          entityId: trigger.entityId,
+          scopeId: trigger.scopeId,
+          scope: trigger.scope
+        } as SubscriptionNotification, {
+          confirm: true,
+          mandatory: true,
+        } as Publish)
 
-        await this.subscriptionCollection.updateOne(subscription.id, { sent: true })
-
-        this.log.debug({ trigger, subscription }, 'message sent')
-      }
+      this.log.debug({ triggerId, subscription }, 'subscription sent')
     }
   }
 

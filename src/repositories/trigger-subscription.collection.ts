@@ -118,10 +118,6 @@ export class TriggerSubscriptionCollection {
       item.options = JSON.parse(item.options as unknown as string)
     }
 
-    if ( item.sent ) {
-      item.sent = JSON.parse(item.sent as unknown as string)
-    }
-
     return item as unknown as TriggerSubscription
   }
 

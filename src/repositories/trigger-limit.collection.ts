@@ -3,6 +3,7 @@ import { TriggerLimit } from "../models/entities/trigger-limit"
 import { isNaN } from "lodash"
 import { createArrayFromHGetAll, PipelineResult } from '../utils/pipeline-utils'
 import { limits as limitDictionary } from "../sports"
+import { CommonLimit } from '../sports/common-limits'
 // import { redis as redisConfig } from '../configs/redis'
 
 export function keyLimitHashTable(triggerId: string) {
@@ -66,6 +67,14 @@ export class TriggerLimitCollection {
 
     for(const event of Object.keys(counts)) {
       counts[event] = parseInt(counts[event], 10) as any
+    }
+
+    if ( counts[CommonLimit.Scope] == undefined ) {
+      counts[CommonLimit.Scope] = 0 as any
+    }
+
+    if ( counts[CommonLimit.Minute] == undefined ) {
+      counts[CommonLimit.Minute] = 0 as any
     }
 
     return counts as any as Record<string, number>
