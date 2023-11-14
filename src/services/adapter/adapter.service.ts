@@ -151,6 +151,8 @@ export class AdapterService {
     if (triggerActivated) {
       // if trigger is activated should increment count of all events inside snapshot options
       await this.incrementCounters(trigger, eventSnapshot)
+
+      // reset states
       for (const condition of conditions) {
         await this.conditionCollection.update(condition.id, { activated: false })
       }

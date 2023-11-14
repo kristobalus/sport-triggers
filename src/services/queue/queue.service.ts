@@ -243,7 +243,7 @@ export class QueueService {
     const activated = await this.adapterService.evaluateTrigger(eventSnapshot, triggerId)
 
     if ( activated ) {
-      await this.notificationQueue.add('notify', { triggerId, reason: job.id } as NotificationJob)
+      await this.notificationQueue.add('notify', { triggerId, reason: eventSnapshot.id } as NotificationJob)
     }
 
     this.log.debug({ id: job.id, name: job.name, triggerActivated: activated }, 'trigger job completed')
