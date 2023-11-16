@@ -31,6 +31,12 @@
                 },
                 "disabledEntity": {
                     "type": "boolean"
+                },
+                "useEntityLimits": {
+                    "type": "boolean"
+                },
+                "useConditionThreshold": {
+                    "type": "boolean"
                 }
             },
             "additionalProperties": false,
@@ -76,6 +82,10 @@
                 "additionalProperties": false,
                 "required": ["event", "compare","targets"]
             }
+        },
+        "limits": {
+            "type": "object",
+            "additionalProperties": true
         }
     },
     "additionalProperties": false,

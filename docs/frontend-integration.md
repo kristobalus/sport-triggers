@@ -1037,7 +1037,9 @@ request
         "entity": "question",
         "entity_id": "63206",
         "disabled": false,
-        "disabled_entity": true
+        "disabled_entity": true,
+        "use_entity_limits": false,
+        "use_condition_threshold": false
     },
     "conditions": [        
         {
