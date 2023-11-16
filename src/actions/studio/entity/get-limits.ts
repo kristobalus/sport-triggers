@@ -9,9 +9,9 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<any> {
   const { entity, entityId } = request.params as unknown as EntityGetLimitsRequest
   const { studioService } = this
 
-  const data = await studioService.getEntityLimits(entity, entityId)
+  const limits = await studioService.getEntityLimits(entity, entityId)
 
-  return { data } as EntityGetLimitsResponse
+  return { limits } as EntityGetLimitsResponse
 }
 
 Handler.schema = 'studio.entity.get-limits'

@@ -1,6 +1,6 @@
 
 
 export interface EntityGetLimitsResponse {
-  data: Record<string, number>
+  limits: Record<string, number>
 }
 
