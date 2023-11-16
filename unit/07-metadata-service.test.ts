@@ -73,7 +73,9 @@ describe('Metadata tests', function () {
     for(const [id, team] of Object.entries(teams)) {
       assert(id === team.id)
     }
-    console.log(game.teams)
+
+    const data = service.getStudioConfigData("nvenue", gameId, true)
+    console.log(JSON.stringify(data, null, 2))
   })
 
 })

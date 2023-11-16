@@ -296,6 +296,10 @@ export class StudioService {
     return true
   }
 
+  async getEntityLimits(entity: string, entityId: string) : Promise<Record<string, number>> {
+    return await this.entityLimitCollection.getLimits(entity, entityId)
+  }
+
   async disableEntity(entity: string, entityId: string) {
     const triggerIds = await this.triggerCollection.getListByEntity(entity, entityId)
 
