@@ -75,6 +75,8 @@ export class TriggerCollection {
     data.activated = (data.activated as unknown as string) == 'true'
     data.disabled = (data.disabled as unknown as string) == 'true'
     data.disabledEntity = (data.disabledEntity as unknown as string) == 'true'
+    data.useConditionThreshold = (data.useConditionThreshold as unknown as string) == 'true'
+    data.useEntityLimits = (data.useEntityLimits as unknown as string) == 'true'
     data.next = (data.next as unknown as string) == 'true'
 
     return data.id ? data : null
