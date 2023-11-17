@@ -19,6 +19,7 @@ import { Microfleet } from '@microfleet/core-types'
 import { TriggerLimitCollection } from '../src/repositories/trigger-limit.collection'
 import { EntityLimitCollection } from '../src/repositories/entity-limit.collection'
 import { Sport }  from "../src/models/events/sport"
+import { CommonLimit } from '../src/sports/common-limits'
 
 interface TestContext {
   log?: Logger
@@ -78,7 +79,7 @@ describe('StudioService', function () {
     ctx.redis.disconnect()
   })
 
-  it(`should create trigger`, async () => {
+  it(`should create trigger with limits`, async () => {
 
     const triggerData: EssentialTriggerData = {
       name: 'Trigger name',
@@ -106,15 +107,21 @@ describe('StudioService', function () {
       },
     ]
 
-    ctx.triggerId = await ctx.studioService.createTrigger(triggerData, conditionData)
+    const givenLimits = {
+      [CommonLimit.Scope]: 1
+    }
+
+    ctx.triggerId = await ctx.studioService.createTrigger(triggerData, conditionData, givenLimits)
     assert.ok(ctx.triggerId)
 
     const [condition] = await ctx.conditionCollection.getByTriggerId(ctx.triggerId)
+    const storedLimits = await ctx.triggerLimitCollection.getLimits(ctx.triggerId)
 
     assert.equal(condition.event, BasketballEvents.Team)
     assert.equal(condition.type, ConditionType.String)
     assert.equal(condition.compare, CompareOp.In)
     assert.deepEqual(condition.targets, [teamId])
+    assert.deepEqual(givenLimits, storedLimits)
   })
 
   it(`should find list of triggers by scope`, async () => {

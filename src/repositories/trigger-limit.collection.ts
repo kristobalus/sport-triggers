@@ -1,10 +1,8 @@
 import { Redis } from 'ioredis'
-import { TriggerLimit } from "../models/entities/trigger-limit"
 import { isNaN } from "lodash"
-import { createArrayFromHGetAll, PipelineResult } from '../utils/pipeline-utils'
+// import { createArrayFromHGetAll, PipelineResult } from '../utils/pipeline-utils'
 import { limits as limitDictionary } from "../sports"
 import { CommonLimit } from '../sports/common-limits'
-// import { redis as redisConfig } from '../configs/redis'
 
 export function keyLimitHashTable(triggerId: string) {
   return `trigger-limits/${triggerId}/limit`
@@ -135,44 +133,49 @@ export class TriggerLimitCollection {
     }
   }
 
-  async getByTriggerId(triggerId: string): Promise<Record<string, TriggerLimit>> {
+  // async getByTriggerId(triggerId: string): Promise<Record<string, number>> {
+  //
+  //   const pipe = this.redis.pipeline()
+  //   pipe.hgetall(keyLimitHashTable(triggerId))
+  //   pipe.hgetall(keyCountHashTable(triggerId))
+  //   pipe.hgetall(keyTimeHashTable(triggerId))
+  //
+  //   const [ limits, counts, times ] = createArrayFromHGetAll<Record<string, string>>(await pipe.exec() as PipelineResult[])
+  //
+  //   const result: Record<string, number> = {} as Record<string, number>
+  //
+  //   for(const [event, limit] of Object.entries(limits)) {
+  //     if (!result[event]) {
+  //       result[event] = {} as any
+  //     }
+  //     let value = limit ? parseInt(limit, 10) as any : 0
+  //     result[event].limit = isNaN(value) ? 0 : value
+  //   }
+  //
+  //   for(const [event, count] of Object.entries(counts)) {
+  //     if (!result[event]) {
+  //       result[event] = {} as any
+  //     }
+  //     let value = count ? parseInt(count, 10) as any : 0
+  //     result[event].count = isNaN(value) ? 0 : value
+  //   }
+  //
+  //   for(const [event, time] of Object.entries(times)) {
+  //     if (!result[event]) {
+  //       result[event] = {} as any
+  //     }
+  //     let value = time ? parseInt(time, 10) as any : 0
+  //     result[event].time = isNaN(value) ? 0 : value
+  //   }
+  //
+  //   return result
+  // }
 
+  async deleteByTriggerId(triggerId: string) {
     const pipe = this.redis.pipeline()
-    pipe.hgetall(keyLimitHashTable(triggerId))
-    pipe.hgetall(keyCountHashTable(triggerId))
-    pipe.hgetall(keyTimeHashTable(triggerId))
-
-    const [ limits, counts, times ] = createArrayFromHGetAll<Record<string, string>>(await pipe.exec() as PipelineResult[])
-
-    const result: Record<string, TriggerLimit> = {} as Record<string, TriggerLimit>
-
-    for(const [event, limit] of Object.entries(limits)) {
-      if (!result[event]) {
-        result[event] = {} as any
-      }
-      let value = limit ? parseInt(limit, 10) as any : 0
-      result[event].limit = isNaN(value) ? 0 : value
-    }
-
-    for(const [event, count] of Object.entries(counts)) {
-      if (!result[event]) {
-        result[event] = {} as any
-      }
-      let value = count ? parseInt(count, 10) as any : 0
-      result[event].count = isNaN(value) ? 0 : value
-    }
-
-    for(const [event, time] of Object.entries(times)) {
-      if (!result[event]) {
-        result[event] = {} as any
-      }
-      let value = time ? parseInt(time, 10) as any : 0
-      result[event].time = isNaN(value) ? 0 : value
-    }
-
-    return result
+    pipe.del(keyLimitHashTable(triggerId))
+    pipe.del(keyCountHashTable(triggerId))
+    await pipe.exec()
   }
-
-
 }
 

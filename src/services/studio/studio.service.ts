@@ -35,7 +35,7 @@ export interface StudioServiceOptions {
 export class StudioService {
   private log: Microfleet['log']
   private triggerCollection: TriggerCollection
-  private conditionCollection: TriggerConditionCollection
+  private triggerConditionCollection: TriggerConditionCollection
   private subscriptionCollection: TriggerSubscriptionCollection
   private triggerLimitCollection: TriggerLimitCollection
   private entityLimitCollection: EntityLimitCollection
@@ -43,7 +43,7 @@ export class StudioService {
   constructor(options: StudioServiceOptions) {
     this.log = options.log
     this.triggerCollection = options.triggerCollection
-    this.conditionCollection = options.conditionCollection
+    this.triggerConditionCollection = options.conditionCollection
     this.subscriptionCollection = options.subscriptionCollection
     this.triggerLimitCollection = options.triggerLimitCollection
     this.entityLimitCollection = options.entityLimitCollection
@@ -59,12 +59,18 @@ export class StudioService {
    *
    * @param triggerData
    * @param conditionData
+   * @param limits
    * @return triggerId
    */
-  async createTrigger(triggerData: EssentialTriggerData, conditionData: EssentialConditionData[]) : Promise<string> {
+  async createTrigger(
+    triggerData: EssentialTriggerData,
+    conditionData: EssentialConditionData[],
+    limits?: Record<string, number>
+  ) : Promise<string> {
     this.log.debug({
       trigger: triggerData,
-      conditions: conditionData
+      conditions: conditionData,
+      limits: limits
     }, 'create trigger')
 
     let triggerId
@@ -73,29 +79,54 @@ export class StudioService {
       triggerId = await this.triggerCollection.add(triggerData)
     } catch (err) {
       this.log.fatal({ err }, 'failed to create trigger instance')
+
       throw new ArgumentError('failed to create trigger', err)
     }
 
     try {
-      await this.conditionCollection.add(
+
+      await this.triggerConditionCollection.add(
         triggerId,
         triggerData.datasource,
         triggerData.sport,
         triggerData.scope,
         triggerData.scopeId,
         conditionData)
+
+
     } catch (err) {
       if (triggerId) {
         await this.triggerCollection.deleteOne(triggerId)
+        await this.triggerConditionCollection.deleteByTriggerId(triggerId)
       }
+
       this.log.fatal({ err }, 'failed to create condition instance')
+
       throw new ArgumentError('failed to create trigger', err)
+    }
+
+    if ( limits  ) {
+      try {
+        await this.triggerLimitCollection.setLimits(triggerId, limits)
+      } catch (err) {
+        if (triggerId) {
+          await this.triggerCollection.deleteOne(triggerId)
+          await this.triggerConditionCollection.deleteByTriggerId(triggerId)
+          await this.triggerLimitCollection.deleteByTriggerId(triggerId)
+        }
+
+        this.log.fatal({ err }, 'failed to create limits')
+
+        throw new ArgumentError('failed to create trigger', err)
+      }
     }
 
     this.log.debug({
       triggerId,
       trigger: triggerData,
-      conditions: conditionData }, 'trigger created')
+      conditions: conditionData,
+      limits: limits
+    }, 'trigger created')
 
     return triggerId
   }
@@ -185,7 +216,7 @@ export class StudioService {
     // TODO change for checking statistics
     if ( trigger && !trigger.activated ) {
       await this.triggerCollection.deleteOne(triggerId)
-      await this.conditionCollection.deleteByTriggerId(triggerId)
+      await this.triggerConditionCollection.deleteByTriggerId(triggerId)
       await this.subscriptionCollection.deleteByTriggerId(triggerId)
     }
   }
@@ -217,8 +248,8 @@ export class StudioService {
    */
   async getTrigger(triggerId: string, options: TriggerOptions = {}): Promise<TriggerWithConditions> {
     const trigger = await this.triggerCollection.getOne(triggerId)
-    const conditions = await this.conditionCollection.getByTriggerId(triggerId, { showLog: options.showLog })
-    const limits = await this.triggerLimitCollection.getByTriggerId(triggerId)
+    const conditions = await this.triggerConditionCollection.getByTriggerId(triggerId, { showLog: options.showLog })
+    const limits = await this.triggerLimitCollection.getLimits(triggerId)
     const counts = await this.triggerLimitCollection.getCounts(triggerId)
 
     if (options.trim) {
@@ -248,17 +279,17 @@ export class StudioService {
 
     // diff clean up obsolete conditions (which are present in db but not present in update)
     const updatedIds = conditionsUpdate.map(v => v.id).filter(id => id !== undefined)
-    const currentIds = await this.conditionCollection.getListByTriggerId(triggerUpdate.id)
+    const currentIds = await this.triggerConditionCollection.getListByTriggerId(triggerUpdate.id)
 
     for (const id of currentIds) {
       if ( updatedIds.indexOf(id) == -1 ) {
-        await this.conditionCollection.deleteById(id)
+        await this.triggerConditionCollection.deleteById(id)
       }
     }
 
     if ( conditionsUpdate.length ) {
       // update or create conditions
-      await this.conditionCollection.add(trigger.id, trigger.datasource, trigger.sport, trigger.scope, trigger.scopeId, conditionsUpdate)
+      await this.triggerConditionCollection.add(trigger.id, trigger.datasource, trigger.sport, trigger.scope, trigger.scopeId, conditionsUpdate)
     }
 
     if (limits) {

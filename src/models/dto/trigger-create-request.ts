@@ -10,5 +10,6 @@ export type EssentialConditionData = Pick<TriggerCondition,
 export interface TriggerCreateRequest {
   trigger: EssentialTriggerData
   conditions: EssentialConditionData[]
+  limits?: Record<string, number>
 }
 

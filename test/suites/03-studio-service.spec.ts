@@ -25,6 +25,7 @@ import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditi
 import { SubscriptionCancelRequest } from '../../src/models/dto/subscription-cancel-request'
 import { TriggerDeleteRequest } from '../../src/models/dto/trigger-delete-request'
 import { TriggerUpdateRequest } from '../../src/models/dto/trigger-update-request'
+import { CommonLimit } from '../../src/sports/common-limits'
 
 const sinon = require('sinon')
 
@@ -32,6 +33,7 @@ interface SuitContext extends TestContext {
   log?: Microfleet['log']
   triggerId?: string
   subscriptionId?: string
+  limits?: Record<string, number>
 }
 
 describe('StudioService', function () {
@@ -73,7 +75,7 @@ describe('StudioService', function () {
     await stopContext(ctx)
   })
 
-  it('should create trigger', async () => {
+  it('should create trigger with limits', async () => {
     const triggerData: EssentialTriggerData = {
       name: '...',
       description: '..',
@@ -93,11 +95,16 @@ describe('StudioService', function () {
       },
     ]
 
+    const givenLimits = {
+      [CommonLimit.Scope]: 1
+    }
+
     const prefix = ctx.app.config.routerAmqp.prefix
 
     const data: TriggerCreateRequest = {
       trigger: triggerData,
       conditions: conditionData,
+      limits: givenLimits
     }
 
     const response: ItemResponse<TriggerCreateResponse> = await ctx.app
@@ -110,6 +117,7 @@ describe('StudioService', function () {
     assert.equal(response.data.type, 'trigger')
 
     ctx.triggerId = response.data.id
+    ctx.limits = givenLimits
   })
 
   it('should get trigger by id', async () => {
@@ -125,6 +133,10 @@ describe('StudioService', function () {
 
     assert.ok(item.type)
     assert.equal(item.type, 'trigger')
+
+    const { limits } = response.data.attributes
+
+    assert.deepEqual(limits, ctx.limits)
 
     ctx.app.log.debug({ response }, 'service response for studio.trigger.get')
   })

@@ -7,7 +7,7 @@ import { ItemResponse, Response } from '../../../models/dto/response'
 import { TriggerCreateResponse } from '../../../models/dto/trigger-create-response'
 
 async function CreateHandler(this: FleetApp, request: ServiceRequest): Promise<Response<TriggerCreateResponse>> {
-  const { conditions, trigger } = request.params as unknown as TriggerCreateRequest
+  const { conditions, trigger, limits } = request.params as unknown as TriggerCreateRequest
 
   const { studioService, metadataService, log } = this
 
@@ -21,9 +21,7 @@ async function CreateHandler(this: FleetApp, request: ServiceRequest): Promise<R
 
   trigger.sport = game.sport
 
-  // TODO create trigger inside on-going game
-  //    check trigger open time
-  const id = await studioService.createTrigger(trigger, conditions)
+  const id = await studioService.createTrigger(trigger, conditions, limits)
 
   return {
     data: {
