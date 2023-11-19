@@ -3,6 +3,7 @@ import { HttpStatusError } from '@microfleet/validation'
 
 import { FleetApp } from '../../../fleet-app'
 import { StudioConfigData } from '../../../models/studio/studio-config.data'
+import { allowSignedRequest } from '../../../plugins/signed-request.plugin'
 
 async function Handler(this: FleetApp, request: ServiceRequest) {
   const { amqp, metadataService, log } = this
@@ -60,6 +61,7 @@ async function Handler(this: FleetApp, request: ServiceRequest) {
 }
 
 Handler.schema = 'studio.metadata.get'
-Handler.transports = [ActionTransport.amqp]
+Handler.allowed = allowSignedRequest
+Handler.transports = [ActionTransport.amqp, ActionTransport.http]
 
 export = Handler

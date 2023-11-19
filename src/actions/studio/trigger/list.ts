@@ -6,6 +6,7 @@ import { FleetApp } from '../../../fleet-app'
 import { ListResponse, toResponseItem } from '../../../models/dto/response'
 import { TriggerWithConditions } from '../../../models/dto/trigger-with-conditions'
 import { TriggerListRequest } from '../../../models/dto/trigger-list-request'
+import { allowSignedRequest } from '../../../plugins/signed-request.plugin'
 
 async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ListResponse<TriggerWithConditions>> {
   const { entity, entityId, scope, scopeId, datasource } = request.params as TriggerListRequest
@@ -33,7 +34,8 @@ async function Handler(this: FleetApp, request: ServiceRequest,): Promise<ListRe
 }
 
 Handler.schema = 'studio.trigger.list'
-Handler.transports = [ActionTransport.amqp]
+Handler.allowed = allowSignedRequest
+Handler.transports = [ActionTransport.amqp, ActionTransport.http]
 
 export = Handler
 

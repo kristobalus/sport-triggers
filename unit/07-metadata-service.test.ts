@@ -78,4 +78,15 @@ describe('Metadata tests', function () {
     console.log(JSON.stringify(data, null, 2))
   })
 
+  it(`should get list of limits by sport`, async () => {
+    const sport = "baseball"
+    const service = new MetadataService()
+    const list = service.getLimitsBySport(sport)
+    assert.ok(list)
+    assert.equal(list.length > 0, true)
+
+    console.log(list)
+  })
+
+
 })

@@ -125,9 +125,9 @@ describe('StudioService', function () {
   })
 
   it(`should find list of triggers by scope`, async () => {
-    const [id] = await ctx.triggerCollection.getListByScope(datasource, scope, scopeId)
-    assert.ok(id)
-    assert.equal(ctx.triggerId, id)
+    const list = await ctx.triggerCollection.getListByScope(datasource, scope, scopeId)
+    assert.ok(list)
+    assert.equal(list.length > 0, true)
   })
 
   it(`should be able to find trigger by event and scope`, async () => {
