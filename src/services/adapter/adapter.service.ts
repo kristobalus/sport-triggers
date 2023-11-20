@@ -92,11 +92,6 @@ export class AdapterService {
       return false
     }
 
-    // if (trigger.activated) {
-    //   this.log.debug({ triggerId, eventSnapshotId: eventSnapshot.id}, 'trigger skipped since it was activated before')
-    //   return false
-    // }
-
     const skipped = await this.shouldTriggerSkipRun(trigger, eventSnapshot)
     if (skipped) {
       this.log.debug({ triggerId }, 'evaluating trigger skipped')
@@ -146,7 +141,10 @@ export class AdapterService {
       }
     }
 
-    const triggerActivated = trigger.threshold ? conditionCount >= trigger.threshold : conditionCount == conditions.length
+    const triggerActivated =
+      trigger.useConditionThreshold && trigger.threshold
+        ? conditionCount >= trigger.threshold
+        : conditionCount == conditions.length
 
     if (triggerActivated) {
       // if trigger is activated should increment count of all events inside snapshot options
@@ -207,7 +205,7 @@ export class AdapterService {
           entity: trigger.entityId,
           entityId: trigger.entityId,
           scopeId: trigger.scopeId,
-          scope: trigger.scope
+          scope: trigger.scope,
         } as SubscriptionNotification, {
           confirm: true,
           mandatory: true,
@@ -306,29 +304,36 @@ export class AdapterService {
     return result
   }
 
-  private getLimitFactories() {
-    return [
-      {
+  private getLimitFactories(trigger: Trigger) {
+    const factories = []
+
+    if (trigger.useEntityLimits) {
+      factories.push({
         limits: async (trigger: Trigger) => {
           return this.entityLimitCollection.getLimits(trigger.entity, trigger.entityId)
         },
         count: async (trigger: Trigger, eventName: string, eventValue: any) => {
           return this.entityLimitCollection.getCount(trigger.entity, trigger.entityId, eventName, eventValue)
         },
-      },
-      {
+      })
+    }
+
+    if ( trigger.useLimits ) {
+      factories.push({
         limits: async (trigger: Trigger) => {
           return this.triggerLimitCollection.getLimits(trigger.id)
         },
         count: async (trigger: Trigger, eventName: string, eventValue: any) => {
           return this.triggerLimitCollection.getCount(trigger.id, eventName, eventValue)
         },
-      },
-    ]
+      })
+    }
+
+    return factories
   }
 
   private async shouldTriggerSkipRun(trigger: Trigger, eventSnapshot: EventSnapshot): Promise<boolean> {
-    const factories = this.getLimitFactories()
+    const factories = this.getLimitFactories(trigger)
 
     for (const factory of factories) {
       const limits = await factory.limits(trigger)
@@ -340,7 +345,7 @@ export class AdapterService {
           continue
         }
 
-        if ( limitDictionary[limitEvent]?.common ) {
+        if (limitDictionary[limitEvent]?.common) {
           // scope
           // minute
           // finite limit ignores current event value
@@ -371,7 +376,7 @@ export class AdapterService {
   }
 
   private async shouldTriggerRunNext(trigger: Trigger): Promise<boolean> {
-    const factories = this.getLimitFactories()
+    const factories = this.getLimitFactories(trigger)
 
     for (const factory of factories) {
       const limits = await factory.limits(trigger)

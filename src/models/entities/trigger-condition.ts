@@ -59,7 +59,14 @@ export interface TriggerCondition {
   type: ConditionType
   // target value of the event, threshold value to compare with
   targets?: string[]
-  // condition options, additional events required for condition to be activated
+  // condition options (sub-conditions), additional events required for condition to be activated
+  //
+  //  Conditions are comprised of one or more sub-conditions.
+  //  Sub-conditions are comprised of categories and outcomes.
+  //  Sub-conditions must all be true at the same time in order for the condition to be true.
+  //  In the Coca Cola advertisement example:
+  //  Event Trigger 3 has 1 condition with 2 sub-conditions.
+  //  Team pitching = Yankees; Pitch Outcome = Strikeout | at the same time | Game condition = 8th inning
   options: TriggerConditionOption[]
   // current value read from event
   current?: string
