@@ -5,13 +5,13 @@ import { Sport } from '../../models/events/sport'
 
 export const limits: Record<string, EventLimit> = {
   [BaseballEvents.InningNumber]: {
-    label: "Limit per inning",
+    label: "per inning",
     description: "Should occur N times per inning",
     finite: false,
     sport: Sport.Baseball
   },
   [BaseballEvents.InningHalf]: {
-    label: "Limit per inning half",
+    label: "per inning half",
     description: "Should occur N times per inning half",
     finite: false,
     sport: Sport.Baseball

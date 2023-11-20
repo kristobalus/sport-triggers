@@ -4,7 +4,7 @@ import { Sport } from '../../models/events/sport'
 
 export const limits: Record<string, EventLimit> = {
   [BasketballEvents.Sequence]: {
-    label: "Limit per sequence",
+    label: "per sequence",
     description: "Should occur N times per sequence",
     finite: false,
     sport: Sport.Basketball
