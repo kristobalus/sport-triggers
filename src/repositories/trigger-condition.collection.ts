@@ -8,6 +8,7 @@ import { TriggerCondition, TriggerConditionOption } from '../models/entities/tri
 import { assertNoError, createArrayFromHGetAll } from '../utils/pipeline-utils'
 import { getEventUri } from '../models/events/event-uri'
 import { metadata as metadataDictionary } from '../sports'
+import assert from 'assert'
 
 export function conditionSetByTriggerKey(triggerId: string) {
   return `triggers/${triggerId}/conditions`
@@ -120,6 +121,8 @@ export function validateOption(
   // parent condition
   condition: Partial<TriggerCondition>,
 ) {
+  assert(option.event, `event should be defined`)
+
   if (!metadataDictionary[option.event]) {
     throw new ArgumentError(`Metadata not defined for event ${option.event}`)
   }
@@ -169,6 +172,12 @@ export function validateOption(
   if (!option.compare) {
     if (optionMetadata.defaultCompare) {
       option.compare = optionMetadata.defaultCompare
+    }
+  }
+
+  for (const item of condition.options) {
+    if ( item.event === option.event ) {
+      assert.deepEqual(item, option)
     }
   }
 
