@@ -75,7 +75,10 @@ export const metadata: Record<string, EventMetadata> = {
     primary: true,
     childOptions: [
       // see basic scenarios
-      BaseballEvents.AtBatOutcome
+      BaseballEvents.AtBatOutcome,
+      BaseballEvents.PitchOutcome,
+      BaseballEvents.PitchType,
+      BaseballEvents.PitchSpeed,
     ],
     compare: [
       // at least one out of...
@@ -101,6 +104,7 @@ export const metadata: Record<string, EventMetadata> = {
     primary: true,
     childOptions: [
       // see basic scenarios
+      BaseballEvents.AtBatOutcome,
       BaseballEvents.PitchOutcome,
       BaseballEvents.PitchType,
       BaseballEvents.PitchSpeed,
@@ -129,7 +133,10 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     childOptions: [
       // see basic scenario
-      BaseballEvents.AtBatOutcome
+      BaseballEvents.AtBatOutcome,
+      BaseballEvents.PitchOutcome,
+      BaseballEvents.PitchType,
+      BaseballEvents.PitchSpeed,
     ],
     targets: [
       // deliberately left empty here,
@@ -151,6 +158,7 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     childOptions: [
       // see basic scenarios
+      BaseballEvents.AtBatOutcome,
       BaseballEvents.PitchOutcome,
       BaseballEvents.PitchType,
       BaseballEvents.PitchSpeed,
