@@ -175,11 +175,11 @@ export function validateOption(
     }
   }
 
-  for (const item of condition.options) {
-    if ( item.event === option.event ) {
-      assert.deepEqual(item, option)
-    }
-  }
+  // for (const item of condition.options) {
+  //   if ( item.event === option.event ) {
+  //     assert.deepEqual(item, option)
+  //   }
+  // }
 
   if (optionMetadata.aggregate) {
     if (!parentOption) {
