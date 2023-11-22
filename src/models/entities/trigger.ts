@@ -24,8 +24,6 @@ export interface Trigger {
   disabled?: boolean
   // flag to show that parent entity is disabled and trigger should be ignored in processing
   disabledEntity?: boolean
-  // flag to use or not global entity limits (applied to all triggers inside entity)
-  useEntityLimits?: boolean
   // flag to use or not trigger limits
   useLimits?: boolean
   // minimum number of conditions to be activated in order to consider trigger as activated

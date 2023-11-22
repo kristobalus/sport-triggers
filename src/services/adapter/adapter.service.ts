@@ -288,7 +288,9 @@ export class AdapterService {
   private getLimitFactories(trigger: Trigger) {
     const factories = []
 
-    if (trigger.useEntityLimits) {
+    const useEntityLimits = this.entityLimitCollection.isEnabled(trigger.entity, trigger.entityId)
+
+    if (useEntityLimits) {
       factories.push({
         limits: async (trigger: Trigger) => {
           return this.entityLimitCollection.getLimits(trigger.entity, trigger.entityId)
