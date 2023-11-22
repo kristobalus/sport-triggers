@@ -4,6 +4,7 @@ import { ActionTransport, ServiceRequest } from '@microfleet/plugin-router'
 import { FleetApp } from '../../../fleet-app'
 import { EntityGetLimitsRequest } from '../../../models/dto/entity-get-limits-request'
 import { EntityGetLimitsResponse } from '../../../models/dto/entity-get-limits-response'
+import { allowSignedRequest } from '../../../plugins/signed-request.plugin'
 
 async function Handler(this: FleetApp, request: ServiceRequest): Promise<any> {
   const { entity, entityId } = request.params as unknown as EntityGetLimitsRequest
@@ -15,7 +16,8 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<any> {
 }
 
 Handler.schema = 'studio.entity.get-limits'
-Handler.transports = [ActionTransport.amqp]
+Handler.allowed = allowSignedRequest
+Handler.transports = [ActionTransport.amqp, ActionTransport.http]
 
 export = Handler
 

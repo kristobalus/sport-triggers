@@ -1,0 +1,14 @@
+{
+    "$id": "studio.entity.get-limits",
+    "type": "object",
+    "properties": {
+        "entity": {
+            "type": "string"
+        },
+        "entityId": {
+            "type": "string"
+        }
+    },
+    "additionalProperties": false,
+    "required": ["entity", "entityId"]
+}
