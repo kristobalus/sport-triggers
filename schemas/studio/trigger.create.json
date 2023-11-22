@@ -40,7 +40,7 @@
                 }
             },
             "additionalProperties": false,
-            "required": ["name", "description","scope", "scopeId", "entity", "entityId"]
+            "required": ["scope", "scopeId", "entity", "entityId"]
         },
         "conditions": {
             "type": "array",
@@ -79,8 +79,7 @@
                         }
                     }
                 },
-                "additionalProperties": false,
-                "required": ["event", "compare","targets"]
+                "additionalProperties": false
             }
         },
         "limits": {
