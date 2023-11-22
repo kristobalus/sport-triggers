@@ -6,10 +6,10 @@ import { EntitySetLimitsRequest } from '../../../models/dto/entity-set-limits-re
 import { allowSignedRequest } from '../../../plugins/signed-request.plugin'
 
 async function Handler(this: FleetApp, request: ServiceRequest): Promise<any> {
-  const { entity, entityId, limits } = request.params as unknown as EntitySetLimitsRequest
+  const { entity, entityId, limits, enabled } = request.params as unknown as EntitySetLimitsRequest
   const { studioService } = this
 
-  await studioService.setEntityLimits(entity, entityId, limits)
+  await studioService.setEntityLimits(entity, entityId, limits, enabled)
 
   return {}
 }

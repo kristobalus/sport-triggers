@@ -322,13 +322,44 @@ export class StudioService {
     return true
   }
 
-  async setEntityLimits(entity: string, entityId: string, limits: Record<string, number | string>) : Promise<boolean> {
+  async setEntityLimits(
+    entity: string,
+    entityId: string,
+    limits: Record<string, number | string>,
+    enabled: boolean
+  ) : Promise<boolean> {
     await this.entityLimitCollection.setLimits(entity, entityId, limits)
+
+    if ( enabled ) {
+      await this.entityLimitCollection.enableLimits(entity, entityId)
+    } else {
+      await this.entityLimitCollection.disableLimits(entity, entityId)
+    }
+
+    return true
+  }
+
+  async setEntityLimitsEnabled(
+    entity: string,
+    entityId: string,
+    enabled: boolean
+  ) : Promise<boolean> {
+
+    if ( enabled ) {
+      await this.entityLimitCollection.enableLimits(entity, entityId)
+    } else {
+      await this.entityLimitCollection.disableLimits(entity, entityId)
+    }
+
     return true
   }
 
   async getEntityLimits(entity: string, entityId: string) : Promise<Record<string, number>> {
     return await this.entityLimitCollection.getLimits(entity, entityId)
+  }
+
+  async isEntityLimitsEnabled(entity: string, entityId: string) : Promise<boolean> {
+    return await this.entityLimitCollection.isEnabled(entity, entityId)
   }
 
   async disableEntity(entity: string, entityId: string) {

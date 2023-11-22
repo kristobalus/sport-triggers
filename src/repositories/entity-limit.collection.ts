@@ -7,6 +7,10 @@ export function keyLimitHashTable(entity: string, entityId: string) {
   return `entity-limits/${entity}/${entityId}/limit`
 }
 
+export function keyLimitEnabled(entity: string, entityId: string) {
+  return `entity-limits/${entity}/${entityId}/enabled`
+}
+
 export function keyCountSnapshotSet(
   entity: string,
   entityId: string,
@@ -61,6 +65,19 @@ export class EntityLimitCollection {
       limits[event] = parseInt(limits[event], 10) as any
     }
     return limits as any as Record<string, number>
+  }
+
+  async enableLimits(entity: string, entityId: string) {
+    await this.redis.set(keyLimitEnabled(entity, entityId), "true")
+  }
+
+  async disableLimits(entity: string, entityId: string) {
+    await this.redis.set(keyLimitEnabled(entity, entityId), "false")
+  }
+
+  async isEnabled(entity: string, entityId: string) : Promise<boolean> {
+    const result = await this.redis.get(keyLimitEnabled(entity, entityId))
+    return result === "true"
   }
 
   async getCounts(entity: string, entityId: string) : Promise<Record<string, number>> {
