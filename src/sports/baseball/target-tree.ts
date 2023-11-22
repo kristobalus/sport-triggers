@@ -94,11 +94,13 @@ export const targetTree: StudioTargetTree = {
     },
 
     [AtBatOutcomeState.X1]: {
-      label: 'X1'
+      label: 'X1',
+      description: 'Single'
     },
 
     [AtBatOutcomeState.X2]: {
-      label: 'X2'
+      label: 'X2',
+      description: 'Double'
     },
 
     [AtBatOutcomeState.X3]: {

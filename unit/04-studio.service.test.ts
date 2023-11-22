@@ -140,6 +140,8 @@ describe('StudioService', function () {
   it(`studio should create subscription for trigger`, async () => {
 
     const data: EssentialSubscriptionData = {
+      entity: "question",
+      entityId: "1",
       route: 'some.route',
       payload: { foo: 'bar' },
     }

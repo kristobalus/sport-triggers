@@ -73,7 +73,7 @@ export const metadata: Record<string, EventMetadata> = {
     input: StudioInputs.SelectMulti,
     type: ConditionType.String,
     primary: true,
-    preferredOptions: [
+    childOptions: [
       // see basic scenarios
       BaseballEvents.AtBatOutcome
     ],
@@ -99,11 +99,11 @@ export const metadata: Record<string, EventMetadata> = {
     input: StudioInputs.SelectMulti,
     type: ConditionType.String,
     primary: true,
-    preferredOptions: [
+    childOptions: [
       // see basic scenarios
       BaseballEvents.PitchOutcome,
       BaseballEvents.PitchType,
-      BaseballEvents.PitchSpeed
+      BaseballEvents.PitchSpeed,
     ],
     compare: [
       // at least one out of...
@@ -127,7 +127,7 @@ export const metadata: Record<string, EventMetadata> = {
       // at least one out of...
       CompareOp.In
     ],
-    preferredOptions: [
+    childOptions: [
       // see basic scenario
       BaseballEvents.AtBatOutcome
     ],
@@ -149,9 +149,11 @@ export const metadata: Record<string, EventMetadata> = {
       // at least one out of...
       CompareOp.In
     ],
-    preferredOptions: [
+    childOptions: [
       // see basic scenarios
-      BaseballEvents.PitchOutcome
+      BaseballEvents.PitchOutcome,
+      BaseballEvents.PitchType,
+      BaseballEvents.PitchSpeed,
     ],
     targets: [
       // deliberately left empty here,
@@ -274,7 +276,7 @@ export const metadata: Record<string, EventMetadata> = {
     label: 'Pitch Outcome',
     input: StudioInputs.SelectMulti,
     type: ConditionType.String,
-    primary: true,
+    primary: false,
     compare: [
       // at least one out of...
       CompareOp.In
@@ -292,7 +294,7 @@ export const metadata: Record<string, EventMetadata> = {
     label: 'Pitch speed',
     input: StudioInputs.SelectMulti,
     type: ConditionType.String,
-    primary: true,
+    primary: false,
     compare: [
       CompareOp.In
     ],
@@ -309,7 +311,7 @@ export const metadata: Record<string, EventMetadata> = {
     label: 'Pitch type',
     input: StudioInputs.SelectMulti,
     type: ConditionType.String,
-    primary: true,
+    primary: false,
     compare: [
       // at least one out of...
       CompareOp.In
@@ -327,7 +329,7 @@ export const metadata: Record<string, EventMetadata> = {
     label: 'AtBat Outcome',
     input: StudioInputs.SelectMulti,
     type: ConditionType.String,
-    primary: true,
+    primary: false,
     compare: [
       CompareOp.In
     ],

@@ -174,13 +174,32 @@ describe('Disabled triggers', function () {
     })
   }
 
+  async function enableTrigger(ctx: SuiteContext) {
+    const { amqpPrefix } = ctx
+    await ctx.app.amqp.publishAndWait(`${amqpPrefix}.studio.trigger.enable`, {
+      id: ctx.triggerId
+    } as TriggerDisableRequest)
+  }
+
+  async function enableEntity(ctx: SuiteContext) {
+    const { amqpPrefix } = ctx
+    await ctx.app.amqp.publishAndWait(`${amqpPrefix}.studio.entity.enable`, {
+      entities: [
+        {
+          entity: ctx.trigger.entity,
+          entityId: ctx.trigger.entityId
+        }
+      ]
+    })
+  }
+
   before(async () => {
     await startContext(ctx, {
       logger: {
         debug: true,
         prettifyDefaultLogger: true,
         options: {
-          level: 'trace',
+          level: 'debug',
         },
       },
     } as Partial<CoreOptions>)
@@ -208,6 +227,20 @@ describe('Disabled triggers', function () {
     const { trigger } = await getTriggerWithConditions(ctx.triggerId)
     ctx.app.log.debug({ trigger }, 'trigger status')
     assert.equal(trigger.disabledEntity, true)
+  })
+
+  it('should enable trigger', async () => {
+    await enableTrigger(ctx)
+    const { trigger } = await getTriggerWithConditions(ctx.triggerId)
+    ctx.app.log.debug({ trigger }, 'trigger status')
+    assert.equal(trigger.disabled, false)
+  })
+
+  it('should enable entity', async () => {
+    await enableEntity(ctx)
+    const { trigger } = await getTriggerWithConditions(ctx.triggerId)
+    ctx.app.log.debug({ trigger }, 'trigger status')
+    assert.equal(trigger.disabledEntity, false)
   })
 
 

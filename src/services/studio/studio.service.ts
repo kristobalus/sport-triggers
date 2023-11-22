@@ -102,7 +102,7 @@ export class StudioService {
 
       this.log.fatal({ err }, 'failed to create condition instance')
 
-      throw new ArgumentError('failed to create trigger', err)
+      throw new ArgumentError('failed to create trigger condition', err)
     }
 
     if ( limits  ) {
@@ -265,8 +265,8 @@ export class StudioService {
   }
 
   async updateTrigger(
-    triggerUpdate: Trigger,
-    conditionsUpdate: TriggerCondition[],
+    triggerUpdate: Partial<Trigger>,
+    conditionsUpdate: Partial<TriggerCondition>[] = [],
     limits?: Record<string, number>) {
 
     assert(triggerUpdate.id)

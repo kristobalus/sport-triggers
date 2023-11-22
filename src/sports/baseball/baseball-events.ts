@@ -82,21 +82,25 @@ export enum AtBatOutcomeState {
   "baseball.score.differential"		situation['subevent']['score_home'] - situation['subevent']['score_away'],
  */
 export enum BaseballEvents {
-  InningNumber = 'baseball.inningNumber',
-  InningHalf = 'baseball.inningHalf',
+  // category
   PlayerBatter = 'baseball.player.batter',
   PlayerPitcher = 'baseball.player.pitcher',
   TeamBatter = 'baseball.team.batter',
   TeamPitcher = 'baseball.team.pitcher',
+  // outcomes
+  AtBatOutcome = 'baseball.atbat.outcomes',
+  PitchOutcome = 'baseball.pitch.outcomes',
+  PitchType = 'baseball.pitch.type',
+  PitchSpeed = 'baseball.pitch.speed',
+  // game states
+  InningNumber = 'baseball.inningNumber',
+  InningHalf = 'baseball.inningHalf',
   ScoreHome = 'baseball.score.home',
   ScoreAway = 'baseball.score.away',
   GameStateStrikes = 'baseball.game.state.strikes',
   GameStateBalls = 'baseball.game.state.balls',
   GameStateOut = 'baseball.game.state.outs',
   GameStatePitches = 'baseball.game.state.pitches',
+  // unknown
   ScoreDifferential = 'baseball.score.differential',
-  AtBatOutcome = 'baseball.atbat.outcomes',
-  PitchOutcome = 'baseball.pitch.outcomes',
-  PitchSpeed = 'baseball.pitch.speed',
-  PitchType = 'baseball.pitch.type',
 }

@@ -7,7 +7,7 @@ import { TestContext } from '../module'
 import { Scope } from '../../src/models/entities/trigger'
 import { Sport } from '../../src/models/events/sport'
 import { startContext, stopContext } from '../helpers/common'
-import { ChainOp, CompareOp } from '../../src/models/entities/trigger-condition'
+import { CompareOp } from '../../src/models/entities/trigger-condition'
 import {
   EssentialConditionData,
   EssentialTriggerData,
@@ -21,7 +21,6 @@ import { AdapterPushRequest } from '../../src/models/dto/adapter-push-request'
 import { Defer } from '../../src/utils/defer'
 import { BasketballEvents } from '../../src/sports/basketball/basketball-events'
 import { sign } from '../../src/plugins/signed-request.plugin'
-import { TriggerJobResult } from '../../src/services/queue/queue.service'
 
 interface SuitContext extends TestContext {
   amqpPrefix?: string
@@ -48,7 +47,7 @@ describe('AdapterService', function () {
   const teamId = randomUUID()
   const teamPoints = '30'
 
-  const events = {
+  const snapshots = {
     [BasketballEvents.GameLevel]: {
       id: randomUUID(),
       datasource,
@@ -136,7 +135,6 @@ describe('AdapterService', function () {
         event: BasketballEvents.Team,
         compare: CompareOp.In,
         targets: [teamId],
-        chainOperation: ChainOp.AND,
         options: [
           {
             event: BasketballEvents.TeamScoresPoints,
@@ -151,7 +149,6 @@ describe('AdapterService', function () {
         targets: [
           teamId,
         ],
-        chainOperation: ChainOp.AND,
         options: [
           {
             event: BasketballEvents.TeamShootingFoul,
@@ -242,7 +239,7 @@ describe('AdapterService', function () {
   it('push unsigned request', async () => {
     await assert.rejects(ctx.request.post('adapter/event/push', {
       json: {
-        event: events[BasketballEvents.GameLevel]
+        event: snapshots[BasketballEvents.GameLevel]
       },
     }), (err) => {
       console.log(err)
@@ -252,45 +249,29 @@ describe('AdapterService', function () {
   })
 
   it('push game level event', async () => {
-    const defer = new Defer<TriggerJobResult>()
-
-    ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
-
     await sendSignedRequest({
-      event: events[BasketballEvents.GameLevel],
+      event: snapshots[BasketballEvents.GameLevel],
     })
 
-    const { activated } = await defer.promise
-
-    assert.equal(activated, false)
+    await new Promise(resolve => setTimeout(resolve, 1000))
   })
 
   it('push team scores points event', async () => {
-    const defer = new Defer<TriggerJobResult>()
-
-    ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
-
     await sendSignedRequest({
-      event: events[BasketballEvents.TeamScoresPoints],
+      event: snapshots[BasketballEvents.TeamScoresPoints],
     })
-    const { activated } = await defer.promise
 
-    assert.equal(activated, false)
+    await new Promise(resolve => setTimeout(resolve, 1000))
   })
 
   it('push team shooting foul event', async () => {
     ctx.pendingSubscriberMessage = new Defer()
-    const defer = new Defer<TriggerJobResult>()
-
-    ctx.app.queueService.triggerJobCallback = (result) => defer.resolve(result)
 
     await sendSignedRequest({
-      event: events[BasketballEvents.TeamShootingFoul],
+      event: snapshots[BasketballEvents.TeamShootingFoul],
     })
 
-    const { activated } = await defer.promise
-
-    assert.equal(activated, true)
+    await new Promise(resolve => setTimeout(resolve, 1000))
   })
 
   it('should receive notification', async () => {

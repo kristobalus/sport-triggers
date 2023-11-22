@@ -4,9 +4,8 @@ import { Microfleet } from '@microfleet/core-types'
 import { Worker, Job, Queue } from 'bullmq'
 import { RedisOptions } from 'ioredis'
 
-import { ScopeSnapshot } from '../../models/events/scope-snapshot'
+import { getEventUriListBySnapshot, ScopeSnapshot } from '../../models/events/scope-snapshot'
 import { AdapterService } from '../adapter/adapter.service'
-import { EventSnapshot } from '../../models/events/event-snapshot'
 
 export function getQueueRedisConfig(config: RedisConfig): RedisOptions {
   return {
@@ -16,16 +15,16 @@ export function getQueueRedisConfig(config: RedisConfig): RedisOptions {
 }
 
 export interface StoreJob {
-  scopeSnapshot: ScopeSnapshot
+  snapshot: ScopeSnapshot
 }
 
 export interface EventJob {
-  eventSnapshot: EventSnapshot
+  snapshot: ScopeSnapshot
 }
 
 export interface TriggerJob {
   triggerId: string
-  eventSnapshot: EventSnapshot
+  snapshot: ScopeSnapshot
 }
 
 export interface NotificationJob {
@@ -55,18 +54,10 @@ export class QueueService {
   /**
    * @description this sole purpose of  this callback is serving results for tests
    */
-  public eventSnapshotJobCallback?: (result) => any
-
-  /**
-   * @description this sole purpose of  this callback is serving results for tests
-   */
   public storeJobCallback?: (result) => any
 
   private storeQueue: Queue
   private storeWorker: Worker
-
-  private eventQueue: Queue
-  private eventWorker: Worker
 
   private triggerQueue: Queue
   private triggerWorker: Worker
@@ -87,6 +78,10 @@ export class QueueService {
       connection: redisOptions,
     })
 
+    this.storeQueue.on("error", (err) => {
+      this.log.trace({ err }, `error in store queue`)
+    })
+
     this.triggerQueue = new Queue('triggers', {
       defaultJobOptions: {
         removeOnComplete: true,
@@ -95,12 +90,8 @@ export class QueueService {
       connection: redisOptions,
     })
 
-    this.eventQueue = new Queue('events', {
-      defaultJobOptions: {
-        removeOnComplete: true,
-        removeOnFail: false,
-      },
-      connection: redisOptions,
+    this.triggerQueue.on("error", (err) => {
+      this.log.trace({ err }, `error in trigger queue`)
     })
 
     this.notificationQueue = new Queue('notifications', {
@@ -111,24 +102,14 @@ export class QueueService {
       connection: redisOptions,
     })
 
+    this.notificationQueue.on("error", (err) => {
+      this.log.trace({ err }, `error in notification queue`)
+    })
+
     this.storeWorker = new Worker('store',
       async (job: Job) => {
         try {
           await this.onStoreScopeSnapshotJob(job)
-        } catch (err) {
-          log.error(err)
-          throw err
-        }
-      },
-      {
-        connection: redisOptions,
-        concurrency: 1
-      })
-
-    this.eventWorker = new Worker('events',
-      async (job: Job) => {
-        try {
-          await this.onEventSnapshotJob(job)
         } catch (err) {
           log.error(err)
           throw err
@@ -169,7 +150,7 @@ export class QueueService {
   }
 
   async addScopeSnapshot(snapshot: ScopeSnapshot) {
-    await this.storeQueue.add('store', { scopeSnapshot: snapshot } as StoreJob)
+    await this.storeQueue.add('store', { snapshot } as StoreJob)
     this.log.debug({ snapshot }, 'snapshot scheduled for storing')
   }
 
@@ -178,57 +159,31 @@ export class QueueService {
    * @param job
    */
   async onStoreScopeSnapshotJob(job: Job<StoreJob>) {
-    const { scopeSnapshot } = job.data
-    const { adapterService } = this
+    const { adapterService, triggerQueue } = this
+    const { snapshot } = job.data
 
-    const jobs = []
+    if (await adapterService.hasTriggers(snapshot)) {
+      this.log.debug({ id: job.id, snapshot }, 'at least one trigger is interested in the snapshot')
 
-    for (const [name, value] of Object.entries(scopeSnapshot.options)) {
-      const event = { ...scopeSnapshot, name, value } as EventSnapshot
+      const uris = getEventUriListBySnapshot(snapshot)
+      for( const uri of uris) {
+        for await (const triggers of adapterService.getTriggersByUri(uri)) {
+          if ( triggers.length ) {
+            this.log.debug({ triggers, uri, snapshot }, 'trigger list from db')
 
-      if (await adapterService.hasTriggers(event)) {
-        jobs.push({ name: 'evaluate', data: { eventSnapshot: event } as EventJob })
+            const jobs = triggers.map((trigger) => ({
+              name: 'evaluate',
+              data: { triggerId: trigger.id, snapshot } as TriggerJob }))
+
+            await triggerQueue.addBulk(jobs)
+          }
+        }
       }
     }
 
-    if (jobs.length > 0) {
-      // store adapter event in game log
-      await this.adapterService.storeScopeSnapshot(scopeSnapshot)
-      await this.eventQueue.addBulk(jobs)
-      this.log.debug({ count: jobs.length  }, 'event jobs scheduled')
-    }
-
-    this.log.debug({ scopeSnapshot: scopeSnapshot }, 'store job completed')
+    this.log.debug({ snapshot }, 'store job completed')
 
     this.storeJobCallback?.({ result: true, job })
-  }
-
-  /**
-   * @description generates a set of event snapshots out of scope snapshot
-   * @param job
-   */
-  async onEventSnapshotJob(job: Job<EventJob>) {
-    const { adapterService, triggerQueue } = this
-    const { eventSnapshot } = job.data
-
-    this.log.debug({ id: job.id, snapshot: eventSnapshot }, 'there is definitely a trigger interested in the event, event job started')
-
-    // trigger processing
-    if (await adapterService.hasTriggers(eventSnapshot)) {
-      for await (const triggers of adapterService.getTriggersBySnapshot(eventSnapshot)) {
-        this.log.debug({ triggers, eventSnapshot }, 'trigger list from db')
-
-        const jobs = triggers.map((trigger) => ({
-          name: 'evaluate',
-          data: { triggerId: trigger.id, eventSnapshot } as TriggerJob }))
-
-        await triggerQueue.addBulk(jobs)
-      }
-    }
-
-    this.log.debug({ id: job.id }, 'event snapshot generation job completed')
-
-    this.eventSnapshotJobCallback?.({ result: true, job })
   }
 
   /**
@@ -236,14 +191,14 @@ export class QueueService {
    * @param job
    */
   async onTriggerJob(job: Job<TriggerJob>) {
-    const { triggerId, eventSnapshot } = job.data
+    const { triggerId, snapshot } = job.data
 
-    this.log.debug({ id: job.id, name: job.name, triggerId, eventSnapshot }, 'trigger job started')
+    this.log.debug({ job }, 'trigger job started')
 
-    const activated = await this.adapterService.evaluateTrigger(eventSnapshot, triggerId)
+    const activated = await this.adapterService.evaluateTrigger(snapshot, triggerId)
 
     if ( activated ) {
-      await this.notificationQueue.add('notify', { triggerId, reason: eventSnapshot.id } as NotificationJob)
+      await this.notificationQueue.add('notify', { triggerId, reason: snapshot.id } as NotificationJob)
     }
 
     this.log.debug({ id: job.id, name: job.name, triggerActivated: activated }, 'trigger job completed')
@@ -271,11 +226,9 @@ export class QueueService {
    */
   async close() {
     await this.storeQueue.close()
-    await this.eventQueue.close()
     await this.triggerQueue.close()
     await this.notificationQueue.close()
     await this.storeWorker.close()
-    await this.eventWorker.close()
     await this.triggerWorker.close()
     await this.notificationWorker.close()
   }

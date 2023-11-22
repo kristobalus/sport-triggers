@@ -30,6 +30,17 @@ export function getStrArr(pipeRes: PipelineResult<string[]>, defaultValue?: stri
   return arr ?? defaultValue
 }
 
+export function createObjectFromArray(data) {
+
+  const result = {}
+  do {
+    const key = data.shift()
+    result[key] = data.shift()
+  } while(data.length > 0 )
+
+  return result
+}
+
 /**
  * @param pipeRes
  * @param fields

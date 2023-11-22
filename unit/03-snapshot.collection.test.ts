@@ -24,7 +24,7 @@ export function parse(result): AggregateResult {
   return reduced
 }
 
-describe("EventCollection", function () {
+describe("SnapshotCollection", function () {
 
   // const datasource = "sportradar"
   // const scope = Scope.Game
@@ -37,8 +37,8 @@ describe("EventCollection", function () {
     triggerId?: string
     trigger?: Trigger
     redis?: Redis
-    events?: ScopeSnapshotCollection
-    eventId?: string
+    snapshotCollection?: ScopeSnapshotCollection
+    snapshotId?: string
     scopeId?: string
     playerId? :string
     playerId2? :string
@@ -48,11 +48,11 @@ describe("EventCollection", function () {
   before(async () => {
     ctx.log = pino({ name: "test", level: "trace" })
     ctx.redis = new IORedis()
-    ctx.events = new ScopeSnapshotCollection(ctx.redis)
+    ctx.snapshotCollection = new ScopeSnapshotCollection(ctx.redis)
     ctx.scopeId = randomUUID()
     ctx.playerId = randomUUID()
     ctx.teamId = randomUUID()
-    ctx.eventId = randomUUID()
+    ctx.snapshotId = randomUUID()
     await ctx.redis.flushall()
   })
 
@@ -61,32 +61,35 @@ describe("EventCollection", function () {
     await new Promise(r => setTimeout(r, 1000))
   })
 
-
-  it('should executeQuery', async () => {
+  it('should execute query', async () => {
     const query = [
       "ft.create", "index", "on", "json",
       "prefix", "1", "event:",
       "schema",
       "$.id", "as", "id", "tag",
       "$.timestamp", "as", "timestamp", "numeric", "sortable",
-      "$.options.[basketball.team.scores.3fg]", "as", "team_scores_3fg", "tag",
+      `$.options.[basketball.team.scores.3fg]`, "as", "team_scores_3fg", "tag",
       "$.options.[basketball.team]", "as", "team", "tag",
       "$.events", "as", "events", "tag"
     ]
-    const result = await ctx.events.execute(["ft._list"])
+    const result = await ctx.snapshotCollection.execute(["ft._list"])
     ctx.log.debug(result)
-    const result2 = await ctx.events.execute(query)
+
+    const result2 = await ctx.snapshotCollection.execute(query)
     ctx.log.debug(result2)
-    const result3 = await ctx.events.execute(["ft._list"])
+
+    const result3 = await ctx.snapshotCollection.execute(["ft._list"])
     ctx.log.debug(result3)
+
     await assert.rejects(async () => {
-      await ctx.events.execute(query)
+      await ctx.snapshotCollection.execute(query)
     }, (err: Error) => {
       ctx.log.debug(err.message)
       assert.equal(err.message, "Index already exists")
       return true
     })
-    await ctx.events.dropIndex("index")
+
+    await ctx.snapshotCollection.dropIndex("index")
   })
 
   it('should createIndex', async () => {
@@ -94,7 +97,7 @@ describe("EventCollection", function () {
     const sport = "basketball"
     const scope = "game"
     const scopeId = ctx.scopeId
-    const result = await ctx.events.createIndex(datasource, sport, scope, scopeId)
+    const result = await ctx.snapshotCollection.createIndex(datasource, sport, scope, scopeId)
     assert.equal(result, true)
   })
 
@@ -106,8 +109,9 @@ describe("EventCollection", function () {
     const player = ctx.playerId
     const team = ctx.teamId
 
-    const result1 = await ctx.events.append({
-      id: ctx.eventId,
+    // should add one snapshot
+    const result1 = await ctx.snapshotCollection.append({
+      id: ctx.snapshotId,
       datasource,
       scope,
       scopeId,
@@ -123,7 +127,9 @@ describe("EventCollection", function () {
     assert.equal(result1, true)
 
     ctx.playerId2 = randomUUID()
-    const result2 = await ctx.events.append({
+
+    // should add second snapshot
+    const result2 = await ctx.snapshotCollection.append({
       id: randomUUID(),
       datasource,
       scope,
@@ -137,11 +143,16 @@ describe("EventCollection", function () {
         [BasketballEvents.TeamScores3FG]: team
       }
     } as ScopeSnapshot)
+
     assert.equal(result2, true)
 
-    const result3 = await ctx.events.execute(["ft._list"])
+    // at least one index exists
+    const result3 = await ctx.snapshotCollection.execute(["ft._list"])
     ctx.log.debug(result3)
     assert.equal(result3.length , 1)
+
+    const count = await ctx.snapshotCollection.count(datasource, sport, scope, scopeId)
+    assert.equal(count, 2)
   })
 
   it('should get event', async () => {
@@ -149,7 +160,7 @@ describe("EventCollection", function () {
     const sport = "basketball"
     const scope = "game"
 
-    const result = await ctx.events.getItem(datasource, sport, scope, ctx.scopeId, ctx.eventId)
+    const result = await ctx.snapshotCollection.getItem(datasource, sport, scope, ctx.scopeId, ctx.snapshotId)
     ctx.log.debug(JSON.stringify(result, null ,2))
   })
 
@@ -162,7 +173,7 @@ describe("EventCollection", function () {
 
     ctx.log.debug(query)
 
-    const { count } = parse(await ctx.events.execute(query))
+    const { count } = parse(await ctx.snapshotCollection.execute(query))
 
     ctx.log.debug({ count }, `after aggregation`)
   })

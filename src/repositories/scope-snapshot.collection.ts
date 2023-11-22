@@ -1,7 +1,8 @@
 import { Redis } from 'ioredis'
 
 import { ScopeSnapshot } from '../models/events/scope-snapshot'
-import * as Basketball from '../sports/basketball/redis-index'
+import { redisIndexQueryBuilders }  from '../sports'
+import { createObjectFromArray } from '../utils/pipeline-utils'
 
 export interface AggregateResult {
   [k: string]: string
@@ -12,16 +13,17 @@ export function getIndexName(datasource: string, sport: string, scope: string, s
 }
 
 export function getIndexPrefix(datasource: string, sport: string, scope: string, scopeId: string) {
-  return `json/${datasource}/${sport}/${scope}/${scopeId}/events/`
+  return `json/${datasource}/${sport}/${scope}/${scopeId}/snapshots/`
 }
 
-export function getSnapshotKey(datasource: string, sport: string, scope: string, scopeId: string, eventId: string) {
-  return `json/${datasource}/${sport}/${scope}/${scopeId}/events/${eventId}`
-}
-
-export function getSnapshotKeyByEntity(snapshot: ScopeSnapshot) {
-  const { datasource, sport, scope, scopeId, id: eventId } = snapshot
-  return getSnapshotKey(datasource, sport, scope, scopeId, eventId)
+export function getSnapshotKey(options: {
+  datasource: string,
+  sport: string,
+  scope: string,
+  scopeId: string,
+  snapshotId: string }) {
+  const { datasource, sport, scope, scopeId, snapshotId } = options
+  return `json/${datasource}/${sport}/${scope}/${scopeId}/snapshots/${snapshotId}`
 }
 
 export class ScopeSnapshotCollection {
@@ -48,34 +50,26 @@ export class ScopeSnapshotCollection {
   }
 
   async createIndex(datasource: string, sport: string, scope: string, scopeId: string): Promise<boolean> {
-    if ( sport == 'basketball' ) {
-      const indexName = getIndexName(datasource, sport, scope, scopeId)
+    const indexName = getIndexName(datasource, sport, scope, scopeId)
 
-      if ( !this.indices.has(indexName) ) {
-        const query = Basketball.getIndexQuery(datasource, scopeId)
+    const queryBuilder = redisIndexQueryBuilders[sport]
+    if ( queryBuilder && !this.indices.has(indexName) ) {
+      const query = queryBuilder(datasource, scopeId)
 
-        try {
-          await this.execute(query)
+      try {
+        await this.execute(query)
+        this.indices.set(indexName, true)
+      } catch (err) {
+        if ( err.message == 'Index already exists' ) {
           this.indices.set(indexName, true)
-        } catch (err) {
-          if ( err.message == 'Index already exists' ) {
-            this.indices.set(indexName, true)
-          } else {
-            throw err
-          }
+        } else {
+          throw err
         }
-
-        return true
-      } else {
-        return false
       }
-    }
-    else if ( sport == 'baseball' ) {
-      // doing nothing
+
+      return true
+    } else {
       return false
-    }
-    else {
-      throw new Error(`Unknown sport: ${sport}`)
     }
   }
 
@@ -86,18 +80,34 @@ export class ScopeSnapshotCollection {
 
     data.events = Object.keys(data.options)
 
-    const key = getSnapshotKey(datasource, sport, scope, scopeId, id)
+    const key = getSnapshotKey({ datasource, sport, scope, scopeId, snapshotId: id })
     const json = JSON.stringify(data)
     const result = await this.redis.send_command('json.set', key, '$', json)
 
     return result == 'OK'
   }
 
-  async getItem(datasource: string, sport: string, scope: string, scopeId: string, eventId: string): Promise<ScopeSnapshot> {
-    const key = getSnapshotKey(datasource, sport, scope, scopeId, eventId)
+  async getItem(
+    datasource: string,
+    sport: string,
+    scope: string,
+    scopeId: string,
+    snapshotId: string): Promise<ScopeSnapshot> {
+
+    const key = getSnapshotKey({ datasource, sport, scope, scopeId, snapshotId })
     const result = await this.redis.send_command('json.get', key, '$')
 
     return JSON.parse(result)
+  }
+
+  async getList() {
+    return await this.execute(["ft._list"])
+  }
+
+  async count(datasource: string, sport: string, scope: string, scopeId: string): Promise<number> {
+    const indexName = getIndexName(datasource, sport, scope, scopeId)
+    const data = createObjectFromArray(await this.execute(["ft.info", indexName]))
+    return data["num_docs"]
   }
 }
 

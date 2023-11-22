@@ -1,4 +1,5 @@
 import { Sport } from './sport'
+import { getEventUri } from './event-uri'
 
 export interface ScopeSnapshot {
   // datasource snapshot's id
@@ -16,4 +17,12 @@ export interface ScopeSnapshot {
   // event name -> event value
   options: Record<string, string | number>
   events?: string[]
+}
+
+export function getEventUriListBySnapshot(snapshot: ScopeSnapshot) {
+  const { datasource, scope, scopeId } = snapshot
+  return Object.entries(snapshot.options).map(entry => {
+    const [eventName] = entry
+    return getEventUri({ datasource, scope, scopeId, eventName })
+  })
 }

@@ -8,6 +8,9 @@ import { targetTree as basketballTargetTree } from './basketball/target-tree'
 import { limits as basketballLimits } from './basketball/limits'
 import { limits as baseballLimits } from './baseball/limits'
 import { limits as commonLimits } from './common-limits'
+import { Sport } from '../models/events/sport'
+
+import { getIndexQuery as BasketballIndexQuery } from './basketball/redis-index'
 
 export const metadata = {
   ...footballMetadata,
@@ -24,5 +27,9 @@ export const limits = {
   ...basketballLimits,
   ...baseballLimits,
   ...commonLimits
+}
+
+export const redisIndexQueryBuilders = {
+  [Sport.Basketball]: BasketballIndexQuery,
 }
 

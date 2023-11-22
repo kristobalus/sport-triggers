@@ -5,7 +5,6 @@ import pino from 'pino'
 import assert from 'assert'
 import pretty from 'pino-pretty'
 
-import { EventSnapshot } from '../src/models/events/event-snapshot'
 import { Scope, Trigger } from '../src/models/entities/trigger'
 import { AdapterService, AdapterServiceOptions } from '../src/services/adapter/adapter.service'
 import { AMQPTransport, Publish } from '@microfleet/transport-amqp'
@@ -23,17 +22,17 @@ import { Microfleet } from '@microfleet/core-types'
 import { TriggerLimitCollection } from '../src/repositories/trigger-limit.collection'
 import { ScopeSnapshotCollection } from '../src/repositories/scope-snapshot.collection'
 import { EntityLimitCollection } from '../src/repositories/entity-limit.collection'
-import { ScopeSnapshot } from '../src/models/events/scope-snapshot'
+import { getEventUriListBySnapshot, ScopeSnapshot } from '../src/models/events/scope-snapshot'
 import { Sport } from '../src/models/events/sport'
 import { CommonLimit, limits as CommonLimits } from '../src/sports/common-limits'
 
-interface TestContext {
+interface UnitTestContext {
   redis?: Redis,
   log?: Microfleet['log'],
   adapterService?: AdapterService,
   studioService?: StudioService,
   triggerCollection?: TriggerCollection
-  conditionCollection?: TriggerConditionCollection
+  triggerConditionCollection?: TriggerConditionCollection
   subscriptionCollection?: TriggerSubscriptionCollection
   triggerLimitCollection?: TriggerLimitCollection,
   snapshotCollection?: ScopeSnapshotCollection,
@@ -41,6 +40,7 @@ interface TestContext {
   notifications: any[],
   trigger?: Trigger,
   triggerId?: string
+  limits?: Record<string, number>
 }
 
 describe("AdapterService", function () {
@@ -51,12 +51,12 @@ describe("AdapterService", function () {
   const sport = Sport.Basketball
   const scope = Scope.Game
   const scopeId = randomUUID()
-  const entity = "moderation"
+  const entity = "question"
   const entityId = randomUUID()
   const homeId = randomUUID()
   const awayId = randomUUID()
 
-  const ctx: TestContext = {
+  const ctx: UnitTestContext = {
     notifications: [],
   }
 
@@ -86,7 +86,7 @@ describe("AdapterService", function () {
 
     ctx.log = log
     ctx.triggerCollection = new TriggerCollection(ctx.redis)
-    ctx.conditionCollection = new TriggerConditionCollection(ctx.redis)
+    ctx.triggerConditionCollection = new TriggerConditionCollection(ctx.redis)
     ctx.subscriptionCollection = new TriggerSubscriptionCollection(ctx.redis)
     ctx.triggerLimitCollection = new TriggerLimitCollection(ctx.redis)
     ctx.snapshotCollection = new ScopeSnapshotCollection(ctx.redis)
@@ -97,7 +97,7 @@ describe("AdapterService", function () {
       redis: ctx.redis,
       amqp,
       triggerCollection: ctx.triggerCollection,
-      conditionCollection: ctx.conditionCollection,
+      conditionCollection: ctx.triggerConditionCollection,
       subscriptionCollection: ctx.subscriptionCollection,
       triggerLimitCollection: ctx.triggerLimitCollection,
       scopeSnapshotCollection: ctx.snapshotCollection,
@@ -108,7 +108,7 @@ describe("AdapterService", function () {
       log,
       redis: ctx.redis,
       triggerCollection: ctx.triggerCollection,
-      conditionCollection: ctx.conditionCollection,
+      conditionCollection: ctx.triggerConditionCollection,
       subscriptionCollection: ctx.subscriptionCollection,
       triggerLimitCollection: ctx.triggerLimitCollection,
     } as StudioServiceOptions)
@@ -169,12 +169,15 @@ describe("AdapterService", function () {
       assert.ok(ctx.triggerId)
       assert.ok(ctx.trigger.id)
       assert.equal(ctx.triggerId, ctx.trigger.id)
-      const [ condition ] = await ctx.conditionCollection.getByTriggerId(ctx.triggerId)
+      const [ condition ] = await ctx.triggerConditionCollection.getByTriggerId(ctx.triggerId)
       assert.ok(condition)
-      assert.equal(condition.event, BasketballEvents.TeamShootingFoul)
-      const [ option ] = condition.options
-      assert.equal(option.event, BasketballEvents.Sequence)
-      assert.deepEqual(option.targets, ["2"])
+      assert.ok(condition.options)
+      const [ foulOption ] = condition.options.filter(option => option.event === BasketballEvents.TeamShootingFoul)
+      const [ sequenceOption ] = condition.options.filter(option => option.event === BasketballEvents.Sequence)
+      assert.ok(foulOption)
+      assert.ok(sequenceOption)
+      assert.deepEqual(foulOption.targets, [ homeId ])
+      assert.deepEqual(sequenceOption.targets, ["2"])
     })
 
     it(`should not activate trigger for TeamShootingFoul in Sequence 1`, async () => {
@@ -213,39 +216,24 @@ describe("AdapterService", function () {
         },
       }
 
-      await ctx.adapterService.storeScopeSnapshot(scopeSnapshot)
-
-      const event: EventSnapshot = {
-        name: BasketballEvents.TeamShootingFoul,
-        value: homeId,
-        ...scopeSnapshot
-      }
-
-      const result = await ctx.adapterService.evaluateTrigger(event, ctx.trigger.id)
+      const result = await processScopeSnapshot(ctx, scopeSnapshot)
       assert.equal(result, true)
     })
   })
 
-  const processScopeSnapshot = async (ctx: TestContext, snapshot: ScopeSnapshot) => {
+  const processScopeSnapshot = async (ctx: UnitTestContext, snapshot: ScopeSnapshot) => {
     ctx.log.debug({ snapshotId: snapshot.id }, `processing snapshot`)
 
     await ctx.adapterService.storeScopeSnapshot(snapshot)
 
-    for(const [name, value] of Object.entries(snapshot.options)) {
-      const eventSnapshot: EventSnapshot = {
-        ...{ name: name, value: String(value) },
-        ...snapshot,
-      }
+    const result = await ctx.adapterService.evaluateTrigger(snapshot, ctx.trigger.id)
 
-      const result = await ctx.adapterService.evaluateTrigger(eventSnapshot, ctx.trigger.id)
+    if (result) {
+      await ctx.adapterService.notify(ctx.triggerId, snapshot.id)
+    }
 
-      if (result) {
-        await ctx.adapterService.notify(ctx.triggerId, eventSnapshot.id)
-      }
-
-      if (result) {
-        return result
-      }
+    if (result) {
+      return result
     }
 
     return false
@@ -347,7 +335,7 @@ describe("AdapterService", function () {
           datasource,
           scope,
           scopeId,
-          sport: "basketball",
+          sport: Sport.Basketball,
           timestamp: Date.now(),
           options: {
             [BasketballEvents.TeamScores3FG]: homeId,
@@ -376,8 +364,8 @@ describe("AdapterService", function () {
       ctx.snapshotCollection.clearIndices()
 
       const triggerData: EssentialTriggerData = {
-        name: "...",
-        description: "...",
+        name: "...single condition loop trigger...",
+        description: "...single condition loop trigger...",
         datasource,
         scope,
         sport,
@@ -388,10 +376,12 @@ describe("AdapterService", function () {
 
       const conditionData: EssentialConditionData[] = [
         {
-          event: BasketballEvents.Team,
-          compare: CompareOp.In,
-          targets: [homeId],
           options: [
+            {
+              event: BasketballEvents.Team,
+              compare: CompareOp.In,
+              targets: [ homeId ],
+            },
             {
               event: BasketballEvents.TeamDunk,
               compare: CompareOp.In,
@@ -412,7 +402,7 @@ describe("AdapterService", function () {
       assert.equal(ctx.triggerId, ctx.trigger.id)
     })
 
-    it(`should be activated on first run`, async () => {
+    it(`should activate on first run`, async () => {
 
       const snapshots = [
         {
@@ -440,12 +430,12 @@ describe("AdapterService", function () {
       assert.equal(result, true)
     })
 
-    it(`should be reset to initial state after activation`, async () => {
-      const [ condition ] = await ctx.conditionCollection.getByTriggerId(ctx.triggerId)
+    it(`should reset condition to initial state after activation`, async () => {
+      const [ condition ] = await ctx.triggerConditionCollection.getByTriggerId(ctx.triggerId)
       assert.equal(condition.activated, false)
     })
 
-    it(`should not be activated on wrong event`, async () => {
+    it(`should not activate trigger on wrong run`, async () => {
 
       const snapshots = [
         {
@@ -469,7 +459,7 @@ describe("AdapterService", function () {
       }
     })
 
-    it(`should be activated  on second run`, async () => {
+    it(`should be activated on second run`, async () => {
 
       const snapshots = [
         {
@@ -513,42 +503,89 @@ describe("AdapterService", function () {
         scopeId,
         entity,
         entityId,
+        useLimits: true
       }
 
       const conditionData: EssentialConditionData[] = [
         {
-          event: BasketballEvents.Team,
-          compare: CompareOp.In,
-          targets: [homeId],
           options: [
+            {
+              event: BasketballEvents.Team,
+              compare: CompareOp.In,
+              targets: [ homeId ],
+            },
             {
               event: BasketballEvents.TeamDunk,
               compare: CompareOp.In,
               targets: [ homeId ],
             },
-          ],
+          ]
         },
       ]
 
-      const triggerId = await ctx.studioService.createTrigger(triggerData, conditionData)
-      const { trigger } = await ctx.studioService.getTrigger(triggerId)
+      ctx.triggerId = await ctx.studioService.createTrigger(triggerData, conditionData, {
+        [BasketballEvents.Sequence]: 1
+      })
 
+      const { trigger, limits } = await ctx.studioService.getTrigger(ctx.triggerId)
       ctx.trigger = trigger
+      ctx.limits = limits
 
       const subscriptionData = {
-        route: "some.route",
+        route: "interactive.question.triggered",
         payload: { id: 1 },
         entity: trigger.entity,
         entityId: trigger.entityId
       } as EssentialSubscriptionData
 
-      await ctx.studioService.subscribeTrigger(triggerId, subscriptionData)
-      await ctx.studioService.setTriggerLimits(triggerId, {
-        [BasketballEvents.Sequence]: 1
-      })
+      await ctx.studioService.subscribeTrigger(ctx.triggerId, subscriptionData)
     })
 
-    it(`should be activated in sequence 1 on first run`, async () => {
+    it(`should create trigger for home team and limit 1 per sequence`, async () => {
+      assert.ok(ctx.trigger)
+      assert.ok(ctx.triggerId)
+      assert.equal(ctx.triggerId, ctx.trigger.id)
+      assert.equal(ctx.limits[BasketballEvents.Sequence], 1)
+    })
+
+    it(`should not activate for away team`, async () => {
+
+      const snapshots = [
+        {
+          id: randomUUID(),
+          datasource,
+          scope,
+          scopeId,
+          sport: Sport.Basketball,
+          timestamp: Date.now(),
+          options: {
+            [BasketballEvents.TeamDunk]: awayId,
+            [BasketballEvents.Team]: awayId,
+            [BasketballEvents.Sequence]: 1,
+          },
+        },
+        {
+          id: randomUUID(),
+          datasource,
+          scope,
+          scopeId,
+          sport: Sport.Basketball,
+          timestamp: Date.now(),
+          options: {
+            [BasketballEvents.TeamDunk]: awayId,
+            [BasketballEvents.Team]: awayId,
+            [BasketballEvents.Sequence]: 1,
+          },
+        }
+      ]
+
+      for(const snapshot of snapshots) {
+        const result = await processScopeSnapshot(ctx, snapshot)
+        assert.equal(result, false)
+      }
+    })
+
+    it(`should activate for home team in sequence 1 on first run`, async () => {
 
       const snapshots = [
         {
@@ -563,46 +600,7 @@ describe("AdapterService", function () {
             [BasketballEvents.Team]: homeId,
             [BasketballEvents.Sequence]: 1,
           },
-        },
-        {
-          id: randomUUID(),
-          datasource,
-          scope,
-          scopeId,
-          sport: Sport.Basketball,
-          timestamp: Date.now(),
-          options: {
-            [BasketballEvents.TeamDunk]: awayId,
-            [BasketballEvents.Team]: awayId,
-            [BasketballEvents.Sequence]: 1,
-          },
-        },
-        {
-          id: randomUUID(),
-          datasource,
-          scope,
-          scopeId,
-          sport: Sport.Basketball,
-          timestamp: Date.now(),
-          options: {
-            [BasketballEvents.TeamDunk]: awayId,
-            [BasketballEvents.Team]: awayId,
-            [BasketballEvents.Sequence]: 1,
-          },
-        },
-        {
-          id: randomUUID(),
-          datasource,
-          scope,
-          scopeId,
-          sport: Sport.Basketball,
-          timestamp: Date.now(),
-          options: {
-            [BasketballEvents.TeamDunk]: homeId,
-            [BasketballEvents.Team]: homeId,
-            [BasketballEvents.Sequence]: 1,
-          },
-        },
+        }
       ]
 
       const results = []
@@ -615,7 +613,7 @@ describe("AdapterService", function () {
       assert.equal(result, true)
     })
 
-    it(`should be skipped in sequence 1 on second run`, async () => {
+    it(`should not activate for home team in sequence 1 on second run`, async () => {
 
       const snapshots = [
         {
@@ -630,46 +628,7 @@ describe("AdapterService", function () {
             [BasketballEvents.Team]: homeId,
             [BasketballEvents.Sequence]: 1,
           },
-        },
-        {
-          id: randomUUID(),
-          datasource,
-          scope,
-          scopeId,
-          sport: Sport.Basketball,
-          timestamp: Date.now(),
-          options: {
-            [BasketballEvents.TeamDunk]: awayId,
-            [BasketballEvents.Team]: awayId,
-            [BasketballEvents.Sequence]: 1,
-          },
-        },
-        {
-          id: randomUUID(),
-          datasource,
-          scope,
-          scopeId,
-          sport: Sport.Basketball,
-          timestamp: Date.now(),
-          options: {
-            [BasketballEvents.TeamDunk]: awayId,
-            [BasketballEvents.Team]: awayId,
-            [BasketballEvents.Sequence]: 1,
-          },
-        },
-        {
-          id: randomUUID(),
-          datasource,
-          scope,
-          scopeId,
-          sport: Sport.Basketball,
-          timestamp: Date.now(),
-          options: {
-            [BasketballEvents.TeamDunk]: homeId,
-            [BasketballEvents.Team]: homeId,
-            [BasketballEvents.Sequence]: 1,
-          },
-        },
+        }
       ]
 
       for(const snapshot of snapshots) {
@@ -678,7 +637,7 @@ describe("AdapterService", function () {
       }
     })
 
-    it(`should be activated in sequence 2 on first run`, async () => {
+    it(`should activate for home team in sequence 2 on first run`, async () => {
 
       const snapshots = [
         {
@@ -693,46 +652,7 @@ describe("AdapterService", function () {
             [BasketballEvents.Team]: homeId,
             [BasketballEvents.Sequence]: 2,
           },
-        },
-        {
-          id: randomUUID(),
-          datasource,
-          scope,
-          scopeId,
-          sport: Sport.Basketball,
-          timestamp: Date.now(),
-          options: {
-            [BasketballEvents.TeamDunk]: awayId,
-            [BasketballEvents.Team]: awayId,
-            [BasketballEvents.Sequence]: 2,
-          },
-        },
-        {
-          id: randomUUID(),
-          datasource,
-          scope,
-          scopeId,
-          sport: Sport.Basketball,
-          timestamp: Date.now(),
-          options: {
-            [BasketballEvents.TeamDunk]: awayId,
-            [BasketballEvents.Team]: awayId,
-            [BasketballEvents.Sequence]: 2,
-          },
-        },
-        {
-          id: randomUUID(),
-          datasource,
-          scope,
-          scopeId,
-          sport: Sport.Basketball,
-          timestamp: Date.now(),
-          options: {
-            [BasketballEvents.TeamDunk]: homeId,
-            [BasketballEvents.Team]: homeId,
-            [BasketballEvents.Sequence]: 2,
-          },
-        },
+        }
       ]
 
       const results = []
@@ -745,7 +665,7 @@ describe("AdapterService", function () {
       assert.equal(result, true)
     })
 
-    it(`should be skipped in sequence 2 on second run`, async () => {
+    it(`should not activate for home team in sequence 2 on second run`, async () => {
 
       const snapshots = [
         {
@@ -760,46 +680,7 @@ describe("AdapterService", function () {
             [BasketballEvents.Team]: homeId,
             [BasketballEvents.Sequence]: 2,
           },
-        },
-        {
-          id: randomUUID(),
-          datasource,
-          scope,
-          scopeId,
-          sport: Sport.Basketball,
-          timestamp: Date.now(),
-          options: {
-            [BasketballEvents.TeamDunk]: awayId,
-            [BasketballEvents.Team]: awayId,
-            [BasketballEvents.Sequence]: 2,
-          },
-        },
-        {
-          id: randomUUID(),
-          datasource,
-          scope,
-          scopeId,
-          sport: Sport.Basketball,
-          timestamp: Date.now(),
-          options: {
-            [BasketballEvents.TeamDunk]: awayId,
-            [BasketballEvents.Team]: awayId,
-            [BasketballEvents.Sequence]: 2,
-          },
-        },
-        {
-          id: randomUUID(),
-          datasource,
-          scope,
-          scopeId,
-          sport: Sport.Basketball,
-          timestamp: Date.now(),
-          options: {
-            [BasketballEvents.TeamDunk]: homeId,
-            [BasketballEvents.Team]: homeId,
-            [BasketballEvents.Sequence]: 2,
-          },
-        },
+        }
       ]
 
       for(const snapshot of snapshots) {
@@ -825,16 +706,19 @@ describe("AdapterService", function () {
         scopeId,
         entity,
         entityId,
+        useLimits: true
       }
 
       const conditionData: EssentialConditionData[] = [
         {
-          event: BasketballEvents.Team,
-          compare: CompareOp.In,
-          targets: [homeId],
           options: [
             {
               event: BasketballEvents.TeamDunk,
+              compare: CompareOp.In,
+              targets: [ homeId ],
+            },
+            {
+              event: BasketballEvents.Team,
               compare: CompareOp.In,
               targets: [ homeId ],
             },
@@ -842,10 +726,13 @@ describe("AdapterService", function () {
         },
       ]
 
-      ctx.triggerId = await ctx.studioService.createTrigger(triggerData, conditionData)
-      const { trigger } = await ctx.studioService.getTrigger(ctx.triggerId)
+      ctx.triggerId = await ctx.studioService.createTrigger(triggerData, conditionData, {
+        [CommonLimit.Scope]: 1
+      })
 
+      const { trigger, limits } = await ctx.studioService.getTrigger(ctx.triggerId)
       ctx.trigger = trigger
+      ctx.limits = limits
 
       const subscriptionData = {
         route: "some.route",
@@ -855,12 +742,16 @@ describe("AdapterService", function () {
       } as EssentialSubscriptionData
 
       await ctx.studioService.subscribeTrigger(ctx.triggerId, subscriptionData)
-      await ctx.studioService.setTriggerLimits(ctx.triggerId, {
-        [CommonLimit.Scope]: 1
-      })
     })
 
-    it(`should be activated once on first run`, async () => {
+    it(`should create trigger for home team and limit 1 per scope`, async () => {
+      assert.ok(ctx.trigger)
+      assert.ok(ctx.triggerId)
+      assert.equal(ctx.triggerId, ctx.trigger.id)
+      assert.equal(ctx.limits[CommonLimit.Scope], 1)
+    })
+
+    it(`should activate for home team in sequence 1 on first run`, async () => {
 
       const snapshots = [
         {
@@ -888,7 +779,7 @@ describe("AdapterService", function () {
       assert.equal(result, true)
     })
 
-    it(`should be skipped on next run`, async () => {
+    it(`should not activate for home team in sequence 1 on second run`, async () => {
 
       const snapshots = [
         {
@@ -912,7 +803,103 @@ describe("AdapterService", function () {
       }
     })
 
-    it(`should set next to false`, async () => {
+    it(`should not activate for home team in sequence 2 on first run`, async () => {
+
+      const snapshots = [
+        {
+          id: randomUUID(),
+          datasource,
+          scope,
+          scopeId,
+          sport: Sport.Basketball,
+          timestamp: Date.now(),
+          options: {
+            [BasketballEvents.TeamDunk]: homeId,
+            [BasketballEvents.Team]: homeId,
+            [BasketballEvents.Sequence]: 2
+          },
+        }
+      ]
+
+      for(const snapshot of snapshots) {
+        const result = await processScopeSnapshot(ctx, snapshot)
+        assert.equal(result, false)
+      }
+    })
+
+    it(`should not activate for home team in sequence 2 on second run`, async () => {
+
+      const snapshots = [
+        {
+          id: randomUUID(),
+          datasource,
+          scope,
+          scopeId,
+          sport: Sport.Basketball,
+          timestamp: Date.now(),
+          options: {
+            [BasketballEvents.TeamDunk]: homeId,
+            [BasketballEvents.Team]: homeId,
+            [BasketballEvents.Sequence]: 2
+          },
+        }
+      ]
+
+      for(const snapshot of snapshots) {
+        const result = await processScopeSnapshot(ctx, snapshot)
+        assert.equal(result, false)
+      }
+    })
+
+    it(`should not activate for home team in sequence 3 on first run`, async () => {
+
+      const snapshots = [
+        {
+          id: randomUUID(),
+          datasource,
+          scope,
+          scopeId,
+          sport: Sport.Basketball,
+          timestamp: Date.now(),
+          options: {
+            [BasketballEvents.TeamDunk]: homeId,
+            [BasketballEvents.Team]: homeId,
+            [BasketballEvents.Sequence]: 3
+          },
+        }
+      ]
+
+      for(const snapshot of snapshots) {
+        const result = await processScopeSnapshot(ctx, snapshot)
+        assert.equal(result, false)
+      }
+    })
+
+    it(`should not activate for home team in sequence 3 on second run`, async () => {
+
+      const snapshots = [
+        {
+          id: randomUUID(),
+          datasource,
+          scope,
+          scopeId,
+          sport: Sport.Basketball,
+          timestamp: Date.now(),
+          options: {
+            [BasketballEvents.TeamDunk]: homeId,
+            [BasketballEvents.Team]: homeId,
+            [BasketballEvents.Sequence]: 3
+          },
+        }
+      ]
+
+      for(const snapshot of snapshots) {
+        const result = await processScopeSnapshot(ctx, snapshot)
+        assert.equal(result, false)
+      }
+    })
+
+    it(`should set next to false in trigger notification`, async () => {
       const { trigger } = await ctx.studioService.getTrigger(ctx.triggerId)
       assert.equal(trigger.next, false)
 
@@ -930,6 +917,7 @@ describe("AdapterService", function () {
 
       await ctx.redis.flushall()
       ctx.snapshotCollection.clearIndices()
+      ctx.notifications = []
 
       const triggerData: EssentialTriggerData = {
         name: "...",
@@ -940,6 +928,7 @@ describe("AdapterService", function () {
         scopeId,
         entity,
         entityId,
+        useLimits: true
       }
 
       const conditionData: EssentialConditionData[] = [
@@ -957,10 +946,14 @@ describe("AdapterService", function () {
         },
       ]
 
-      const triggerId = await ctx.studioService.createTrigger(triggerData, conditionData)
-      const { trigger } = await ctx.studioService.getTrigger(triggerId)
+      const triggerId = await ctx.studioService.createTrigger(triggerData, conditionData, {
+        [CommonLimit.Minute]: 1
+      })
 
+      const { trigger, limits } = await ctx.studioService.getTrigger(triggerId)
       ctx.trigger = trigger
+      ctx.limits = limits
+      ctx.triggerId = triggerId
 
       const subscriptionData = {
         route: "some.route",
@@ -970,14 +963,11 @@ describe("AdapterService", function () {
       } as EssentialSubscriptionData
 
       await ctx.studioService.subscribeTrigger(triggerId, subscriptionData)
-      await ctx.studioService.setTriggerLimits(triggerId, {
-        [CommonLimit.Minute]: 1
-      })
-
+      // adjust minute interval to 10 seconds to cut test delay
       CommonLimits[CommonLimit.Minute].interval = 10
     })
 
-    it(`should be activated once on first run`, async () => {
+    it(`should activate on first run`, async () => {
 
       const snapshots = [
         {
@@ -1005,7 +995,7 @@ describe("AdapterService", function () {
       assert.equal(result, true)
     })
 
-    it(`should be skipped on next run`, async () => {
+    it(`should not activate on next run immediately`, async () => {
 
       const snapshots = [
         {
@@ -1029,7 +1019,7 @@ describe("AdapterService", function () {
       }
     })
 
-    it(`should be activated after interval`, async () => {
+    it(`should activate after 10 seconds interval`, async () => {
 
       await new Promise((resolve) => setTimeout(resolve, 10000))
 
@@ -1058,13 +1048,24 @@ describe("AdapterService", function () {
       const [result] = results
       assert.equal(result, true)
     })
+
+    it(`should send next = true in trigger notification`, async () => {
+      const { trigger } = await ctx.studioService.getTrigger(ctx.triggerId)
+      assert.equal(trigger.next, true)
+
+      const [ notification ] = ctx.notifications
+      ctx.log.debug({ notification }, 'trigger sent notification to subscribers')
+
+      const { message } = notification ?? {}
+      assert.notEqual(message.next, undefined)
+      assert.equal(message.next, true)
+    })
   })
 
   describe('multiple conditions w/o aggregations', function () {
 
     before(async () => {
       ctx.notifications = []
-
       await ctx.redis.flushall()
       ctx.snapshotCollection.clearIndices()
 
@@ -1119,6 +1120,7 @@ describe("AdapterService", function () {
       const triggerId = await ctx.studioService.createTrigger(triggerData, triggerConditions)
       const result = await ctx.studioService.getTrigger(triggerId)
       ctx.trigger = result.trigger
+      ctx.triggerId = triggerId
 
       // const subscriptionData = {
       //   route: "some.route2",
@@ -1135,7 +1137,7 @@ describe("AdapterService", function () {
         datasource,
         scope,
         scopeId,
-        sport: "basketball",
+        sport: Sport.Basketball,
         timestamp: Date.now(),
         options: {
           [BasketballEvents.Sequence]: 1,
@@ -1147,16 +1149,20 @@ describe("AdapterService", function () {
       const result = await processScopeSnapshot(ctx, snapshot)
       assert.equal(result, false)
 
-      const [condition1, condition2] = await ctx.conditionCollection.getByTriggerId(ctx.trigger.id)
-      ctx.log.debug({
-        "condition1.id": condition1.id,
-        "condition1.activated": condition1.activated,
-        "condition2.id": condition2.id,
-        "condition2.activated": condition2.activated
-      })
+      const conditions = await ctx.triggerConditionCollection.getByTriggerId(ctx.trigger.id)
 
-      assert.equal(condition1.activated, true)
-      assert.equal(condition2.activated, false)
+      let activatedCount = 0
+      for(const condition of conditions) {
+        ctx.log.debug({
+          "condition.id": condition.id,
+          "condition.activated": condition.activated,
+        })
+        if ( condition.activated ) {
+          activatedCount++
+        }
+      }
+
+      assert.equal(activatedCount, 1)
     })
 
     it(`should activate second condition in sequence 2, trigger activated`, async () => {
@@ -1180,13 +1186,14 @@ describe("AdapterService", function () {
     })
   })
 
-  describe('methods', function () {
+  describe('check methods', function () {
 
     const triggers = []
 
     before(async () => {
       ctx.notifications = []
       await ctx.redis.flushall()
+      ctx.snapshotCollection.clearIndices()
 
       const triggerData: EssentialTriggerData = {
         name: "...",
@@ -1227,13 +1234,23 @@ describe("AdapterService", function () {
       ]
 
       const triggerId1 = await ctx.studioService.createTrigger(triggerData, triggerConditions)
+      const trigger1 = await ctx.studioService.getTrigger(triggerId1)
+      triggers.push(trigger1.trigger.id)
+
       const triggerId2 = await ctx.studioService.createTrigger(triggerData, triggerConditions)
-      triggers.push(triggerId1, triggerId2)
+      const trigger2 = await ctx.studioService.getTrigger(triggerId2)
+      triggers.push(trigger2.trigger.id)
+
+      ctx.log.debug({ trigger1, trigger2 }, `created triggers`)
     })
 
-    it(`getTriggers`, async () => {
+    it(`should create triggers`, async () => {
+      assert.ok(triggers.length)
+    })
 
-      const event: ScopeSnapshot = {
+    it(`should get triggers by event uris`, async () => {
+
+      const snapshot: ScopeSnapshot = {
         id: randomUUID(),
         datasource,
         scope,
@@ -1247,9 +1264,14 @@ describe("AdapterService", function () {
         },
       }
 
-      for await (const chunk of ctx.adapterService.getTriggersBySnapshot(event)) {
-        for(const trigger of chunk) {
-          assert.equal(triggers.includes(trigger), true)
+      const uris = getEventUriListBySnapshot(snapshot)
+      for(const uri of uris) {
+        ctx.log.debug({ uri }, `processing uri`)
+        for await (const chunk of ctx.adapterService.getTriggersByUri(uri)) {
+          ctx.log.debug({ chunk, uri }, `chunk loaded by generator`)
+          for(const trigger of chunk) {
+            assert.equal(triggers.includes(trigger.id), true)
+          }
         }
       }
     })
@@ -1326,6 +1348,96 @@ describe("AdapterService", function () {
     })
 
     it(`should activate enabled trigger`, async () => {
+
+      const snapshot: ScopeSnapshot = {
+        id: randomUUID(),
+        datasource,
+        scope,
+        sport,
+        scopeId,
+        timestamp: Date.now(),
+        options: {
+          [BasketballEvents.Team]: homeId,
+          [BasketballEvents.TeamShootingFoul]: homeId,
+          [BasketballEvents.Sequence]: 2,
+        },
+      }
+
+      const result = await processScopeSnapshot(ctx, snapshot)
+      assert.equal(result, true)
+    })
+  })
+
+  describe('disabled entity', function () {
+
+    before(async () => {
+      await ctx.redis.flushall()
+      ctx.snapshotCollection.clearIndices()
+
+      const triggerData: EssentialTriggerData = {
+        name: "...",
+        description: "...",
+        datasource,
+        scope,
+        sport,
+        scopeId,
+        entity,
+        entityId,
+        disabledEntity: true
+      }
+
+      const conditionData: EssentialConditionData[] = [
+        {
+          event: BasketballEvents.Team,
+          compare: CompareOp.In,
+          targets: [homeId],
+          options: [
+            {
+              event: BasketballEvents.Sequence,
+              compare: CompareOp.Equal,
+              targets: ["2"],
+            },
+            {
+              event: BasketballEvents.TeamShootingFoul,
+              compare: CompareOp.Equal,
+              targets: [homeId],
+            },
+          ],
+        },
+      ]
+
+      const triggerId = await ctx.studioService.createTrigger(triggerData, conditionData)
+
+      const result = await ctx.studioService.getTrigger(triggerId)
+      ctx.trigger = result.trigger
+      ctx.triggerId = triggerId
+    })
+
+    it(`should not activate trigger in disabled entity`, async () => {
+
+      const snapshot: ScopeSnapshot = {
+        id: randomUUID(),
+        datasource,
+        scope,
+        scopeId,
+        sport: "basketball",
+        timestamp: Date.now(),
+        options: {
+          [BasketballEvents.Team]: homeId,
+          [BasketballEvents.TeamShootingFoul]: homeId,
+          [BasketballEvents.Sequence]: 2,
+        },
+      }
+
+      const result = await processScopeSnapshot(ctx, snapshot)
+      assert.equal(result, false)
+    })
+
+    it(`should enable entity`, async () => {
+      await ctx.studioService.enableEntity(ctx.trigger.entity, ctx.trigger.entityId)
+    })
+
+    it(`should activate trigger in enabled entity`, async () => {
 
       const snapshot: ScopeSnapshot = {
         id: randomUUID(),

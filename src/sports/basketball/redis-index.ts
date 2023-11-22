@@ -1,8 +1,8 @@
 import { getIndexName, getIndexPrefix } from '../../repositories/scope-snapshot.collection'
-
+import { Sport }  from '../../models/events/sport'
 import { BasketballEvents } from './basketball-events'
 
-const sport = 'basketball'
+const sport = Sport.Basketball
 const scope = 'game'
 
 export function getIndexQuery(datasource: string, scopeId: string) {

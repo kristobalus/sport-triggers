@@ -23,7 +23,7 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     targetSource: CommonSources.GamePlayers,
     targets: [],
-    preferredOptions: [
+    childOptions: [
       /*
         Dunk
         3FG
@@ -55,7 +55,7 @@ export const metadata: Record<string, EventMetadata> = {
     ],
     targetSource: CommonSources.GameTeams,
     targets: [],
-    preferredOptions: [
+    childOptions: [
       /*
       First basket
       Dunk
@@ -100,11 +100,11 @@ export const metadata: Record<string, EventMetadata> = {
       GameLevel.QuarterEnd,
     ],
     targetSource: Sources.GameLevel,
-    preferredOptions: [
+    childOptions: [
       BasketballEvents.Quarter,
       BasketballEvents.Sequence
     ],
-    optionDefaultCompare: CompareOp.In
+    defaultCompare: CompareOp.In
   },
 
   [BasketballEvents.TotalPoints]: {
@@ -122,7 +122,7 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
     ],
     targets: [],
-    optionDefaultCompare: CompareOp.Equal
+    defaultCompare: CompareOp.Equal
   },
 
   [BasketballEvents.Quarter]: {
@@ -140,7 +140,7 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
     ],
     targets: [],
-    optionDefaultCompare: CompareOp.Equal
+    defaultCompare: CompareOp.Equal
   },
 
   [BasketballEvents.Sequence]: {
@@ -159,7 +159,7 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
     ],
     targets: [],
-    optionDefaultCompare: CompareOp.Equal
+    defaultCompare: CompareOp.Equal
   },
 
   [BasketballEvents.GamePointsHome]: {
@@ -177,7 +177,7 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
     ],
     targets: [],
-    optionDefaultCompare: CompareOp.Equal
+    defaultCompare: CompareOp.Equal
   },
 
   [BasketballEvents.GamePointsAway]: {
@@ -195,7 +195,7 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
     ],
     targets: [],
-    optionDefaultCompare: CompareOp.Equal
+    defaultCompare: CompareOp.Equal
   },
 
   [BasketballEvents.TeamDunk]: {
@@ -207,9 +207,9 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     compare: [],
     targets: [],
-    inferTargetsFromScope: true,
-    optionScope: [BasketballEvents.Team],
-    optionDefaultCompare: CompareOp.In
+    inferTargetsFromParent: true,
+    parentOption: BasketballEvents.Team,
+    defaultCompare: CompareOp.In
   },
 
   [BasketballEvents.Team3FG]: {
@@ -221,9 +221,9 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     compare: [],
     targets: [],
-    inferTargetsFromScope: true,
-    optionScope: [BasketballEvents.Team],
-    optionDefaultCompare: CompareOp.In
+    inferTargetsFromParent: true,
+    parentOption: BasketballEvents.Team,
+    defaultCompare: CompareOp.In
   },
 
   [BasketballEvents.Team2FTMade]: {
@@ -235,9 +235,9 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     compare: [],
     targets: [],
-    inferTargetsFromScope: true,
-    optionScope: [BasketballEvents.Team],
-    optionDefaultCompare: CompareOp.In
+    inferTargetsFromParent: true,
+    parentOption: BasketballEvents.Team,
+    defaultCompare: CompareOp.In
   },
 
   [BasketballEvents.TeamFirstBasket]: {
@@ -249,9 +249,9 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     compare: [],
     targets: [],
-    inferTargetsFromScope: true,
-    optionScope: [BasketballEvents.Team],
-    optionDefaultCompare: CompareOp.In
+    inferTargetsFromParent: true,
+    parentOption: BasketballEvents.Team,
+    defaultCompare: CompareOp.In
   },
 
   [BasketballEvents.TeamShootingFoul]: {
@@ -263,9 +263,9 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     compare: [],
     targets: [],
-    inferTargetsFromScope: true,
-    optionScope: [BasketballEvents.Team],
-    optionDefaultCompare: CompareOp.In
+    inferTargetsFromParent: true,
+    parentOption: BasketballEvents.Team,
+    defaultCompare: CompareOp.In
   },
 
   [BasketballEvents.TeamScoresPoints]: {
@@ -284,8 +284,8 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
     ],
     targets: [],
-    optionScope: [BasketballEvents.Team],
-    optionDefaultCompare: CompareOp.In
+    parentOption: BasketballEvents.Team,
+    defaultCompare: CompareOp.In
   },
 
   [BasketballEvents.TeamScores3FG]: {
@@ -304,7 +304,7 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterThan,
     ],
     targets: [],
-    optionScope: [BasketballEvents.Team],
+    parentOption: BasketballEvents.Team,
     aggregate: (datasource, sport, scope, scopeId, targets) => {
       const result = [
         'ft.aggregate',
@@ -342,7 +342,7 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.Equal
     ],
     targets: [],
-    optionScope: [BasketballEvents.Player],
+    parentOption: BasketballEvents.Player,
     aggregate: (datasource, sport, scope, scopeId, targets) => {
       const result = [
         'ft.aggregate', getIndexName(datasource, sport, scope, scopeId),
@@ -378,9 +378,9 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     compare: [],
     targets: [],
-    optionScope: [BasketballEvents.Player],
-    optionDefaultCompare: CompareOp.In,
-    inferTargetsFromScope: true
+    parentOption: BasketballEvents.Player,
+    defaultCompare: CompareOp.In,
+    inferTargetsFromParent: true
   },
 
   [BasketballEvents.Player3FG]: {
@@ -392,9 +392,9 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     compare: [],
     targets: [],
-    optionScope: [BasketballEvents.Player],
-    optionDefaultCompare: CompareOp.In,
-    inferTargetsFromScope: true
+    parentOption: BasketballEvents.Player,
+    defaultCompare: CompareOp.In,
+    inferTargetsFromParent: true
   },
 
   [BasketballEvents.PlayerShootingFoul]: {
@@ -406,9 +406,9 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     compare: [],
     targets: [],
-    optionScope: [BasketballEvents.Player],
-    optionDefaultCompare: CompareOp.In,
-    inferTargetsFromScope: true
+    parentOption: BasketballEvents.Player,
+    defaultCompare: CompareOp.In,
+    inferTargetsFromParent: true
   },
 
   [BasketballEvents.Player1FTMade]: {
@@ -420,9 +420,9 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     compare: [],
     targets: [],
-    optionScope: [BasketballEvents.Player],
-    optionDefaultCompare: CompareOp.In,
-    inferTargetsFromScope: true
+    parentOption: BasketballEvents.Player,
+    defaultCompare: CompareOp.In,
+    inferTargetsFromParent: true
   },
 
   [BasketballEvents.Player2FTMade]: {
@@ -434,9 +434,9 @@ export const metadata: Record<string, EventMetadata> = {
     type: ConditionType.String,
     compare: [],
     targets: [],
-    optionScope: [BasketballEvents.Player],
-    optionDefaultCompare: CompareOp.In,
-    inferTargetsFromScope: true
+    parentOption: BasketballEvents.Player,
+    defaultCompare: CompareOp.In,
+    inferTargetsFromParent: true
   },
 
   [BasketballEvents.PlayerScoresPoints]: {
@@ -454,8 +454,8 @@ export const metadata: Record<string, EventMetadata> = {
       CompareOp.GreaterOrEqual,
     ],
     targets: [],
-    optionScope: [BasketballEvents.Player],
-    optionDefaultCompare: CompareOp.In
+    parentOption: BasketballEvents.Player,
+    defaultCompare: CompareOp.In
   },
 
 }

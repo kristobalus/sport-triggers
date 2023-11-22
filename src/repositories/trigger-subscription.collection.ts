@@ -4,7 +4,7 @@ import assert from 'assert'
 
 import { Redis } from 'ioredis'
 
-import { SerializedTriggerSubscription, TriggerSubscription } from '../models/entities/trigger-subscription'
+import { TriggerSubscription } from '../models/entities/trigger-subscription'
 import { assertNoError } from '../utils/pipeline-utils'
 
 /**
@@ -47,38 +47,59 @@ export class TriggerSubscriptionCollection {
   ) {
   }
 
-  async create(triggerId: string, item: Partial<TriggerSubscription>): Promise<string> {
+  async create(triggerId: string, data: Partial<TriggerSubscription>): Promise<string> {
 
-    validateOnCreate(item)
+    validateOnCreate(data)
 
-    const data = { ...item } as unknown as SerializedTriggerSubscription
-
-    data.id = randomUUID()
-    data.triggerId = triggerId
-
-    if (item.payload) {
-      data.payload = JSON.stringify(item.payload)
-    }
-
-    if (item.options) {
-      data.options = JSON.stringify(item.options)
+    const item: Partial<TriggerSubscription> = {
+      id: randomUUID(),
+      triggerId: triggerId,
+      ...data
     }
 
     const pipe = this.redis.pipeline()
-
-    pipe.hset(subscriptionKey(data.id), data as unknown as Record<string, any>)
-    pipe.sadd(subscriptionByTriggerKey(triggerId), data.id)
-    pipe.sadd(subscriptionByEntityKey(item.entity, item.entityId), data.id)
+    pipe.hset(subscriptionKey(item.id), this.serialize(item))
+    pipe.sadd(subscriptionByTriggerKey(triggerId), item.id)
+    pipe.sadd(subscriptionByEntityKey(data.entity, data.entityId), item.id)
 
     if (this.expiresInSeconds) {
-      pipe.expire(subscriptionKey(data.id), this.expiresInSeconds)
+      pipe.expire(subscriptionKey(item.id), this.expiresInSeconds)
       pipe.expire(subscriptionByTriggerKey(triggerId), this.expiresInSeconds)
-      pipe.expire(subscriptionByEntityKey(item.entity, item.entityId), this.expiresInSeconds)
+      pipe.expire(subscriptionByEntityKey(data.entity, data.entityId), this.expiresInSeconds)
     }
 
     await pipe.exec()
 
-    return data.id
+    return item.id
+  }
+
+  private serialize(item: Partial<TriggerSubscription>):  Record<string, any> {
+    const data = {
+      ...item
+    }
+
+    if (item.payload) {
+      data.payload = JSON.stringify(item.payload) as any
+    }
+
+    if (item.options) {
+      data.options = JSON.stringify(item.options) as any
+    }
+
+    return data
+  }
+
+  private deserialize(item: Record<string, any>) : TriggerSubscription {
+
+    if (item.payload) {
+      item.payload = JSON.parse(item.payload as unknown as string)
+    }
+
+    if (item.options) {
+      item.options = JSON.parse(item.options as unknown as string)
+    }
+
+    return item as unknown as TriggerSubscription
   }
 
   async deleteOne(id: string): Promise<boolean> {
@@ -110,15 +131,7 @@ export class TriggerSubscriptionCollection {
       return null
     }
 
-    if (item.payload) {
-      item.payload = JSON.parse(item.payload as unknown as string)
-    }
-
-    if (item.options) {
-      item.options = JSON.parse(item.options as unknown as string)
-    }
-
-    return item as unknown as TriggerSubscription
+    return this.deserialize(item)
   }
 
   getListByTrigger(triggerId: string): Promise<string[]> {

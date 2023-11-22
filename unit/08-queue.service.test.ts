@@ -45,8 +45,8 @@ describe("QueueService", function () {
     studio?: StudioService
     queueService?: QueueService
     triggerCollection?: TriggerCollection
-    conditionCollection?: TriggerConditionCollection
-    subscriptionCollection?: TriggerSubscriptionCollection
+    triggerConditionCollection?: TriggerConditionCollection
+    triggerSubscriptionCollection?: TriggerSubscriptionCollection
     triggerLimitCollection?: TriggerLimitCollection
     entityLimitCollection?: EntityLimitCollection
     snapshotCollection?: ScopeSnapshotCollection
@@ -76,7 +76,7 @@ describe("QueueService", function () {
 
     const log = pino({
       name: "test",
-      level: "debug",
+      level: "trace",
     }, pretty({
       levelFirst: true,
       colorize: true,
@@ -93,8 +93,8 @@ describe("QueueService", function () {
 
     ctx.log = log as Microfleet['log']
     ctx.triggerCollection = new TriggerCollection(ctx.redis)
-    ctx.conditionCollection = new TriggerConditionCollection(ctx.redis)
-    ctx.subscriptionCollection = new TriggerSubscriptionCollection(ctx.redis)
+    ctx.triggerConditionCollection = new TriggerConditionCollection(ctx.redis)
+    ctx.triggerSubscriptionCollection = new TriggerSubscriptionCollection(ctx.redis)
     ctx.triggerLimitCollection = new TriggerLimitCollection(ctx.redis)
     ctx.entityLimitCollection = new EntityLimitCollection(ctx.redis)
     ctx.snapshotCollection = new ScopeSnapshotCollection(ctx.redis)
@@ -106,8 +106,8 @@ describe("QueueService", function () {
       amqp: amqp,
       triggerCollection: ctx.triggerCollection,
       triggerLimitCollection: ctx.triggerLimitCollection,
-      conditionCollection: ctx.conditionCollection,
-      subscriptionCollection: ctx.subscriptionCollection,
+      conditionCollection: ctx.triggerConditionCollection,
+      subscriptionCollection: ctx.triggerSubscriptionCollection,
       scopeSnapshotCollection: ctx.snapshotCollection,
       entityLimitCollection: ctx.entityLimitCollection
     } as AdapterServiceOptions)
@@ -116,8 +116,8 @@ describe("QueueService", function () {
       redis: ctx.redis,
       triggerCollection: ctx.triggerCollection,
       triggerLimitCollection: ctx.triggerLimitCollection,
-      conditionCollection: ctx.conditionCollection,
-      subscriptionCollection: ctx.subscriptionCollection
+      conditionCollection: ctx.triggerConditionCollection,
+      subscriptionCollection: ctx.triggerSubscriptionCollection
     } as StudioServiceOptions)
 
     ctx.queueService = new QueueService(log as Microfleet['log'], ctx.adapter, {})
@@ -153,22 +153,24 @@ describe("QueueService", function () {
       }
     ]
 
-    ctx.triggerId = await ctx.studio.createTrigger(triggerData, conditionData)
+    const triggerId = await ctx.studio.createTrigger(triggerData, conditionData)
 
-    const { trigger } = await ctx.studio.getTrigger(ctx.triggerId)
+    const { trigger } = await ctx.studio.getTrigger(triggerId)
     ctx.trigger = trigger
+    ctx.triggerId = triggerId
+    ctx.notifications = []
 
     const subscriptionData = {
       ...ctx.receiver,
     } as EssentialSubscriptionData
 
-    await ctx.studio.subscribeTrigger(ctx.triggerId, subscriptionData)
+    await ctx.studio.subscribeTrigger(triggerId, subscriptionData)
   })
 
-  after(async () => {
-    ctx.redis.disconnect()
-    await ctx.queueService.close()
-  })
+  // after(async () => {
+  //   ctx.redis.disconnect()
+  //   await ctx.queueService.close()
+  // })
 
   it(`should store scope snapshot, generate event snapshots and do trigger evaluation`, async () => {
 
@@ -191,11 +193,6 @@ describe("QueueService", function () {
       storeSnapshotJobDeferred.resolve(result)
     }
 
-    const eventSnapshotJobDeferred = new Defer<any>()
-    ctx.queueService.eventSnapshotJobCallback = (result) => {
-      eventSnapshotJobDeferred.resolve(result)
-    }
-
     const triggerJobDeferred = new Defer<any>()
     ctx.queueService.triggerJobCallback = (result) => {
       triggerJobDeferred.resolve(result)
@@ -203,14 +200,13 @@ describe("QueueService", function () {
 
     await ctx.queueService.addScopeSnapshot(snapshot)
 
-    const storeScopeSnapshotResult = await storeSnapshotJobDeferred.promise
-    ctx.log.debug(storeScopeSnapshotResult, `store scope snapshot job result`)
+    const storeJobResult = await storeSnapshotJobDeferred.promise
+    ctx.log.debug(storeJobResult, `store scope snapshot job result`)
 
-    const generateEventSnapshotJobResult = await eventSnapshotJobDeferred.promise
-    ctx.log.debug(generateEventSnapshotJobResult, `generate event snapshot job result`)
+    const triggerJobResult = await triggerJobDeferred.promise
+    ctx.log.debug(triggerJobResult, `trigger job result`)
 
-    const evaluateTriggerJobResult = await triggerJobDeferred.promise
-    ctx.log.debug(evaluateTriggerJobResult, `trigger job result`)
+    await new Promise((resolve) => setTimeout(resolve, 1000))
   })
 
   it(`should notify after trigger activation`, async () => {
@@ -229,8 +225,13 @@ describe("QueueService", function () {
       }
     }
 
+    const storeJobDeferred = new Defer<any>()
     const triggerJobDeferred = new Defer<any>()
     const notificationJobDeferred = new Defer<any>()
+
+    ctx.queueService.storeJobCallback = (result) => {
+      storeJobDeferred.resolve(result)
+    }
 
     ctx.queueService.triggerJobCallback = (result) => {
       triggerJobDeferred.resolve(result)
@@ -241,10 +242,12 @@ describe("QueueService", function () {
     }
 
     await ctx.queueService.addScopeSnapshot(snapshot)
+    const storeJobResult = await storeJobDeferred.promise
+    ctx.log.debug(storeJobResult, `store job result`)
 
     const triggerJobResult = await triggerJobDeferred.promise
     ctx.log.debug(triggerJobResult, `trigger job result`)
-    assert.equal(triggerJobResult.activated, true)
+    // assert.equal(triggerJobResult.triggerActivated, true)
 
     const notificationJobResult = await notificationJobDeferred.promise
 

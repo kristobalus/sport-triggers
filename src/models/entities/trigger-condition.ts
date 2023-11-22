@@ -25,6 +25,7 @@ export enum ChainOp {
 
 export interface TriggerConditionOption {
   event: string
+  parent?: string
   compare?: CompareOp
   aggregate?: string[]
   targets?: string[]
@@ -40,8 +41,6 @@ export interface TriggerCondition {
   datasource: string
   // sport
   sport: string
-  // name of event to be compared with
-  event: string
   // scope of event
   scope: string
   // scope identifier
@@ -53,12 +52,36 @@ export interface TriggerCondition {
   // ft.aggregate filter targets
   // aggregateTargets?: string[]
 
-  // comparison operation, should be used to compare "current" and "target" and return a boolean
+  /**
+   * @deprecated
+   * name of event to be compared with
+   */
+  event: string
+
+  /**
+   * comparison operation, should be used to compare "current" and "target" and return a boolean
+   * @deprecated
+   */
   compare?: CompareOp
-  // type of condition
+
+  /**
+   * type of condition
+   * @deprecated
+   */
   type: ConditionType
-  // target value of the event, threshold value to compare with
+
+  /**
+   * target value of the event, threshold value to compare with
+   * @deprecated
+   */
   targets?: string[]
+
+  /**
+   * current value read from event
+   * @deprecated
+   */
+  current?: string
+
   // condition options (sub-conditions), additional events required for condition to be activated
   //
   //  Conditions are comprised of one or more sub-conditions.
@@ -68,18 +91,33 @@ export interface TriggerCondition {
   //  Event Trigger 3 has 1 condition with 2 sub-conditions.
   //  Team pitching = Yankees; Pitch Outcome = Strikeout | at the same time | Game condition = 8th inning
   options: TriggerConditionOption[]
-  // current value read from event
-  current?: string
+
   // true when compare(target, current) == true
   activated?: boolean
-  // stringified unique event identifier
-  uri: string
+
+  /**
+   * stringified unique event identifiers for all options
+   */
+  uri: string[]
+
   // log of events consumed by condition
   log?: string[]
-  // order of occurrence of condition in array of conditions
+
+  /**
+   * order of occurrence of condition in array of conditions
+   * @deprecated
+   */
   chainOrder?: number
-  // logical operation on condition when combining multiple conditions together
+
+  /**
+   * logical operation on condition when combining multiple conditions together
+   * @deprecated
+   */
   chainOperation?: ChainOp
-  // mark condition as deleted by user
+
+  /**
+   * mark condition as deleted by user
+   * @deprecated
+   */
   deleted?: boolean
 }

@@ -4,18 +4,10 @@ import { Redis } from 'ioredis'
 import { inPlaceSort } from 'fast-sort'
 import { ArgumentError } from 'common-errors'
 
-import { ChainOp, ConditionType, TriggerCondition, TriggerConditionOption } from '../models/entities/trigger-condition'
+import { TriggerCondition, TriggerConditionOption } from '../models/entities/trigger-condition'
 import { assertNoError, createArrayFromHGetAll } from '../utils/pipeline-utils'
-import { metadata as basketballMeta } from '../sports/basketball/metadata'
-import { metadata as baseballMeta } from '../sports/baseball/metadata'
-import { metadata as footballMeta } from '../sports/football/metadata'
-import * as EventUri from '../models/events/event-uri'
-
-const metadata = {
-  ...basketballMeta,
-  ...baseballMeta,
-  ...footballMeta,
-}
+import { getEventUri } from '../models/events/event-uri'
+import { metadata as metadataDictionary } from '../sports'
 
 export function conditionSetByTriggerKey(triggerId: string) {
   return `triggers/${triggerId}/conditions`
@@ -26,16 +18,9 @@ export function conditionKey(conditionId: string) {
 }
 
 /**
- * @description trigger id set subscribed to scope and event
- */
-export function subscribedToScopeAndEvent(datasource: string, scope: string, scopeId: string, eventName: string) {
-  return `subscribers/scope/${datasource}/${scope}/${scopeId}/events/${eventName}/triggers`
-}
-
-/**
  * @description trigger id set subscribe to uri
  */
-export function subscribedToUri(uri: string) {
+export function triggerSubscribedToUri(uri: string) {
   return `subscribers/uri/${uri}/triggers`
 }
 
@@ -43,7 +28,7 @@ export function conditionLogKey(conditionId: string) {
   return `conditions/${conditionId}/log`
 }
 
-function intersection(array1: any[], array2: any[]): any[] {
+export function intersection(array1: any[], array2: any[]): any[] {
   const result = []
 
   for (const e1 of array1) {
@@ -58,44 +43,61 @@ function intersection(array1: any[], array2: any[]): any[] {
 export function validateCondition(
   condition: Partial<TriggerCondition>,
 ) {
-  if (!metadata[condition.event]) {
-    throw new ArgumentError(`metadata not defined for event ${condition.event}`)
+  if (condition.event) {
+    if (!metadataDictionary[condition.event]) {
+      throw new ArgumentError(`metadata not defined for event ${condition.event}`)
+    }
+    const metadata = metadataDictionary[condition.event]
+    condition.type = metadata?.type
   }
 
-  if (!condition?.targets?.length) {
-    throw new ArgumentError('Condition targets should be defined')
+  if (!condition.options) {
+    condition.options = []
   }
 
-  const meta = metadata[condition.event]
-
-  condition.targets = condition.targets.map(target => target.toString())
-  condition.type = meta.type
-
-  if (condition.type == ConditionType.Number) {
-    condition.current = '0'
+  if (condition.event && condition.targets?.length && condition.compare) {
+    // request comes from old version of trigger's UI
+    // move data into options
+    const option: TriggerConditionOption = {
+      event: condition.event,
+      compare: condition.compare,
+      targets: condition.targets
+    }
+    condition.options.push(option)
+    console.log(condition.options)
   }
 
-  if (condition.type == ConditionType.String) {
-    condition.current = ''
-  }
+  // if (!condition?.targets?.length) {
+  //   throw new ArgumentError('Condition targets should be defined')
+  // }
+  // condition.targets = condition.targets.map(target => target.toString())
+
+
+  // if (condition.type == ConditionType.Number) {
+  //   condition.current = '0'
+  // }
+
+  // if (condition.type == ConditionType.String) {
+  //   condition.current = ''
+  // }
 
   // checking allowed targets, if any restricted
-  if (meta.targets?.length > 0) {
-    const mutual = intersection(condition.targets, meta.targets)
-
-    if (mutual.length == 0) {
-      throw new ArgumentError(`Condition for event ${condition.event} should `
-        + `have target one of ${JSON.stringify(meta.targets)}.`)
-    }
-  }
+  // if (metadata.targets?.length > 0) {
+  //   const mutual = intersection(condition.targets, metadata.targets)
+  //
+  //   if (mutual.length == 0) {
+  //     throw new ArgumentError(`Condition for event ${condition.event} should `
+  //       + `have target one of ${JSON.stringify(metadata.targets)}.`)
+  //   }
+  // }
 
   // checking allowed compare operations, if any restricted
-  if (meta.compare?.length > 0) {
-    if (!meta.compare.includes(condition.compare)) {
-      throw new ArgumentError(`Condition for event ${condition.event} should `
-        + `have compare one of ${JSON.stringify(meta.compare)}.`)
-    }
-  }
+  // if (metadata.compare?.length > 0) {
+  //   if (!metadata.compare.includes(condition.compare)) {
+  //     throw new ArgumentError(`Condition for event ${condition.event} should `
+  //       + `have compare one of ${JSON.stringify(metadata.compare)}.`)
+  //   }
+  // }
 
   // TODO aggregation is disabled in condition and left for option
   //  the logic is: condition determines the scope, option aggregates within scope
@@ -106,15 +108,11 @@ export function validateCondition(
   //   }
   // }
 
-  if (!condition.options) {
-    condition.options = []
-  } else {
-    condition.options.forEach(option => validateOption(option, condition))
+  if (!condition.options || condition.options.length == 0) {
+    throw new ArgumentError('Condition options should be defined')
   }
 
-  if(condition.chainOperation === ChainOp.OR) {
-    throw new ArgumentError(`Condition OR chaining operation not allowed.`)
-  }
+  condition.options.forEach(option => validateOption(option, condition))
 }
 
 export function validateOption(
@@ -122,59 +120,63 @@ export function validateOption(
   // parent condition
   condition: Partial<TriggerCondition>,
 ) {
-  if (!metadata[option.event]) {
+  if (!metadataDictionary[option.event]) {
     throw new ArgumentError(`Metadata not defined for event ${option.event}`)
   }
 
-  const meta = metadata[option.event]
+  const { datasource, sport, scope, scopeId } = condition
 
-  if (meta.optionScope && !meta.optionScope.includes(condition.event)) {
-    throw new ArgumentError(`Event ${option.event} can be used as option for ${JSON.stringify(meta.optionScope)} only.`)
-  }
+  const optionMetadata = metadataDictionary[option.event]
+  // const parentMetadata = metadataDictionary[optionMetadata.parentOption]
+  // if (parentMetadata?.childOptions?.length) {
+  //   throw new ArgumentError(`Parent event ${optionMetadata.parentOption} has no child ${option.event}`)
+  // }
 
-  if (!option.targets?.length) {
-    if (meta.inferTargetsFromScope) {
-      option.targets = [...condition.targets]
+  const [ parentOption ] = condition.options.filter(o => o.event === optionMetadata.parentOption)
+
+  // TODO check if parentOption targets should be merged with and not replace the original values
+  if (!option.targets?.length && parentOption) {
+    if (optionMetadata.inferTargetsFromParent) {
+      option.targets = [...parentOption.targets]
     }
   }
 
   if (!option.targets?.length) {
-    throw new ArgumentError('No default event found. Option targets should be defined')
+    throw new ArgumentError(`Option targets should be defined ${JSON.stringify(option)}`)
   }
 
   // checking allowed targets, if any restricted
-  if (meta.targets?.length > 0) {
-    const mutual = intersection(option.targets, meta.targets)
+  if (optionMetadata.targets?.length > 0) {
+    const mutualTargets = intersection(option.targets, optionMetadata.targets)
 
-    if (mutual.length == 0) {
+    if (mutualTargets.length == 0) {
       throw new ArgumentError(`Option for event ${option.event} should `
-        + `have target one of ${JSON.stringify(meta.targets)}.`)
+        + `have target one of ${JSON.stringify(optionMetadata.targets)}.`)
     }
   }
 
   // checking allowed compare operations, if any restricted
-  if (meta.compare?.length > 0) {
-    if (!meta.compare.includes(option.compare)) {
+  if (optionMetadata.compare?.length > 0) {
+    if (!optionMetadata.compare.includes(option.compare)) {
       throw new ArgumentError(`Option for event ${option.event} should `
-        + `have compare one of ${JSON.stringify(meta.compare)}.`)
+        + `have compare one of ${JSON.stringify(optionMetadata.compare)}.`)
     }
   }
 
-  option.type = meta.type
+  option.parent = optionMetadata.parentOption
+  option.type = optionMetadata.type
 
   if (!option.compare) {
-    if ( meta.optionDefaultCompare ) {
-      option.compare = meta.optionDefaultCompare
+    if (optionMetadata.defaultCompare) {
+      option.compare = optionMetadata.defaultCompare
     }
   }
 
-  if (meta.aggregate) {
-    if (!meta.optionScope) {
-      throw new ArgumentError(`Metadata optionScope should be defined for ${option.event} for aggregation`)
+  if (optionMetadata.aggregate) {
+    if (!parentOption) {
+      throw new ArgumentError(`Parent option should be defined for ${option.event} for aggregation`)
     }
-    const { datasource, sport, scope, scopeId, targets } = condition
-
-    option.aggregate = meta.aggregate(datasource, sport, scope, scopeId, targets)
+    option.aggregate = optionMetadata.aggregate(datasource, sport, scope, scopeId, parentOption.targets)
   }
 }
 
@@ -192,12 +194,13 @@ export class TriggerConditionCollection {
     scope: string,
     scopeId: string,
     conditions: Partial<TriggerCondition>[]) {
+
     if (!conditions || conditions.length == 0) {
-      throw new ArgumentError('Cannot create trigger without conditions')
+      throw new ArgumentError('Cannot add empty conditions')
     }
 
     // prefill and validate data
-    const items: TriggerCondition[] = []
+    const insertCandidates: TriggerCondition[] = []
 
     for (let i = 0; i < conditions.length; i++) {
       const condition = { ...conditions[i] } as TriggerCondition
@@ -209,9 +212,10 @@ export class TriggerConditionCollection {
       condition.scope = scope
       condition.sport = sport
       condition.scopeId = scopeId
-      condition.uri = EventUri.getUriFromCondition(condition)
 
       validateCondition(condition)
+
+      condition.uri = this.getOptionUriList(condition)
 
       if (!condition.triggerId) {
         condition.triggerId = triggerId
@@ -219,32 +223,35 @@ export class TriggerConditionCollection {
         throw new ArgumentError('Owner conflict')
       }
 
-      condition.chainOrder = i
-      if (!condition.chainOperation) {
-        condition.chainOperation = ChainOp.AND
-      }
-
-      condition.options = JSON.stringify(condition.options) as any
-      condition.targets = JSON.stringify(condition.targets) as any
-
-      items.push(condition)
+      insertCandidates.push(condition)
     }
 
     const pipe = this.redis.pipeline()
 
-    for (const condition of items) {
-      pipe.hmset(conditionKey(condition.id), condition)
+    for (const condition of insertCandidates) {
+      pipe.hmset(conditionKey(condition.id), this.serialize(condition))
+
       // should add condition into list of trigger conditions
       pipe.sadd(conditionSetByTriggerKey(condition.triggerId), condition.id)
-      // should add trigger into list of event subscribers
-      pipe.zadd(subscribedToScopeAndEvent(datasource, scope, scopeId, condition.event), Date.now(), triggerId)
+
       // should add trigger into list of uri subscribers
-      pipe.zadd(subscribedToUri(condition.uri), Date.now(), triggerId)
+      for (const uri of condition.uri) {
+        pipe.zadd(triggerSubscribedToUri(uri), Date.now(), triggerId)
+      }
     }
 
     const results = await pipe.exec()
 
     assertNoError(results)
+  }
+
+  getOptionUriList(condition: TriggerCondition) {
+    const { datasource, scope, scopeId }  = condition
+    const result = []
+    for (const option of condition.options) {
+      result.push(getEventUri({ datasource, scope, scopeId, eventName: option.event }))
+    }
+    return result
   }
 
   async getByTriggerId(triggerId: string, options: { showLog?: boolean } = {}): Promise<TriggerCondition[]> {
@@ -259,7 +266,7 @@ export class TriggerConditionCollection {
     const conditions = createArrayFromHGetAll(results) as TriggerCondition[]
 
     for (const condition of conditions) {
-      await this.afterRead(condition, options?.showLog)
+      await this.mutateAfterRead(condition, options?.showLog)
     }
 
     inPlaceSort(conditions).asc('chainOrder')
@@ -270,7 +277,7 @@ export class TriggerConditionCollection {
   async getById(id: string, options: { showLog?: boolean } = {}): Promise<TriggerCondition> {
     const condition = await this.redis.hgetall(conditionKey(id))
 
-    await this.afterRead(condition, options?.showLog)
+    await this.mutateAfterRead(condition as unknown as TriggerCondition, options?.showLog)
 
     return condition as unknown as TriggerCondition
   }
@@ -278,8 +285,8 @@ export class TriggerConditionCollection {
   async update(id: string, updated: Partial<TriggerCondition>) {
     const data = { ...updated } as any
 
-    if (data.activated !== undefined ){
-      data.activated = data.activated == 1 || data.activated == "1" || data.activated == "true" ? 1 : 0
+    if (data.activated !== undefined) {
+      data.activated = data.activated == 1 || data.activated == '1' || data.activated == 'true' ? 1 : 0
     }
 
     await this.redis.hmset(conditionKey(id), data)
@@ -293,8 +300,10 @@ export class TriggerConditionCollection {
       pipe.del(conditionKey(condition.id))
       pipe.del(conditionLogKey(condition.id))
       pipe.srem(conditionSetByTriggerKey(triggerId), condition.id)
-      pipe.zrem(subscribedToScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
-      pipe.zrem(subscribedToUri(EventUri.getUriFromCondition(condition)), triggerId)
+
+      for (const uri of condition.uri) {
+        pipe.zrem(triggerSubscribedToUri(uri), triggerId)
+      }
     }
 
     await pipe.exec()
@@ -308,10 +317,10 @@ export class TriggerConditionCollection {
     pipe.del(conditionKey(condition.id))
     pipe.del(conditionLogKey(condition.id))
     pipe.srem(conditionSetByTriggerKey(triggerId), condition.id)
-    // TODO consider changing for zincrby since zrem
-    //   is valid only if there is just 1 condition of certain type of event in a trigger
-    pipe.zrem(subscribedToScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
-    pipe.zrem(subscribedToUri(EventUri.getUriFromCondition(condition)), triggerId)
+
+    for (const uri of condition.uri) {
+      pipe.zrem(triggerSubscribedToUri(uri), triggerId)
+    }
 
     await pipe.exec()
   }
@@ -329,15 +338,16 @@ export class TriggerConditionCollection {
     eventName: string,
     start = 0,
     stop = -1): Promise<string[]> {
-    return this.redis.zrange(subscribedToScopeAndEvent(datasource, scope, scopeId, eventName), start, stop)
+    const uri = getEventUri({ datasource, scope, scopeId, eventName })
+    return this.redis.zrange(triggerSubscribedToUri(uri), start, stop)
   }
 
   getTriggerListByUri(uri: string, start = 0, stop = -1): Promise<string[]> {
-    return this.redis.zrange(subscribedToUri(uri), start, stop)
+    return this.redis.zrange(triggerSubscribedToUri(uri), start, stop)
   }
 
   countSubscribedToUri(uri: string): Promise<number> {
-    return this.redis.zcard(subscribedToUri(uri))
+    return this.redis.zcard(triggerSubscribedToUri(uri))
   }
 
   /**
@@ -348,7 +358,7 @@ export class TriggerConditionCollection {
     let cursor = null
 
     do {
-      const [cur, result] = await this.redis.zscan(subscribedToUri(uri), cursor, 'count', count)
+      const [cur, result] = await this.redis.zscan(triggerSubscribedToUri(uri), cursor, 'count', count)
 
       cursor = cur
       yield result.filter((_, index) => index % 2 == 0)
@@ -357,7 +367,7 @@ export class TriggerConditionCollection {
 
   async appendToEventLog(conditionId: string, uniqueId: string): Promise<boolean> {
     const logKey = conditionLogKey(conditionId)
-    const result = await this.redis.zadd(logKey, "NX", Date.now(), uniqueId)
+    const result = await this.redis.zadd(logKey, 'NX', Date.now(), uniqueId)
     return !!result
   }
 
@@ -381,8 +391,9 @@ export class TriggerConditionCollection {
         pipe.del(conditionLogKey(condition.id))
       }
 
-      pipe.zrem(subscribedToScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
-      pipe.zrem(subscribedToUri(condition.uri), triggerId)
+      for (const uri of condition.uri) {
+        pipe.zrem(triggerSubscribedToUri(uri), triggerId)
+      }
 
       await pipe.exec()
     }
@@ -394,28 +405,48 @@ export class TriggerConditionCollection {
     for (const condition of conditions) {
       const pipe = this.redis.pipeline()
 
-      pipe.zrem(subscribedToScopeAndEvent(condition.datasource, condition.scope, condition.scopeId, condition.event), triggerId)
-      pipe.zrem(subscribedToUri(condition.uri), triggerId)
+      for (const uri of condition.uri) {
+        pipe.zrem(triggerSubscribedToUri(uri), triggerId)
+      }
 
       await pipe.exec()
     }
   }
 
-  private async afterRead(condition: TriggerCondition | Record<string, string>, appendLog?: boolean) {
-    condition.chainOrder = parseInt(condition.chainOrder as unknown as string)
+  private async mutateAfterRead(condition: TriggerCondition, appendLog?: boolean) {
     condition.activated = (condition.activated as unknown as string) == '1'
 
-    if (condition.options) {
-      condition.options = JSON.parse(condition.options as any)
-    }
+    // condition.chainOrder = parseInt(condition.chainOrder as unknown as string)
 
     if (condition.targets) {
       condition.targets = JSON.parse(condition.targets as any)
     }
 
+    if (condition.options) {
+      condition.options = JSON.parse(condition.options as any)
+    }
+
+    if (condition.uri) {
+      condition.uri = JSON.parse(condition.uri as any)
+    }
+
     if (appendLog) {
       condition.log = await this.getEventLog(condition.id)
     }
+  }
+
+  private serialize(condition: TriggerCondition) {
+    const data =  {
+      ...condition
+    }
+    data.options = JSON.stringify(data.options) as any
+    data.uri = JSON.stringify(data.uri) as any
+    data.targets = JSON.stringify(data.targets) as any
+    return data
+  }
+
+  hasUri(condition: TriggerCondition, uri: string) {
+    return condition.uri.includes(uri)
   }
 }
 

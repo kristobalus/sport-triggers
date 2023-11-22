@@ -56,7 +56,7 @@ export class MetadataService {
         label: eventMeta.label,
         compare: eventMeta.compare,
         ...(eventMeta.targetSource ? { targetSource: eventMeta.targetSource } : {}),
-        ...(eventMeta.preferredOptions ? { preferredOptions: eventMeta.preferredOptions } : {})
+        ...(eventMeta.childOptions ? { preferredOptions: eventMeta.childOptions } : {})
       }
 
       if ( eventMeta.targetSource ) {
