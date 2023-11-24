@@ -44,35 +44,35 @@ export function intersection(array1: any[], array2: any[]): any[] {
 export function validateCondition(
   condition: Partial<TriggerCondition>,
 ) {
+
   if (condition.event) {
+    // only version 1 has event, compare, targets fields in the root condition document
     if (!metadataDictionary[condition.event]) {
       throw new ArgumentError(`metadata not defined for event ${condition.event}`)
     }
     const metadata = metadataDictionary[condition.event]
     condition.type = metadata?.type
-  }
 
-  if (!condition.options) {
-    condition.options = []
-  }
-
-  if (condition.event && condition.targets?.length && condition.compare) {
-    // request comes from old version of trigger's UI
-    // move data into options
-    const option: TriggerConditionOption = {
-      event: condition.event,
-      compare: condition.compare,
-      targets: condition.targets
+    if (!condition.options) {
+      condition.options = []
     }
-    condition.options.push(option)
-    console.log(condition.options)
+
+    if (condition.event && condition.targets?.length && condition.compare) {
+      // request comes from old version of trigger's UI
+      // move data into options
+      const option: TriggerConditionOption = {
+        event: condition.event,
+        compare: condition.compare,
+        targets: condition.targets
+      }
+      condition.options.push(option)
+    }
   }
 
   // if (!condition?.targets?.length) {
   //   throw new ArgumentError('Condition targets should be defined')
   // }
   // condition.targets = condition.targets.map(target => target.toString())
-
 
   // if (condition.type == ConditionType.Number) {
   //   condition.current = '0'
@@ -100,8 +100,6 @@ export function validateCondition(
   //   }
   // }
 
-  // TODO aggregation is disabled in condition and left for option
-  //  the logic is: condition determines the scope, option aggregates within scope
   // if (meta.aggregate) {
   //   if ( condition.aggregateTargets?.length ) {
   //     const { datasource, scopeId, aggregateTargets } = condition

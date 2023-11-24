@@ -270,17 +270,17 @@ export class AdapterService {
 
     const appended = await this.triggerConditionCollection.appendToEventLog(condition.id, snapshotKey)
     if (!appended) {
-      this.log.trace({ result, snapshotKey }, 'condition has already processed this event')
+      this.log.debug({ result, snapshotKey }, 'condition has already processed this event')
       return result
     }
 
-    this.log.trace({ snapshot, condition }, 'evaluating condition using evaluator class against game snapshot')
+    this.log.debug({ snapshot, condition }, 'evaluating condition using evaluator class against game snapshot')
 
     const evaluator = new ConditionEvaluator(this.redis, this.log)
     const activated = await evaluator.evaluate(condition, snapshot)
 
     result.activated = !!activated
-    this.log.trace({ result }, 'condition evaluation result')
+    this.log.debug({ result }, 'condition evaluation result')
 
     return result
   }
