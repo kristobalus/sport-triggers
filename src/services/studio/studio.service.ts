@@ -254,10 +254,10 @@ export class StudioService {
 
     if (options.trim) {
       for (const condition of conditions) {
-        condition.scopeId = undefined
-        condition.scope = undefined
-        condition.triggerId = undefined
-        condition.type = undefined
+        delete condition.scopeId
+        delete condition.scope
+        delete condition.triggerId
+        delete condition.type
       }
     }
 
@@ -270,6 +270,7 @@ export class StudioService {
     limits?: Record<string, number>) {
 
     assert(triggerUpdate.id)
+
     const trigger = await this.triggerCollection.getOne(triggerUpdate.id)
 
     assert(trigger)

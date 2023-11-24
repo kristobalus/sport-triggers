@@ -236,7 +236,7 @@ export class TriggerConditionCollection {
     const pipe = this.redis.pipeline()
 
     for (const condition of insertCandidates) {
-      pipe.hmset(conditionKey(condition.id), this.serialize(condition))
+      pipe.hmset(conditionKey(condition.id), this.deflate(condition))
 
       // should add condition into list of trigger conditions
       pipe.sadd(conditionSetByTriggerKey(condition.triggerId), condition.id)
@@ -273,7 +273,7 @@ export class TriggerConditionCollection {
     const conditions = createArrayFromHGetAll(results) as TriggerCondition[]
 
     for (const condition of conditions) {
-      await this.mutateAfterRead(condition, options?.showLog)
+      await this.inflate(condition, options?.showLog)
     }
 
     inPlaceSort(conditions).asc('chainOrder')
@@ -284,7 +284,7 @@ export class TriggerConditionCollection {
   async getById(id: string, options: { showLog?: boolean } = {}): Promise<TriggerCondition> {
     const condition = await this.redis.hgetall(conditionKey(id))
 
-    await this.mutateAfterRead(condition as unknown as TriggerCondition, options?.showLog)
+    await this.inflate(condition as unknown as TriggerCondition, options?.showLog)
 
     return condition as unknown as TriggerCondition
   }
@@ -420,7 +420,7 @@ export class TriggerConditionCollection {
     }
   }
 
-  private async mutateAfterRead(condition: TriggerCondition, appendLog?: boolean) {
+  private async inflate(condition: TriggerCondition, appendLog?: boolean) {
     condition.activated = (condition.activated as unknown as string) == '1'
 
     // condition.chainOrder = parseInt(condition.chainOrder as unknown as string)
@@ -442,13 +442,23 @@ export class TriggerConditionCollection {
     }
   }
 
-  private serialize(condition: TriggerCondition) {
-    const data =  {
+  private deflate(condition: TriggerCondition) {
+    const data: any =  {
       ...condition
     }
-    data.options = JSON.stringify(data.options) as any
-    data.uri = JSON.stringify(data.uri) as any
-    data.targets = JSON.stringify(data.targets) as any
+
+    if ( data.options) {
+      data.options = JSON.stringify(data.options)
+    }
+
+    if ( data.uri ) {
+      data.uri = JSON.stringify(data.uri)
+    }
+
+    if ( data.targets ) {
+      data.targets = JSON.stringify(data.targets)
+    }
+
     return data
   }
 
