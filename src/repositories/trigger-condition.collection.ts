@@ -434,7 +434,11 @@ export class TriggerConditionCollection {
     }
 
     if (condition.uri) {
-      condition.uri = JSON.parse(condition.uri as any)
+      try {
+        condition.uri = JSON.parse(condition.uri as any)
+      } catch(err) {
+         condition.uri = [ condition.uri as any ]
+      }
     }
 
     if (appendLog) {

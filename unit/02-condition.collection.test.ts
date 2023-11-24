@@ -20,7 +20,7 @@ describe("ConditionCollection", function () {
   const datasource = "sportradar"
   const scope = Scope.Game
   const scopeId = randomUUID()
-  const entity = "moderation"
+  const entity = "question"
   const entityId = randomUUID()
 
   const ctx: {
@@ -35,106 +35,218 @@ describe("ConditionCollection", function () {
   } = {}
 
   before(async () => {
-    ctx.log = pino({ name: "test", level: "trace", transport: { target: "pino-pretty" } })
+    ctx.log = pino({ name: "test", level: "debug", transport: { target: "pino-pretty" } })
     ctx.redis = new IORedis()
     ctx.triggers = new TriggerCollection(ctx.redis)
     ctx.triggerConditionCollection = new TriggerConditionCollection(ctx.redis)
     ctx.playerId = randomUUID()
     ctx.teamId = randomUUID()
-    await ctx.redis.flushall()
   })
 
   after(async () => {
+    await new Promise(resolve => setTimeout(resolve, 1000))
     ctx.redis.disconnect()
   })
 
-  it('should create trigger', async () => {
-    const essentialData: EssentialTriggerData = {
-      name: "...name of trigger...",
-      description: "...description of trigger...",
-      datasource,
-      sport,
-      scope,
-      scopeId,
-      entity,
-      entityId,
-    }
+  describe(`api v1`, function() {
 
-    ctx.triggerId = await ctx.triggers.add(essentialData)
-    ctx.trigger = await ctx.triggers.getOne(ctx.triggerId)
+    before(async () => {
+      await ctx.redis.flushall()
+    })
 
-    assert.ok(ctx.triggerId)
-    assert.ok(ctx.trigger)
+    it('should create trigger', async () => {
+      const essentialData: EssentialTriggerData = {
+        name: "...name of trigger...",
+        description: "...description of trigger...",
+        datasource,
+        sport,
+        scope,
+        scopeId,
+        entity,
+        entityId,
+      }
+
+      ctx.triggerId = await ctx.triggers.add(essentialData)
+      ctx.trigger = await ctx.triggers.getOne(ctx.triggerId)
+
+      assert.ok(ctx.triggerId)
+      assert.ok(ctx.trigger)
+    })
+
+    it(`should add condition`, async () => {
+      const data: EssentialConditionData[] = [
+        {
+          event: BasketballEvents.Player,
+          compare: CompareOp.In,
+          targets: [ ctx.playerId ],
+          options: [
+            {
+              event: BasketballEvents.PlayerScores3FG,
+              compare: CompareOp.Equal,
+              targets: [ "2" ]
+            }
+          ],
+        },
+      ]
+
+      await ctx.triggerConditionCollection.add(ctx.triggerId, datasource, sport, scope, scopeId, data)
+
+      const conditions = await ctx.triggerConditionCollection.getByTriggerId(ctx.triggerId)
+
+      assert.ok(Array.isArray(conditions))
+      ctx.log.debug({ conditions }, "conditions retrieved")
+
+      for(const condition of conditions) {
+        // assert.ok(Array.isArray(condition.targets))
+        assert.ok(Array.isArray(condition.options))
+      }
+    })
+
+    it(`should fail to add condition for ${BasketballEvents.Team} with wrong compare`, async () => {
+      const data: EssentialConditionData[] = [
+        {
+          event: BasketballEvents.Team,
+          compare: CompareOp.Equal,
+          targets: [ "wrong" ],
+          options: [
+            {
+              event: BasketballEvents.TeamScores3FG,
+              compare: CompareOp.Equal,
+              targets: [
+                "2"
+              ]
+            },
+          ],
+        },
+      ]
+
+      await assert.rejects(
+        ctx.triggerConditionCollection.add(ctx.triggerId, datasource, sport, scope, scopeId, data),
+        (err: Error) => {
+          ctx.log.debug({ err }, "adding condition raised error")
+          assert(err)
+          assert.equal(err.name.includes("ArgumentError"), true)
+          assert.equal(err.message.includes("should have compare one of"), true)
+          return true
+        })
+    })
+
+    it(`should get triggers by event ${BasketballEvents.Player} and scope`, async () => {
+      const items = await ctx.triggerConditionCollection
+        .getTriggerListByScopeAndEventName(datasource, scope, scopeId, BasketballEvents.Player)
+      assert.ok(items.length)
+      ctx.log.debug({ items }, `list of triggers`)
+    })
+
+    it('should get conditions by trigger id', async () => {
+      const conditions = await ctx.triggerConditionCollection.getByTriggerId(ctx.triggerId)
+      assert.ok(conditions.length > 0)
+      ctx.log.debug({ conditions }, `conditions`)
+    })
   })
 
-  it(`should add condition for ${BasketballEvents.Player} and ${BasketballEvents.PlayerScores3FG}`, async () => {
-    const data: EssentialConditionData[] = [
-      {
-        event: BasketballEvents.Player,
-        compare: CompareOp.In,
-        targets: [ ctx.playerId ],
-        options: [
-          {
-            event: BasketballEvents.PlayerScores3FG,
-            compare: CompareOp.Equal,
-            targets: [ "2" ]
-          }
-        ],
-      },
-    ]
+  describe(`api v2`, function() {
 
-    await ctx.triggerConditionCollection.add(ctx.triggerId, datasource, sport, scope, scopeId, data)
+    before(async () => {
+      await ctx.redis.flushall()
+    })
 
-    const conditions = await ctx.triggerConditionCollection.getByTriggerId(ctx.triggerId)
+    it('should create trigger', async () => {
+      const essentialData: EssentialTriggerData = {
+        name: "...name of trigger...",
+        description: "...description of trigger...",
+        datasource,
+        sport,
+        scope,
+        scopeId,
+        entity,
+        entityId,
+      }
 
-    assert.ok(Array.isArray(conditions))
-    ctx.log.debug({ conditions }, "conditions retrieved")
+      ctx.triggerId = await ctx.triggers.add(essentialData)
+      ctx.trigger = await ctx.triggers.getOne(ctx.triggerId)
 
-    for(const condition of conditions) {
-      // assert.ok(Array.isArray(condition.targets))
-      assert.ok(Array.isArray(condition.options))
-    }
+      assert.ok(ctx.triggerId)
+      assert.ok(ctx.trigger)
+    })
+
+    it(`should add condition`, async () => {
+
+      const data: EssentialConditionData[] = [
+        {
+          options: [
+            {
+              event: BasketballEvents.Player,
+              compare: CompareOp.In,
+              targets: [ ctx.playerId ],
+            },
+            {
+              event: BasketballEvents.PlayerScores3FG,
+              compare: CompareOp.Equal,
+              targets: [ "2" ]
+            }
+          ],
+        },
+      ]
+
+      await ctx.triggerConditionCollection.add(ctx.triggerId, datasource, sport, scope, scopeId, data)
+
+      const conditions = await ctx.triggerConditionCollection.getByTriggerId(ctx.triggerId)
+
+      assert.ok(Array.isArray(conditions))
+      ctx.log.debug({ conditions }, "conditions retrieved")
+
+      for(const condition of conditions) {
+        // assert.ok(Array.isArray(condition.targets))
+        assert.ok(Array.isArray(condition.options))
+      }
+    })
+
+    it(`should fail to add condition for ${BasketballEvents.Team} with wrong compare`, async () => {
+      const data: EssentialConditionData[] = [
+        {
+          options: [
+            {
+              event: BasketballEvents.Team,
+              compare: CompareOp.Equal,
+              targets: [ "wrong" ],
+            },
+            {
+              event: BasketballEvents.TeamScores3FG,
+              compare: CompareOp.Equal,
+              targets: [
+                "2"
+              ]
+            },
+          ],
+        },
+      ]
+
+      await assert.rejects(
+        ctx.triggerConditionCollection.add(ctx.triggerId, datasource, sport, scope, scopeId, data),
+        (err: Error) => {
+          ctx.log.debug({ err }, "adding condition raised error")
+          assert(err)
+          assert.equal(err.name.includes("ArgumentError"), true)
+          assert.equal(err.message.includes("should have compare one of"), true)
+          return true
+        })
+    })
+
+    it(`should get triggers by event ${BasketballEvents.Player} and scope`, async () => {
+      const items = await ctx.triggerConditionCollection
+        .getTriggerListByScopeAndEventName(datasource, scope, scopeId, BasketballEvents.Player)
+      assert.ok(items.length)
+      ctx.log.debug({ items }, `list of triggers`)
+    })
+
+    it('should get conditions by trigger id', async () => {
+      const conditions = await ctx.triggerConditionCollection.getByTriggerId(ctx.triggerId)
+      assert.ok(conditions.length > 0)
+      ctx.log.debug({ conditions }, `conditions`)
+    })
   })
 
-  it(`should fail to add condition for ${BasketballEvents.Team} with wrong compare`, async () => {
-    const data: EssentialConditionData[] = [
-      {
-        event: BasketballEvents.Team,
-        compare: CompareOp.Equal,
-        targets: [ "wrong" ],
-        options: [
-          {
-            event: BasketballEvents.TeamScores3FG,
-            compare: CompareOp.Equal,
-            targets: [
-              "2"
-            ]
-          },
-        ],
-      },
-    ]
 
-    await assert.rejects(
-      ctx.triggerConditionCollection.add(ctx.triggerId, datasource, sport, scope, scopeId, data),
-      (err: Error) => {
-        ctx.log.debug({ err }, "adding condition raised error")
-        assert(err)
-        assert.equal(err.name.includes("ArgumentError"), true)
-        assert.equal(err.message.includes("should have compare one of"), true)
-        return true
-      })
-  })
-
-  it(`should get triggers by event ${BasketballEvents.Player} and scope`, async () => {
-    const items = await ctx.triggerConditionCollection
-      .getTriggerListByScopeAndEventName(datasource, scope, scopeId, BasketballEvents.Player)
-    assert.ok(items.length)
-  })
-
-  it('should get conditions by trigger id', async () => {
-    const conditions = await ctx.triggerConditionCollection.getByTriggerId(ctx.triggerId)
-    assert.ok(conditions.length > 0)
-    ctx.log.debug(JSON.stringify(conditions))
-  })
 
 })
