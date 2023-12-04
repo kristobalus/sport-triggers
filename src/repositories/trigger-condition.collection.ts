@@ -435,8 +435,10 @@ export class TriggerConditionCollection {
 
     if (condition.uri) {
       try {
+        // version 2: uri is array
         condition.uri = JSON.parse(condition.uri as any)
       } catch(err) {
+        // version 1: uri is a string
          condition.uri = [ condition.uri as any ]
       }
     }

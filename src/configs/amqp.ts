@@ -8,5 +8,5 @@ export const amqp: CoreOptions['amqp'] = {
 }
 
 export const routerAmqp: CoreOptions['routerAmqp'] = {
-  prefix: 'triggers',
+  prefix: 'triggers'
 }

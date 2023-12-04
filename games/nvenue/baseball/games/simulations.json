@@ -1,0 +1,62 @@
+[
+  {
+    "scheduled": "2021-07-11T18:10:00+00:00",
+    "nv_game_id": "f7260678-6063-49c7-9e76-9becdf5b708d",
+    "mlb_game_id": "633340",
+    "away_abbr": "NYY",
+    "home_abbr": "HOU",
+    "season": 2023,
+    "season_type": "PST",
+    "status": "simulation"
+  },
+  {
+    "scheduled": "2022-09-10T00:40:00+00:00",
+    "nv_game_id": "747ddafa-242a-4b98-a464-d0ea79236ada",
+    "mlb_game_id": "662870",
+    "away_abbr": "ARI",
+    "home_abbr": "COL",
+    "season": 2023,
+    "season_type": "PST",
+    "status": "simulation"
+  },
+  {
+    "scheduled": "2022-09-28T01:40:00+00:00",
+    "nv_game_id": "60a02f0f-5429-4b14-975e-0b813f5a9bf0",
+    "mlb_game_id": "662210",
+    "away_abbr": "LAD",
+    "home_abbr": "SD",
+    "season": 2023,
+    "season_type": "PST",
+    "status": "simulation"
+  },
+  {
+    "scheduled": "2022-09-30T01:38:00+00:00",
+    "nv_game_id": "99e0610b-ebb4-4dc0-860b-6ff4acbe28b4",
+    "mlb_game_id": "663420",
+    "away_abbr": "OAK",
+    "home_abbr": "LAA",
+    "season": 2023,
+    "season_type": "PST",
+    "status": "simulation"
+  },
+  {
+    "scheduled": "2022-05-25T01:45:00+00:00",
+    "nv_game_id": "e1ee8fa5-c7fd-4522-8922-31114010fa3f",
+    "mlb_game_id": "662074",
+    "away_abbr": "NYM",
+    "home_abbr": "SF",
+    "season": 2023,
+    "season_type": "PST",
+    "status": "simulation"
+  },
+  {
+    "scheduled": "2022-04-08T17:05:00+00:00",
+    "nv_game_id": "750dc887-ff56-4c36-b5c8-670fc50fb682",
+    "mlb_game_id": "661333",
+    "away_abbr": "BOS",
+    "home_abbr": "NYY",
+    "season": 2023,
+    "season_type": "PST",
+    "status": "simulation"
+  }
+]
