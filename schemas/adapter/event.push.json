@@ -20,6 +20,9 @@
         "scopeId": {
           "type": "string"
         },
+        "simulationId": {
+          "type": "string"
+        },
         "timestamp": {
           "type": "number"
         },
