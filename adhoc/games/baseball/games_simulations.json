@@ -58,5 +58,25 @@
     "season": 2023,
     "season_type": "PST",
     "status": "simulation"
+  },
+  {
+    "scheduled": "2022-06-30T23:05:00+00:00",
+    "nv_game_id": "0162ffb3-0e19-4306-9b8c-83d98827b016",
+    "mlb_game_id": "661105",
+    "away_abbr": "MIL",
+    "home_abbr": "PIT",
+    "season": 2023,
+    "season_type": "PST",
+    "status": "simulation"
+  },
+  {
+    "scheduled": "2022-09-17T23:10:00+00:00",
+    "nv_game_id": "7ccc2979-a9d6-49a4-be47-98a574109996",
+    "mlb_game_id": "662958",
+    "away_abbr": "MIN",
+    "home_abbr": "CLE",
+    "season": 2023,
+    "season_type": "PST",
+    "status": "simulation"
   }
 ]

@@ -15,7 +15,13 @@ export class NvenueDatasource implements Datasource {
   private games: Map<string, Game> = new Map<string, Game>
 
   getGame(gameId: string): Game {
-    return this.games.get(gameId)
+    if ( this.games.has(gameId) ) {
+      return this.games.get(gameId)
+    }
+
+    const simulationId = gameId.replace(/-\d{8}$/, '')
+
+    return this.games.get(simulationId)
   }
 
   loadGames(
@@ -23,7 +29,6 @@ export class NvenueDatasource implements Datasource {
     mlbTeamFile: string,
     mlbPlayerFile: string,
     sport: Sport) {
-
 
     if (!fs.existsSync(nvGamesDir)) {
       throw new Error(`${nvGamesDir} not found`)

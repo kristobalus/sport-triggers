@@ -1,0 +1,50 @@
+{
+    "f7260678-6063-49c7-9e76-9becdf5b708d": {
+        "game": "NYY Yankees at HOU Astros",
+        "completed": true,
+        "date": "2021/07/11",
+        "time": ""
+    },
+    "747ddafa-242a-4b98-a464-d0ea79236ada": {
+        "game": "ARI Diamondbacks at COL Rockies",
+        "completed": false,
+        "date": "2022/09/09",
+        "time": "14:00"
+    },
+    "60a02f0f-5429-4b14-975e-0b813f5a9bf0": {
+        "game": "LAD Dodgers at SD Padres",
+        "completed": false,
+        "date": "2022/09/27",
+        "time": "17:00"
+    },
+    "99e0610b-ebb4-4dc0-860b-6ff4acbe28b4": {
+        "game": "OAK Athletics at LAA Angels",
+        "completed": false,
+        "date": "2022/09/29",
+        "time": "20:00"
+    },
+    "e1ee8fa5-c7fd-4522-8922-31114010fa3f": {
+        "game": "NYM Mets at SF Giants",
+        "completed": false,
+        "date": "2022/05/24",
+        "time": "23:00"
+    },
+    "750dc887-ff56-4c36-b5c8-670fc50fb682": {
+        "game": "BOS Red Sox at NYY Yankees",
+        "completed": false,
+        "date": "2022/04/08",
+        "time": "02:00"
+    },
+    "0162ffb3-0e19-4306-9b8c-83d98827b016": {
+        "game": "MIL Brewers at PIT Pirates",
+        "completed": false,
+        "date": "2022/06/30",
+        "time": "05:00"
+    },
+    "7ccc2979-a9d6-49a4-be47-98a574109996": {
+        "game": "MIN Twins at CLE Guardians",
+        "completed": false,
+        "date": "2022/09/17",
+        "time": "08:00"
+    }
+}

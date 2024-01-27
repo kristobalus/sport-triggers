@@ -19,7 +19,8 @@ export function init(parent: FleetApp) {
     nvenue.loadGames(
       path.resolve(__dirname, '../../games/nvenue/baseball/games'),
       path.resolve(__dirname, '../../games/mlb/teams.json'),
-      path.resolve(__dirname, '../../games/mlb/players.json'), Sport.Baseball)
+      path.resolve(__dirname, '../../games/mlb/players.json'),
+      Sport.Baseball)
 
     const service = parent.metadataService = new MetadataService()
 
