@@ -33,7 +33,7 @@ export class MetadataService {
 
     const studioConfig: StudioConfigData = {
       game: {
-        id: game.id,
+        id: gameId,
         datasource: game.datasource,
         scope: game.scope,
         sport: game.sport
