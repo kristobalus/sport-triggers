@@ -166,6 +166,9 @@ export class QueueService {
       if (await adapterService.storeScopeSnapshot(snapshot)) {
         this.log.debug({ id: job.id, snapshot }, 'at least one trigger is interested in the snapshot')
         const uris = getEventUriListBySnapshot(snapshot)
+
+        this.log.debug({ uris }, 'uri list for snapshot')
+
         for( const uri of uris) {
           for await (const triggers of adapterService.getTriggersByUri(uri)) {
             if ( triggers.length ) {
