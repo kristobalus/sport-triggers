@@ -82,18 +82,18 @@ export class AdapterService {
     const trigger = await this.triggerCollection.getOne(triggerId)
 
     if (trigger.disabled) {
-      this.log.debug({ triggerId }, 'trigger skipped as disabled')
+      this.log.debug({ triggerId, snapshot }, 'trigger skipped as disabled')
       return false
     }
 
     if (trigger.disabledEntity) {
-      this.log.debug({ triggerId }, 'trigger skipped since entity is disabled')
+      this.log.debug({ triggerId, snapshot }, 'trigger skipped since entity is disabled')
       return false
     }
 
     const skipped = await this.shouldTriggerSkipRun(trigger, snapshot)
     if (skipped) {
-      this.log.debug({ triggerId }, 'evaluating trigger skipped')
+      this.log.debug({ triggerId, snapshot }, 'evaluating trigger skipped')
       return false
     }
 
@@ -120,14 +120,19 @@ export class AdapterService {
     for (const condition of conditions) {
       if (!condition.activated) {
         const mutual = intersection(condition.uri, uri)
-        if ( mutual.length === condition.uri.length ) {
-          // condition was not activated by previous snapshots
-          // and condition uri matched the event uri
-          const result = await this.evaluateConditionUsingEvaluator(condition, snapshot)
 
+        if ( mutual.length === condition.uri.length ) {
+
+          this.log.debug({
+            'condition.id': condition.id,
+            'condition.uri': condition.uri,
+            'snapshot.uri': uri,
+            mutual
+          }, `evaluating condition`)
+
+          const result = await this.evaluateConditionUsingEvaluator(condition, snapshot)
           condition.activated = result.activated
           // condition.current = snapshot.value
-
           await this.triggerConditionCollection.update(condition.id, { activated: result.activated })
         } else {
           this.log.debug({
@@ -169,7 +174,7 @@ export class AdapterService {
       // reset states
       for (const condition of conditions) {
         await this.triggerConditionCollection.update(condition.id, { activated: false })
-        this.log.debug({ triggerId, conditionId: condition.id }, 'condition state reset')
+        this.log.debug({ triggerId, snapshot, conditionId: condition.id }, 'condition state reset')
       }
     }
 
@@ -180,7 +185,7 @@ export class AdapterService {
 
     if (!next) {
       await this.triggerConditionCollection.unsubscribeTriggerFromEvents(trigger.id)
-      this.log.debug({ triggerId }, 'trigger unsubscribed from event, end of trigger lifecycle')
+      this.log.debug({ triggerId, snapshot }, 'trigger unsubscribed from event, end of trigger lifecycle')
     }
 
     const counts = await this.triggerLimitCollection.getCounts(triggerId)
@@ -188,6 +193,7 @@ export class AdapterService {
     this.log.debug({ triggerId,
       triggerActivated,
       conditionCount: activatedConditionCount,
+      snapshot,
       next,
       counts }, 'trigger evaluation result')
 
