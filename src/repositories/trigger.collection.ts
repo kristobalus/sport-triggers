@@ -19,12 +19,12 @@ export function triggerSetByEntityKey(entity: string, entityId: string) {
 }
 
 export function validateOnCreate(data: Partial<Trigger>) {
-  assert(data.entity, `entity should be defined`)
-  assert(data.entityId, `entityId should be defined`)
-  assert(data.sport, `sport should be defined`)
-  assert(data.datasource, `datasource should be defined`)
-  assert(data.scope, `scope should be defined`)
-  assert(data.scopeId, `scopeId should be defined`)
+  assert(data.entity, 'entity should be defined')
+  assert(data.entityId, 'entityId should be defined')
+  assert(data.sport, 'sport should be defined')
+  assert(data.datasource, 'datasource should be defined')
+  assert(data.scope, 'scope should be defined')
+  assert(data.scopeId, 'scopeId should be defined')
 }
 
 export class TriggerCollection {
@@ -34,7 +34,6 @@ export class TriggerCollection {
   ) { }
 
   async add(data: Partial<Trigger>): Promise<string> {
-
     validateOnCreate(data)
 
     const item = {

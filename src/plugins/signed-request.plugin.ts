@@ -11,7 +11,7 @@ export function allowSignedRequest(this: FleetApp, request: ServiceRequest) {
   const { config } = this
   const { headers } = request
 
-  if ( request.transport === "http" ) {
+  if ( request.transport === 'http' ) {
     const token = headers[config.signedRequest.tokenHeader]
 
     if (!token) {

@@ -1,19 +1,19 @@
 import { Redis } from 'ioredis'
-import { isNaN } from "lodash"
+import { isNaN } from 'lodash'
+
 // import { createArrayFromHGetAll, PipelineResult } from '../utils/pipeline-utils'
-import { limits as limitDictionary } from "../sports"
+import { limits as limitDictionary } from '../sports'
 import { CommonLimit } from '../sports/common-limits'
 
-export function keyLimitHashTable(triggerId: string) {
+function keyLimitHashTable(triggerId: string) {
   return `trigger-limits/${triggerId}/limit`
 }
 
-export function keyCountSnapshotSet(
+function keySnapshotSet(
   triggerId: string,
   eventName: string,
   eventValue: string | number,
   ignoreValue?: boolean) {
-
   if ( ignoreValue || eventValue == null ) {
     return `trigger-limits/${triggerId}/event/${eventName}`
   }
@@ -21,50 +21,59 @@ export function keyCountSnapshotSet(
   return `trigger-limits/${triggerId}/event/${eventName}/${eventValue}`
 }
 
-export function keyCountHashTable(triggerId: string) {
-  return `trigger-limits/${triggerId}/count`
+function keyCounterSet(triggerId: string) {
+  return `trigger-limits/${triggerId}/counters`
 }
 
-export function keyCountHashField(name: string, value: string | number, ignoreValue?: boolean) {
+function keyCounter(triggerId: string, name: string, value?: string | number, ignoreValue?: boolean) {
   if ( ignoreValue || value == null ) {
-    return `${name}`
+    return `trigger-limits/${triggerId}/counters/${name}`
   }
-  return `${name}/${value}`
+  
+  return `trigger-limits/${triggerId}/counters/${name}/${value}`
 }
 
-export function keyTimeHashTable(triggerId: string) {
-  return `trigger-limits/${triggerId}/time`
-}
-
-export function keyStateHashTable(triggerId: string) {
-  return `trigger-limits/${triggerId}/state`
-}
+// export function keyTimeHashTable(triggerId: string) {
+//   return `trigger-limits/${triggerId}/time`
+// }
+//
+// export function keyStateHashTable(triggerId: string) {
+//   return `trigger-limits/${triggerId}/state`
+// }
 
 export class TriggerLimitCollection {
-
   constructor(
     private redis: Redis
   ) {}
 
-  async getLimit(triggerId: string, event: string) : Promise<number> {
-    let value = parseInt(await this.redis.hget(keyLimitHashTable(triggerId), event), 10)
+  async getLimit(triggerId: string, event: string): Promise<number> {
+    const value = parseInt(await this.redis.hget(keyLimitHashTable(triggerId), event), 10)
+    
     return isNaN(value) ? 0 : value
   }
 
-  async getLimits(triggerId: string) : Promise<Record<string, number>> {
+  async getLimits(triggerId: string): Promise<Record<string, number>> {
     const limits = await this.redis.hgetall(keyLimitHashTable(triggerId))
-    for(const event of Object.keys(limits)) {
+
+    for (const event of Object.keys(limits)) {
       limits[event] = parseInt(limits[event], 10) as any
     }
+    
     return limits as any as Record<string, number>
   }
 
-  async getCounts(triggerId: string) : Promise<Record<string, number>> {
-    const hashTable = keyCountHashTable(triggerId)
-    const counts = await this.redis.hgetall(hashTable)
+  async getCounts(triggerId: string): Promise<Record<string, number>> {
+    const counterSet = keyCounterSet(triggerId)
+    const counters = await this.redis.smembers(counterSet)
 
-    for(const event of Object.keys(counts)) {
-      counts[event] = parseInt(counts[event], 10) as any
+    const counts = {}
+
+    for (const counter of counters) {
+      const value = await this.redis.get(counter)
+      const [,,, ...parts] = counter.split('/')
+      const event = parts.join('/')
+
+      counts[event] = parseInt(value, 10) as any
     }
 
     if ( counts[CommonLimit.Scope] == undefined ) {
@@ -78,12 +87,13 @@ export class TriggerLimitCollection {
     return counts as any as Record<string, number>
   }
 
-  async getCount(triggerId: string, eventName: string, eventValue: string | number) : Promise<number> {
+  async getCount(triggerId: string, eventName: string, eventValue?: string | number): Promise<number> {
     const limit = limitDictionary[eventName]
-    const hashTable = keyCountHashTable(triggerId)
-    const hashField = keyCountHashField(eventName, eventValue,  limit?.finite ?? false)
-    const count = await this.redis.hget(hashTable, hashField)
-    let value = parseInt(count, 10)
+    // const counters = keyCounterSet(triggerId)
+    const counter = keyCounter(triggerId, eventName, eventValue,  limit?.finite ?? false)
+    const valueStr = await this.redis.get(counter)
+    const value = parseInt(valueStr, 10)
+    
     return isNaN(value) ? 0 : value
   }
 
@@ -107,27 +117,27 @@ export class TriggerLimitCollection {
     snapshotId: string,
     eventName: string,
     eventValue?: string | number) {
-
     const limit = limitDictionary[eventName]
+
     if (limit) {
-      const countSet = keyCountSnapshotSet(triggerId, eventName, eventValue, limit.finite)
-      const countTable = keyCountHashTable(triggerId)
-      const countField = keyCountHashField(eventName, eventValue, limit.finite)
+      const snapshots = keySnapshotSet(triggerId, eventName, eventValue, limit.finite)
+      const counters = keyCounterSet(triggerId)
+      const counter = keyCounter(triggerId, eventName, eventValue, limit.finite)
 
-      await this.redis.sadd(countSet, snapshotId)
+      await this.redis.sadd(snapshots, snapshotId)
 
-      const count = await this.redis.scard(countSet)
+      const count = await this.redis.scard(snapshots)
 
-      await this.redis.hset(countTable, countField, count)
+      await this.redis.set(counter, count)
+      await this.redis.sadd(counters, counter)
 
       if ( limit.interval ) {
-        // await this.redis.send_command("expire", redisConfig.options.keyPrefix ?? "" + countSet, limit.interval, "NX")
-        // await this.redis.send_command("expire", redisConfig.options.keyPrefix ?? "" + countTable, limit.interval, "NX")
-        if ( await this.redis.ttl(countSet) < 1 ) {
-          await this.redis.expire(countSet, limit.interval)
+        if ( await this.redis.ttl(snapshots) < 1 ) {
+          await this.redis.expire(counter, limit.interval)
         }
-        if ( await this.redis.ttl(countTable) < 1 ) {
-          await this.redis.expire(countTable, limit.interval)
+
+        if ( await this.redis.ttl(counter) < 1 ) {
+          await this.redis.expire(counter, limit.interval)
         }
       }
     }
@@ -173,8 +183,9 @@ export class TriggerLimitCollection {
 
   async deleteByTriggerId(triggerId: string) {
     const pipe = this.redis.pipeline()
+
     pipe.del(keyLimitHashTable(triggerId))
-    pipe.del(keyCountHashTable(triggerId))
+    pipe.del(keyCounterSet(triggerId))
     await pipe.exec()
   }
 }

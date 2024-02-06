@@ -1,6 +1,4 @@
 
-
-
 export interface SubscriptionNotification {
   payload: Record<string, any>
   limits?: Record<string, number>

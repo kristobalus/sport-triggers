@@ -4,6 +4,7 @@ import { AMQPTransport, Publish } from '@microfleet/transport-amqp'
 import { Redis } from 'ioredis'
 
 import {
+  conditionKey, conditionLogKey,
   intersection,
   TriggerConditionCollection,
 } from '../../repositories/trigger-condition.collection'
@@ -17,9 +18,10 @@ import { getSnapshotKey, ScopeSnapshotCollection } from '../../repositories/scop
 import { TriggerLimitCollection } from '../../repositories/trigger-limit.collection'
 import { SubscriptionNotification } from '../../models/dto/subscription-notification'
 import { EntityLimitCollection } from '../../repositories/entity-limit.collection'
-import { ConditionEvaluator } from './condition-evaluator'
 import { limits as limitDictionary } from '../../sports'
 import { CommonLimit } from '../../sports/common-limits'
+
+import { ConditionEvaluator } from './condition-evaluator'
 
 export interface CompareResult {
   activated: boolean
@@ -27,9 +29,9 @@ export interface CompareResult {
 }
 
 export interface AdapterServiceOptions {
-  log: Microfleet['log'],
-  redis: Redis,
-  amqp: AMQPTransport,
+  log: Microfleet['log']
+  redis: Redis
+  amqp: AMQPTransport
   conditionCollection: TriggerConditionCollection
   subscriptionCollection: TriggerSubscriptionCollection
   triggerCollection: TriggerCollection
@@ -66,7 +68,7 @@ export class AdapterService {
   /**
    * executed in queue "store"
    */
-  async storeScopeSnapshot(snapshot: ScopeSnapshot) : Promise<boolean> {
+  async storeScopeSnapshot(snapshot: ScopeSnapshot): Promise<boolean> {
     if (await this.snapshotCollection.hasSnapshot(snapshot)) {
       return false
     }
@@ -83,17 +85,21 @@ export class AdapterService {
 
     if (trigger.disabled) {
       this.log.debug({ triggerId, snapshot }, 'trigger skipped as disabled')
+      
       return false
     }
 
     if (trigger.disabledEntity) {
       this.log.debug({ triggerId, snapshot }, 'trigger skipped since entity is disabled')
+      
       return false
     }
 
     const skipped = await this.shouldTriggerSkipRun(trigger, snapshot)
+
     if (skipped) {
       this.log.debug({ triggerId, snapshot }, 'evaluating trigger skipped')
+      
       return false
     }
 
@@ -111,7 +117,8 @@ export class AdapterService {
 
     const { datasource, scope, scopeId }  = snapshot
     const uri = Object.entries(snapshot.options).map(entry => {
-      const [ eventName ] = entry
+      const [eventName] = entry
+      
       return getEventUri({ datasource, scope, scopeId, eventName })
     })
 
@@ -122,15 +129,15 @@ export class AdapterService {
         const mutual = intersection(condition.uri, uri)
 
         if ( mutual.length === condition.uri.length ) {
-
           this.log.debug({
             'condition.id': condition.id,
             'condition.uri': condition.uri,
             'snapshot.uri': uri,
             mutual
-          }, `evaluating condition`)
+          }, 'evaluating condition')
 
           const result = await this.evaluateConditionUsingEvaluator(condition, snapshot)
+
           condition.activated = result.activated
           // condition.current = snapshot.value
           await this.triggerConditionCollection.update(condition.id, { activated: result.activated })
@@ -140,15 +147,14 @@ export class AdapterService {
             'condition.uri': condition.uri,
             'snapshot.uri': uri,
             mutual
-          }, `condition skipped since some uri from condition not found in the snapshot`)
+          }, 'condition skipped since some uri from condition not found in the snapshot')
         }
-
       } else {
         this.log.debug({
           'condition.id': condition.id,
           'condition.activated': condition.activated,
-          uri,
-        }, `condition skipped since it was activated earlier`)
+          uri: uri,
+        }, 'condition skipped since it was activated earlier')
       }
 
       if (condition.activated) {
@@ -215,6 +221,7 @@ export class AdapterService {
 
     for (const id of ids) {
       const count = await this.subscriptionCollection.addReason(id, reason)
+
       if (count == 0) {
         // skipped, subscription was already notified
         continue
@@ -249,8 +256,9 @@ export class AdapterService {
   async hasTriggers(snapshot: ScopeSnapshot): Promise<boolean> {
     const snapshotUris = getEventUriListBySnapshot(snapshot)
 
-    for(const uri of snapshotUris) {
+    for (const uri of snapshotUris) {
       const count = await this.triggerConditionCollection.countSubscribedToUri(uri)
+
       if ( count > 0 ) {
         return true
       }
@@ -278,21 +286,29 @@ export class AdapterService {
     }
   }
 
+  /**
+   * @description get list of trigger identifiers subscribed to event uri by their conditions
+   */
+  getTriggerListByUri(uri: string): AsyncGenerator<string[], void, void> {
+    return this.triggerConditionCollection.getSubscribedToUri(uri)
+  }
+
   private async evaluateConditionUsingEvaluator(
     condition: TriggerCondition,
     snapshot: ScopeSnapshot,
   ): Promise<CompareResult> {
-
     const result: CompareResult = {
       activated: condition.activated,
     }
 
     const { datasource, sport, scope, scopeId, id: snapshotId } = snapshot
-    const snapshotKey = getSnapshotKey({ datasource, sport, scope, scopeId, snapshotId})
+    const snapshotKey = getSnapshotKey({ datasource, sport, scope, scopeId, snapshotId })
 
     const appended = await this.triggerConditionCollection.appendToEventLog(condition.id, snapshotKey)
+
     if (!appended) {
       this.log.debug({ result, snapshotKey }, 'condition has already processed this event')
+      
       return result
     }
 
@@ -307,6 +323,27 @@ export class AdapterService {
     return result
   }
 
+  // @ts-ignore
+  private async evaluateConditionUsingLuaScript(
+    condition: TriggerCondition,
+    event: ScopeSnapshot,
+  ): Promise<CompareResult> {
+    this.log.debug({ event, condition }, 'evaluating condition using lua script')
+
+    const key = conditionKey(condition.id)
+    const logKey = conditionLogKey(condition.id)
+    const result: CompareResult = {
+      activated: false
+    }
+
+    const [activated, debug] = await this.redis.set_and_compare(2, key, logKey, JSON.stringify(event))
+
+    result.activated = !!activated
+    this.log.debug({ key, debug: debug ? JSON.parse(debug) : {}, result }, 'condition evaluation result')
+
+    return result
+  }
+
   private getLimitFactories(trigger: Trigger) {
     const factories = []
 
@@ -315,23 +352,43 @@ export class AdapterService {
     if (useEntityLimits) {
       factories.push({
         limits: async (trigger: Trigger) => {
-          return this.entityLimitCollection.getLimits(trigger.entity, trigger.entityId)
+          const limits = this.entityLimitCollection.getLimits(trigger.entity, trigger.entityId)
+
+          this.log.debug({ limits, triggerId: trigger.id }, 'got entity-level limits')
+
+          return limits
         },
         count: async (trigger: Trigger, eventName: string, eventValue: any) => {
-          return this.entityLimitCollection.getCount(trigger.entity, trigger.entityId, eventName, eventValue)
+          const count =  this.entityLimitCollection.getCount(trigger.entity, trigger.entityId, eventName, eventValue)
+
+          this.log.debug({ count, triggerId: trigger.id }, 'got entity-level activation count')
+
+          return count
         },
       })
+    } else {
+      this.log.debug({ triggerId: trigger.id }, 'entity-level limit factory skipped')
     }
 
     if ( trigger.useLimits ) {
       factories.push({
         limits: async (trigger: Trigger) => {
-          return this.triggerLimitCollection.getLimits(trigger.id)
+          const limits = await this.triggerLimitCollection.getLimits(trigger.id)
+
+          this.log.debug({ limits, triggerId: trigger.id }, 'got trigger-level limits')
+
+          return limits
         },
         count: async (trigger: Trigger, eventName: string, eventValue: any) => {
-          return this.triggerLimitCollection.getCount(trigger.id, eventName, eventValue)
+          const count =  this.triggerLimitCollection.getCount(trigger.id, eventName, eventValue)
+
+          this.log.debug({ count, triggerId: trigger.id, eventName, eventValue }, 'got trigger-level activation count')
+
+          return count
         },
       })
+    } else {
+      this.log.debug({ triggerId: trigger.id }, 'trigger-level limit factory skipped')
     }
 
     return factories
@@ -342,11 +399,11 @@ export class AdapterService {
 
     for (const factory of factories) {
       const limits = await factory.limits(trigger)
-      for (const [limitEvent, limitCount] of Object.entries(limits)) {
 
+      for (const [limitEvent, limitCount] of Object.entries(limits)) {
         if (limitCount == 0) {
           // limit essentially disabled
-          this.log.debug({ limitCount, limitEvent }, `limit disabled`)
+          this.log.debug({ limitCount, limitEvent, triggerId: trigger.id }, 'limit disabled')
           continue
         }
 
@@ -355,7 +412,8 @@ export class AdapterService {
           // minute
           // finite limit ignores current event value
           const activationCount = await factory.count(trigger, limitEvent, null)
-          this.log.debug({ limitCount, limitEvent, activationCount }, `common limit being compared`)
+
+          this.log.debug({ triggerId: trigger.id, limitCount, limitEvent, activationCount }, 'common limit being compared')
           if (limitCount <= activationCount) {
             // limit reached, should stop looping
             return true
@@ -367,7 +425,7 @@ export class AdapterService {
           const eventValue = snapshot.options[limitEvent]
           const activationCount = await factory.count(trigger, limitEvent, eventValue)
 
-          this.log.debug({ limitCount, limitEvent, activationCount, eventValue }, `limit being compared`)
+          this.log.debug({ triggerId: trigger.id, limitCount, limitEvent, activationCount, eventValue }, 'limit being compared')
 
           if (limitCount <= activationCount) {
             // limit reached, should skip looping
@@ -385,20 +443,21 @@ export class AdapterService {
 
     for (const factory of factories) {
       const limits = await factory.limits(trigger)
-      for (const [limitEvent, limitCount] of Object.entries(limits)) {
 
+      for (const [limitEvent, limitCount] of Object.entries(limits)) {
         if (limitCount == 0) {
           // limit essentially disabled
-          this.log.debug({ limitCount, limitEvent }, `limit disabled`)
+          this.log.debug({ triggerId: trigger.id, limitCount, limitEvent }, 'limit disabled')
           continue
         }
 
         const limit = limitDictionary[limitEvent]
+
         if (limit && limit.finite) {
           // finite limit ignores current event value
           const activationCount = await factory.count(trigger, limitEvent, null)
 
-          this.log.debug({ limitCount, limitEvent, activationCount }, `limit estimate`)
+          this.log.debug({ triggerId: trigger.id, limitCount, limitEvent, activationCount }, 'limit estimate')
 
           if (limitCount <= activationCount) {
             // limit reached, should stop looping
@@ -423,6 +482,6 @@ export class AdapterService {
       await this.entityLimitCollection.incrCount(trigger.entity, trigger.entityId, snapshot.id, eventName, eventValue)
     }
 
-    this.log.debug({ snapshot }, 'trigger counters incremented')
+    this.log.debug({ snapshot, triggerId: trigger.id }, 'trigger counters incremented')
   }
 }

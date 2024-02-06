@@ -70,7 +70,10 @@ describe('StudioService', function () {
       conditionCollection: ctx.conditionCollection,
       subscriptionCollection: ctx.subscriptionCollection,
       triggerLimitCollection: ctx.triggerLimitCollection,
-      entityLimitCollection: ctx.entityLimitCollection
+      entityLimitCollection: ctx.entityLimitCollection,
+      defaultLimits: {
+        [CommonLimit.Scope]: 10
+      }
     } as StudioServiceOptions)
     ctx.log = log
   })

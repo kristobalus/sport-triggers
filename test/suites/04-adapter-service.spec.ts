@@ -37,7 +37,6 @@ interface SuitContext extends TestContext {
 }
 
 describe('AdapterService', function () {
-
   const sport = Sport.Basketball
   const datasource = 'sportradar'
   const scope = Scope.Game

@@ -107,7 +107,11 @@ describe("AdapterService", function () {
     ctx.studioService = new StudioService({
       log,
       redis: ctx.redis,
+      defaultLimits: {
+        [CommonLimit.Scope]: 10
+      },
       triggerCollection: ctx.triggerCollection,
+      entityLimitCollection: ctx.entityLimitCollection,
       conditionCollection: ctx.triggerConditionCollection,
       subscriptionCollection: ctx.subscriptionCollection,
       triggerLimitCollection: ctx.triggerLimitCollection,

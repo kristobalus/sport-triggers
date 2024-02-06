@@ -20,7 +20,7 @@ import { TriggerWithConditions } from '../../src/models/dto/trigger-with-conditi
 import { TriggerGetRequest } from '../../src/models/dto/trigger-get-request'
 import { Defer } from '../../src/utils/defer'
 import { BasketballEvents } from '../../src/sports/basketball/basketball-events'
-import { TriggerDisableRequest } from "../../src/models/dto/trigger-disable-request"
+import { TriggerDisableRequest } from '../../src/models/dto/trigger-disable-request'
 
 interface SuiteContext extends TestContext {
   amqpPrefix?: string
@@ -111,9 +111,11 @@ describe('Disabled triggers', function () {
         trigger: triggerData,
         conditions: conditionData,
       } as TriggerCreateRequest)
+
     ctx.triggerId = response.data.id
 
     const { trigger } = await getTriggerWithConditions(ctx.triggerId)
+
     ctx.trigger = trigger
   }
 
@@ -157,6 +159,7 @@ describe('Disabled triggers', function () {
 
   async function disableTrigger(ctx: SuiteContext) {
     const { amqpPrefix } = ctx
+
     await ctx.app.amqp.publishAndWait(`${amqpPrefix}.studio.trigger.disable`, {
       id: ctx.triggerId
     } as TriggerDisableRequest)
@@ -164,6 +167,7 @@ describe('Disabled triggers', function () {
 
   async function disableEntity(ctx: SuiteContext) {
     const { amqpPrefix } = ctx
+
     await ctx.app.amqp.publishAndWait(`${amqpPrefix}.studio.entity.disable`, {
       entities: [
         {
@@ -176,6 +180,7 @@ describe('Disabled triggers', function () {
 
   async function enableTrigger(ctx: SuiteContext) {
     const { amqpPrefix } = ctx
+
     await ctx.app.amqp.publishAndWait(`${amqpPrefix}.studio.trigger.enable`, {
       id: ctx.triggerId
     } as TriggerDisableRequest)
@@ -183,6 +188,7 @@ describe('Disabled triggers', function () {
 
   async function enableEntity(ctx: SuiteContext) {
     const { amqpPrefix } = ctx
+
     await ctx.app.amqp.publishAndWait(`${amqpPrefix}.studio.entity.enable`, {
       entities: [
         {
@@ -218,6 +224,7 @@ describe('Disabled triggers', function () {
   it('should disable trigger', async () => {
     await disableTrigger(ctx)
     const { trigger } = await getTriggerWithConditions(ctx.triggerId)
+
     ctx.app.log.debug({ trigger }, 'trigger status')
     assert.equal(trigger.disabled, true)
   })
@@ -225,6 +232,7 @@ describe('Disabled triggers', function () {
   it('should disable entity', async () => {
     await disableEntity(ctx)
     const { trigger } = await getTriggerWithConditions(ctx.triggerId)
+
     ctx.app.log.debug({ trigger }, 'trigger status')
     assert.equal(trigger.disabledEntity, true)
   })
@@ -232,6 +240,7 @@ describe('Disabled triggers', function () {
   it('should enable trigger', async () => {
     await enableTrigger(ctx)
     const { trigger } = await getTriggerWithConditions(ctx.triggerId)
+
     ctx.app.log.debug({ trigger }, 'trigger status')
     assert.equal(trigger.disabled, false)
   })
@@ -239,9 +248,8 @@ describe('Disabled triggers', function () {
   it('should enable entity', async () => {
     await enableEntity(ctx)
     const { trigger } = await getTriggerWithConditions(ctx.triggerId)
+
     ctx.app.log.debug({ trigger }, 'trigger status')
     assert.equal(trigger.disabledEntity, false)
   })
-
-
 })

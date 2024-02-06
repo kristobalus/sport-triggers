@@ -1,4 +1,5 @@
 import fs = require('fs')
+import path from 'path'
 
 import { Game } from '../models/studio/game'
 import { Game as NVenueGame } from '../models/nvenue/game'
@@ -9,7 +10,6 @@ import { PlayerMlb } from '../models/mlb/player.mlb'
 import { Datasource } from '../models/studio/datasource'
 import { Sport } from '../models/events/sport'
 import { Player } from '../models/studio/player'
-import path from 'path'
 
 export class NvenueDatasource implements Datasource {
   private games: Map<string, Game> = new Map<string, Game>
@@ -29,7 +29,6 @@ export class NvenueDatasource implements Datasource {
     mlbTeamFile: string,
     mlbPlayerFile: string,
     sport: Sport) {
-
     if (!fs.existsSync(nvGamesDir)) {
       throw new Error(`${nvGamesDir} not found`)
     }
@@ -63,16 +62,20 @@ export class NvenueDatasource implements Datasource {
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     // List all files in the directory
-    const nvGameFiles = fs.readdirSync(nvGamesDir);
+    const nvGameFiles = fs.readdirSync(nvGamesDir)
 
     const nvGames: NVenueGame[] = []
-    for (let fileName of nvGameFiles) {
+
+    for (const fileName of nvGameFiles) {
       // console.log(fileName)
-      const filePath = path.join(nvGamesDir, fileName);
+      const filePath = path.join(nvGamesDir, fileName)
       // Check if the item is a file
-      const stat = fs.statSync(filePath);
+      const stat = fs.statSync(filePath)
+
       if (stat.isFile()) {
+        // eslint-disable-next-line  @typescript-eslint/no-var-requires
         const content = require(filePath)
+
         nvGames.push(...content)
       }
     }

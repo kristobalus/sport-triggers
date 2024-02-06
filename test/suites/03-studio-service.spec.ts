@@ -37,7 +37,6 @@ interface SuitContext extends TestContext {
 }
 
 describe('StudioService', function () {
-
   const datasource = 'sportradar'
   const scope = Scope.Game
   const scopeId = '0d996d35-85e5-4913-bd45-ac9cfedbf272'

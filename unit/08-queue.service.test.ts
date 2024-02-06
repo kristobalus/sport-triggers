@@ -26,6 +26,7 @@ import { ScopeSnapshotCollection } from '../src/repositories/scope-snapshot.coll
 import { Sport } from '../src/models/events/sport'
 import { BasketballEvents } from '../src/sports/basketball/basketball-events'
 import assert from "assert"
+import { CommonLimit } from '../src/sports/common-limits'
 
 describe("QueueService", function () {
 
@@ -117,7 +118,11 @@ describe("QueueService", function () {
       triggerCollection: ctx.triggerCollection,
       triggerLimitCollection: ctx.triggerLimitCollection,
       conditionCollection: ctx.triggerConditionCollection,
-      subscriptionCollection: ctx.triggerSubscriptionCollection
+      subscriptionCollection: ctx.triggerSubscriptionCollection,
+      entityLimitCollection: ctx.entityLimitCollection,
+      defaultLimits: {
+        [CommonLimit.Scope]: 10
+      }
     } as StudioServiceOptions)
 
     ctx.queueService = new QueueService(log as Microfleet['log'], ctx.adapter, {})

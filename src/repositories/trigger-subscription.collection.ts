@@ -36,8 +36,8 @@ export function subscriptionReasons(subscriptionId: string) {
 }
 
 export function validateOnCreate(data: Partial<TriggerSubscription>) {
-  assert(data.entity, `entity should be defined`)
-  assert(data.entityId, `entityId should be defined`)
+  assert(data.entity, 'entity should be defined')
+  assert(data.entityId, 'entityId should be defined')
 }
 
 export class TriggerSubscriptionCollection {
@@ -48,7 +48,6 @@ export class TriggerSubscriptionCollection {
   }
 
   async create(triggerId: string, data: Partial<TriggerSubscription>): Promise<string> {
-
     validateOnCreate(data)
 
     const item: Partial<TriggerSubscription> = {
@@ -58,6 +57,7 @@ export class TriggerSubscriptionCollection {
     }
 
     const pipe = this.redis.pipeline()
+
     pipe.hset(subscriptionKey(item.id), this.serialize(item))
     pipe.sadd(subscriptionByTriggerKey(triggerId), item.id)
     pipe.sadd(subscriptionByEntityKey(data.entity, data.entityId), item.id)
@@ -87,19 +87,6 @@ export class TriggerSubscriptionCollection {
     }
 
     return data
-  }
-
-  private deserialize(item: Record<string, any>) : TriggerSubscription {
-
-    if (item.payload) {
-      item.payload = JSON.parse(item.payload as unknown as string)
-    }
-
-    if (item.options) {
-      item.options = JSON.parse(item.options as unknown as string)
-    }
-
-    return item as unknown as TriggerSubscription
   }
 
   async deleteOne(id: string): Promise<boolean> {
@@ -146,7 +133,19 @@ export class TriggerSubscriptionCollection {
     return this.redis.hset(subscriptionKey(id), data as unknown as Record<string, any>)
   }
 
-  async addReason(subscriptionId: string, reason: string) : Promise<number> {
-    return await this.redis.sadd(subscriptionReasons(subscriptionId), reason)
+  async addReason(subscriptionId: string, reason: string): Promise<number> {
+    return this.redis.sadd(subscriptionReasons(subscriptionId), reason)
+  }
+
+  private deserialize(item: Record<string, any>): TriggerSubscription {
+    if (item.payload) {
+      item.payload = JSON.parse(item.payload as unknown as string)
+    }
+
+    if (item.options) {
+      item.options = JSON.parse(item.options as unknown as string)
+    }
+
+    return item as unknown as TriggerSubscription
   }
 }

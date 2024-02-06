@@ -1,7 +1,7 @@
 import { StudioEvent } from './studio.event'
 import { StudioTarget } from './studio.target'
 import { Game } from './game'
-import { StudioLimit } from "./studio.limit"
+import { StudioLimit } from './studio.limit'
 
 export interface TargetList {
   targets: StudioTarget[]

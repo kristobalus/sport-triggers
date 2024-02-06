@@ -14,8 +14,9 @@ import { EssentialSubscriptionData } from '../../models/dto/trigger-subscribe-re
 import { TriggerSubscription } from '../../models/entities/trigger-subscription'
 import { Trigger } from '../../models/entities/trigger'
 import { TriggerCondition } from '../../models/entities/trigger-condition'
-import { TriggerLimitCollection } from "../../repositories/trigger-limit.collection"
-import { EntityLimitCollection } from "../../repositories/entity-limit.collection"
+import { TriggerLimitCollection } from '../../repositories/trigger-limit.collection'
+import { EntityLimitCollection } from '../../repositories/entity-limit.collection'
+import { CommonLimit } from '../../sports/common-limits'
 
 export interface TriggerOptions {
   showLog?: boolean
@@ -69,7 +70,7 @@ export class StudioService {
     triggerData: EssentialTriggerData,
     conditionData: EssentialConditionData[],
     limits?: Record<string, number>
-  ) : Promise<string> {
+  ): Promise<string> {
     this.log.debug({
       trigger: triggerData,
       conditions: conditionData,
@@ -91,7 +92,6 @@ export class StudioService {
     }
 
     try {
-
       await this.triggerConditionCollection.add(
         triggerId,
         triggerData.datasource,
@@ -99,7 +99,6 @@ export class StudioService {
         triggerData.scope,
         triggerData.scopeId,
         conditionData)
-
     } catch (err) {
       if (triggerId) {
         await this.triggerCollection.deleteOne(triggerId)
@@ -113,6 +112,7 @@ export class StudioService {
 
     try {
       const combinedLimits = Object.assign({}, this.defaultLimits, limits ?? {})
+
       await this.triggerLimitCollection.setLimits(triggerId, combinedLimits)
     } catch (err) {
       if (triggerId) {
@@ -218,8 +218,9 @@ export class StudioService {
 
   async deleteTrigger(triggerId: string) {
     const trigger = await this.triggerCollection.getOne(triggerId)
-    const counts = await this.triggerLimitCollection.getCounts(triggerId)
-    if ( trigger && counts.scope == 0 ) {
+    const countScope = await this.triggerLimitCollection.getCount(triggerId, CommonLimit.Scope)
+
+    if ( trigger && countScope == 0 ) {
       await this.triggerCollection.deleteOne(triggerId)
       await this.triggerConditionCollection.deleteByTriggerId(triggerId)
       await this.subscriptionCollection.deleteByTriggerId(triggerId)
@@ -232,9 +233,20 @@ export class StudioService {
    *              activation;
    *              e.g. Studio can schedule question activation upon player touchdown,
    *
-   * @param triggerId
-   * @param data
+   * @param item
    */
+  public deserialize(item: Record<string, any>): TriggerSubscription {
+    if (item.payload) {
+      item.payload = JSON.parse(item.payload as unknown as string)
+    }
+
+    if (item.options) {
+      item.options = JSON.parse(item.options as unknown as string)
+    }
+
+    return item as unknown as TriggerSubscription
+  }
+
   async subscribeTrigger(triggerId: string, data: EssentialSubscriptionData): Promise<string> {
     return this.subscriptionCollection.create(triggerId, data)
   }
@@ -273,7 +285,6 @@ export class StudioService {
     triggerUpdate: Partial<Trigger>,
     conditionsUpdate: Partial<TriggerCondition>[] = [],
     limits?: Record<string, number>) {
-
     assert(triggerUpdate.id)
 
     const trigger = await this.triggerCollection.getOne(triggerUpdate.id)
@@ -323,8 +334,9 @@ export class StudioService {
     await this.triggerCollection.updateOne(triggerId, { disabled: true })
   }
 
-  async setTriggerLimits(triggerId: string, limits: Record<string, number | string>) : Promise<boolean> {
+  async setTriggerLimits(triggerId: string, limits: Record<string, number | string>): Promise<boolean> {
     await this.triggerLimitCollection.setLimits(triggerId, limits)
+
     return true
   }
 
@@ -333,7 +345,7 @@ export class StudioService {
     entityId: string,
     limits: Record<string, number | string>,
     enabled: boolean
-  ) : Promise<boolean> {
+  ): Promise<boolean> {
     await this.entityLimitCollection.setLimits(entity, entityId, limits)
 
     if ( enabled ) {
@@ -349,8 +361,7 @@ export class StudioService {
     entity: string,
     entityId: string,
     enabled: boolean
-  ) : Promise<boolean> {
-
+  ): Promise<boolean> {
     if ( enabled ) {
       await this.entityLimitCollection.enableLimits(entity, entityId)
     } else {
@@ -360,19 +371,20 @@ export class StudioService {
     return true
   }
 
-  async getEntityLimits(entity: string, entityId: string) : Promise<Record<string, number>> {
-    return await this.entityLimitCollection.getLimits(entity, entityId)
+  async getEntityLimits(entity: string, entityId: string): Promise<Record<string, number>> {
+    return this.entityLimitCollection.getLimits(entity, entityId)
   }
 
-  async isEntityLimitsEnabled(entity: string, entityId: string) : Promise<boolean> {
-    return await this.entityLimitCollection.isEnabled(entity, entityId)
+  async isEntityLimitsEnabled(entity: string, entityId: string): Promise<boolean> {
+    return this.entityLimitCollection.isEnabled(entity, entityId)
   }
 
   async disableEntity(entity: string, entityId: string) {
     const triggerIds = await this.triggerCollection.getListByEntity(entity, entityId)
 
-    for(const triggerId of triggerIds) {
+    for (const triggerId of triggerIds) {
       const trigger = await this.triggerCollection.getOne(triggerId)
+
       await this.triggerCollection.updateOne(trigger.id, { disabledEntity: true })
     }
   }
@@ -380,10 +392,10 @@ export class StudioService {
   async enableEntity(entity: string, entityId: string) {
     const triggerIds = await this.triggerCollection.getListByEntity(entity, entityId)
 
-    for(const triggerId of triggerIds) {
+    for (const triggerId of triggerIds) {
       const trigger = await this.triggerCollection.getOne(triggerId)
+
       await this.triggerCollection.updateOne(trigger.id, { disabledEntity: false })
     }
   }
-
 }

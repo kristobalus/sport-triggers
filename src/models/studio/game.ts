@@ -1,6 +1,7 @@
+import { Sport } from '../events/sport'
+
 import { Player } from './player'
 import { Team } from './team'
-import { Sport } from '../events/sport'
 
 export interface Game {
   datasource: string

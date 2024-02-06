@@ -1,5 +1,6 @@
 import { getIndexName, getIndexPrefix } from '../../repositories/scope-snapshot.collection'
 import { Sport }  from '../../models/events/sport'
+
 import { BasketballEvents } from './basketball-events'
 
 const sport = Sport.Basketball

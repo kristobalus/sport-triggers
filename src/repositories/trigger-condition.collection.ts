@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+import assert from 'assert'
 
 import { Redis } from 'ioredis'
 import { inPlaceSort } from 'fast-sort'
@@ -8,7 +9,6 @@ import { TriggerCondition, TriggerConditionOption } from '../models/entities/tri
 import { assertNoError, createArrayFromHGetAll } from '../utils/pipeline-utils'
 import { getEventUri } from '../models/events/event-uri'
 import { metadata as metadataDictionary } from '../sports'
-import assert from 'assert'
 
 export function conditionSetByTriggerKey(triggerId: string) {
   return `triggers/${triggerId}/conditions`
@@ -44,13 +44,13 @@ export function intersection(array1: any[], array2: any[]): any[] {
 export function validateCondition(
   condition: Partial<TriggerCondition>,
 ) {
-
   if (condition.event) {
     // only version 1 has event, compare, targets fields in the root condition document
     if (!metadataDictionary[condition.event]) {
       throw new ArgumentError(`metadata not defined for event ${condition.event}`)
     }
     const metadata = metadataDictionary[condition.event]
+
     condition.type = metadata?.type
 
     if (!condition.options) {
@@ -65,6 +65,7 @@ export function validateCondition(
         compare: condition.compare,
         targets: condition.targets
       }
+
       condition.options.push(option)
     }
   }
@@ -119,7 +120,7 @@ export function validateOption(
   // parent condition
   condition: Partial<TriggerCondition>,
 ) {
-  assert(option.event, `event should be defined`)
+  assert(option.event, 'event should be defined')
 
   if (!metadataDictionary[option.event]) {
     throw new ArgumentError(`Metadata not defined for event ${option.event}`)
@@ -133,7 +134,7 @@ export function validateOption(
   //   throw new ArgumentError(`Parent event ${optionMetadata.parentOption} has no child ${option.event}`)
   // }
 
-  const [ parentOption ] = condition.options.filter(o => o.event === optionMetadata.parentOption)
+  const [parentOption] = condition.options.filter(o => o.event === optionMetadata.parentOption)
 
   // TODO check if parentOption targets should be merged with and not replace the original values
   if (!option.targets?.length && parentOption) {
@@ -201,7 +202,6 @@ export class TriggerConditionCollection {
     scope: string,
     scopeId: string,
     conditions: Partial<TriggerCondition>[]) {
-
     if (!conditions || conditions.length == 0) {
       throw new ArgumentError('Cannot add empty conditions')
     }
@@ -255,9 +255,11 @@ export class TriggerConditionCollection {
   getOptionUriList(condition: TriggerCondition) {
     const { datasource, scope, scopeId }  = condition
     const result = []
+
     for (const option of condition.options) {
       result.push(getEventUri({ datasource, scope, scopeId, eventName: option.event }))
     }
+
     return result
   }
 
@@ -346,6 +348,7 @@ export class TriggerConditionCollection {
     start = 0,
     stop = -1): Promise<string[]> {
     const uri = getEventUri({ datasource, scope, scopeId, eventName })
+
     return this.redis.zrange(triggerSubscribedToUri(uri), start, stop)
   }
 
@@ -375,11 +378,13 @@ export class TriggerConditionCollection {
   async appendToEventLog(conditionId: string, uniqueId: string): Promise<boolean> {
     const logKey = conditionLogKey(conditionId)
     const result = await this.redis.zadd(logKey, 'NX', Date.now(), uniqueId)
+
     return !!result
   }
 
+  // eslint-disable-next-line require-await
   async getEventLog(conditionId: string): Promise<string[]> {
-    return await this.redis.zrange(conditionLogKey(conditionId), 0, -1)
+    return this.redis.zrange(conditionLogKey(conditionId), 0, -1)
   }
 
   async cleanByTriggerId(triggerId: string) {
@@ -437,9 +442,9 @@ export class TriggerConditionCollection {
       try {
         // version 2: uri is array
         condition.uri = JSON.parse(condition.uri as any)
-      } catch(err) {
+      } catch (err) {
         // version 1: uri is a string
-         condition.uri = [ condition.uri as any ]
+        condition.uri = [condition.uri as any]
       }
     }
 

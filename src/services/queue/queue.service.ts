@@ -3,6 +3,7 @@ import { Microfleet } from '@microfleet/core-types'
 
 import { Worker, Job, Queue } from 'bullmq'
 import { RedisOptions } from 'ioredis'
+import { uniq } from 'lodash'
 
 import { getEventUriListBySnapshot, ScopeSnapshot } from '../../models/events/scope-snapshot'
 import { AdapterService } from '../adapter/adapter.service'
@@ -78,8 +79,8 @@ export class QueueService {
       connection: redisOptions,
     })
 
-    this.storeQueue.on("error", (err) => {
-      this.log.trace({ err }, `error in store queue`)
+    this.storeQueue.on('error', (err) => {
+      this.log.trace({ err }, 'error in store queue')
     })
 
     this.triggerQueue = new Queue('triggers', {
@@ -90,8 +91,8 @@ export class QueueService {
       connection: redisOptions,
     })
 
-    this.triggerQueue.on("error", (err) => {
-      this.log.trace({ err }, `error in trigger queue`)
+    this.triggerQueue.on('error', (err) => {
+      this.log.trace({ err }, 'error in trigger queue')
     })
 
     this.notificationQueue = new Queue('notifications', {
@@ -102,8 +103,8 @@ export class QueueService {
       connection: redisOptions,
     })
 
-    this.notificationQueue.on("error", (err) => {
-      this.log.trace({ err }, `error in notification queue`)
+    this.notificationQueue.on('error', (err) => {
+      this.log.trace({ err }, 'error in notification queue')
     })
 
     this.storeWorker = new Worker('store',
@@ -165,23 +166,37 @@ export class QueueService {
     if (await adapterService.hasTriggers(snapshot)) {
       if (await adapterService.storeScopeSnapshot(snapshot)) {
         this.log.debug({ id: job.id, snapshot }, 'at least one trigger is interested in the snapshot')
-        const uris = getEventUriListBySnapshot(snapshot)
+        const eventUriList = getEventUriListBySnapshot(snapshot)
 
-        this.log.debug({ uris }, 'uri list for snapshot')
+        this.log.debug({ eventUriList, snapshot }, 'uri list for snapshot')
 
-        for( const uri of uris) {
-          for await (const triggers of adapterService.getTriggersByUri(uri)) {
-            if ( triggers.length ) {
-              this.log.debug({ triggers, uri, snapshot }, 'trigger list from db')
+        // for( const uri of uris) {
+        //   for await (const triggers of adapterService.getTriggersByUri(uri)) {
+        //     if ( triggers.length ) {
+        //       this.log.debug({ triggers, uri, snapshot }, 'trigger list from db')
+        //
+        //       const jobs = triggers.map((trigger) => ({
+        //         name: 'evaluate',
+        //         data: { triggerId: trigger.id, snapshot } as TriggerJob }))
+        //
+        //       await triggerQueue.addBulk(jobs)
+        //     }
+        //   }
+        // }
 
-              const jobs = triggers.map((trigger) => ({
-                name: 'evaluate',
-                data: { triggerId: trigger.id, snapshot } as TriggerJob }))
+        const triggerIds = []
 
-              await triggerQueue.addBulk(jobs)
-            }
+        for ( const uri of eventUriList) {
+          for await (const ids of adapterService.getTriggerListByUri(uri)) {
+            triggerIds.push(...ids)
           }
         }
+
+        const jobs = uniq(triggerIds).map((triggerId) => ({
+          name: 'evaluate',
+          data: { triggerId: triggerId, snapshot } as TriggerJob }))
+
+        await triggerQueue.addBulk(jobs)
       } else {
         this.log.debug({ snapshot }, 'snapshot has been processed before or failed to store snapshot')
       }
@@ -199,7 +214,7 @@ export class QueueService {
   async onTriggerJob(job: Job<TriggerJob>) {
     const { triggerId, snapshot } = job.data
 
-    this.log.debug({ job }, 'trigger job started')
+    this.log.debug({ job, snapshot }, 'trigger job started')
 
     const activated = await this.adapterService.evaluateTrigger(snapshot, triggerId)
 

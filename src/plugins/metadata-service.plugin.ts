@@ -1,11 +1,12 @@
 import { ConnectorsTypes } from '@microfleet/core'
 
+import path = require('path')
+
 import { FleetApp } from '../fleet-app'
 import { MetadataService } from '../services/studio/metadata.service'
 import { SportradarDatasource } from '../datasources/sportradar.datasource'
 import { NvenueDatasource } from '../datasources/nvenue.datasource'
 import { Sport } from '../models/events/sport'
-import path = require('path')
 
 export function init(parent: FleetApp) {
   // eslint-disable-next-line require-await

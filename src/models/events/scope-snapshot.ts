@@ -21,8 +21,10 @@ export interface ScopeSnapshot {
 
 export function getEventUriListBySnapshot(snapshot: ScopeSnapshot) {
   const { datasource, scope, scopeId } = snapshot
+  
   return Object.entries(snapshot.options).map(entry => {
     const [eventName] = entry
+    
     return getEventUri({ datasource, scope, scopeId, eventName })
   })
 }

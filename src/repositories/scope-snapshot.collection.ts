@@ -17,12 +17,13 @@ export function getIndexPrefix(datasource: string, sport: string, scope: string,
 }
 
 export function getSnapshotKey(options: {
-  datasource: string,
-  sport: string,
-  scope: string,
-  scopeId: string,
+  datasource: string
+  sport: string
+  scope: string
+  scopeId: string
   snapshotId: string }) {
   const { datasource, sport, scope, scopeId, snapshotId } = options
+
   return `json/${datasource}/${sport}/${scope}/${scopeId}/snapshots/${snapshotId}`
 }
 
@@ -53,6 +54,7 @@ export class ScopeSnapshotCollection {
     const indexName = getIndexName(datasource, sport, scope, scopeId)
 
     const queryBuilder = redisIndexQueryBuilders[sport]
+
     if ( queryBuilder && !this.indices.has(indexName) ) {
       const query = queryBuilder(datasource, scopeId)
 
@@ -87,10 +89,11 @@ export class ScopeSnapshotCollection {
     return result == 'OK'
   }
 
-  async hasSnapshot(data: ScopeSnapshot) : Promise<boolean> {
+  async hasSnapshot(data: ScopeSnapshot): Promise<boolean> {
     const { datasource, sport, scope, scopeId, id } = data
     const key = getSnapshotKey({ datasource, sport, scope, scopeId, snapshotId: id })
     const count = await this.redis.exists(key)
+
     return count > 0
   }
 
@@ -100,21 +103,22 @@ export class ScopeSnapshotCollection {
     scope: string,
     scopeId: string,
     snapshotId: string): Promise<ScopeSnapshot> {
-
     const key = getSnapshotKey({ datasource, sport, scope, scopeId, snapshotId })
     const result = await this.redis.send_command('json.get', key, '$')
 
     return JSON.parse(result)
   }
 
+  // eslint-disable-next-line require-await
   async getList() {
-    return await this.execute(["ft._list"])
+    return this.execute(['ft._list'])
   }
 
   async count(datasource: string, sport: string, scope: string, scopeId: string): Promise<number> {
     const indexName = getIndexName(datasource, sport, scope, scopeId)
-    const data = createObjectFromArray(await this.execute(["ft.info", indexName]))
-    return data["num_docs"]
+    const data = createObjectFromArray(await this.execute(['ft.info', indexName]))
+
+    return data['num_docs']
   }
 }
 

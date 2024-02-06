@@ -18,7 +18,7 @@ export class MetadataService {
   getStudioConfigData(
     datasource: string,
     gameId: string,
-    shouldMapEnum = false) : StudioConfigData {
+    shouldMapEnum = false): StudioConfigData {
     const ds = this.sources.get(datasource)
 
     if (!ds) {
@@ -84,7 +84,6 @@ export class MetadataService {
     }
 
     studioConfig.limits = this.getLimitsBySport(game.sport)
-
 
     return studioConfig
   }
@@ -172,17 +171,19 @@ export class MetadataService {
     return this.sources.get(id)
   }
 
-  getLimitsBySport(sport: string) : StudioLimit[] {
-      const data = []
-      for(const [id, limit] of Object.entries(limits)) {
-        if ( limit.sport == sport || limit.common ) {
-          data.push({
-            limit: id,
-            label: limit.label,
-            description: limit.description
-          } as StudioLimit)
-        }
+  getLimitsBySport(sport: string): StudioLimit[] {
+    const data = []
+
+    for (const [id, limit] of Object.entries(limits)) {
+      if ( limit.sport == sport || limit.common ) {
+        data.push({
+          limit: id,
+          label: limit.label,
+          description: limit.description
+        } as StudioLimit)
       }
-      return data
+    }
+    
+    return data
   }
 }

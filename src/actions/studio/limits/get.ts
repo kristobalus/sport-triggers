@@ -4,6 +4,7 @@ import { FleetApp } from '../../../fleet-app'
 import { SportGetLimitsResponse } from '../../../models/dto/sport-get-limits-response'
 import { allowSignedRequest } from '../../../plugins/signed-request.plugin'
 
+// eslint-disable-next-line require-await
 async function Handler(this: FleetApp, request: ServiceRequest) {
   const { log } = this
   const { metadataService } = this

@@ -1,5 +1,7 @@
-import { Redis } from 'ioredis'
 import { Microfleet } from '@microfleet/core-types'
+
+import { Redis } from 'ioredis'
+
 import { TriggerCondition } from '../../models/entities/trigger-condition'
 import { ScopeSnapshot } from '../../models/events/scope-snapshot'
 
@@ -11,10 +13,9 @@ export class ConditionEvaluator {
   }
 
   async evaluate(condition: TriggerCondition, snapshot: ScopeSnapshot): Promise<boolean> {
-
     let activated = true
-    for (const option of condition.options) {
 
+    for (const option of condition.options) {
       if ( snapshot.options[option.event] !== undefined ) {
         let value
 
@@ -58,6 +59,7 @@ export class ConditionEvaluator {
     const [, arr] = await this.redis.send_command(command, ...args)
 
     const result: Record<any, any> = {}
+
     for (let i = 0; i < arr.length; i += 2) {
       result[arr[i]] = arr[i + 1]
     }
@@ -70,7 +72,7 @@ export class ConditionEvaluator {
   }
 
   private compare(operation: string, value: any, targets: any[], type: string): boolean {
-    let result = false
+    const result = false
 
     if (type === 'number') {
       value = parseFloat(value)
