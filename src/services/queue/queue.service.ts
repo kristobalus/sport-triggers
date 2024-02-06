@@ -216,7 +216,7 @@ export class QueueService {
   async onNotificationJob(job: Job<NotificationJob>) {
     const { triggerId, reason } = job.data
 
-    this.log.debug({ id: job.id, name: job.name, triggerId }, 'notification job started')
+    this.log.debug({ id: job.id, name: job.name, triggerId, reason }, 'notification job started')
     await this.adapterService.notify(triggerId, reason)
 
     this.log.debug({ id: job.id, name: job.name }, 'notification job completed')
