@@ -233,7 +233,7 @@ export class AdapterService {
           mandatory: true,
         } as Publish)
 
-      this.log.debug({ triggerId, subscription }, 'subscription sent')
+      this.log.debug({ triggerId, subscription, reason }, 'subscription sent')
     }
   }
 
