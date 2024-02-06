@@ -14,6 +14,9 @@ export interface Trigger {
   sport?: string
   scope: Scope
   scopeId: string
+  /**
+   * @deprecated
+   */
   activated: boolean
   next: boolean
   entity: string

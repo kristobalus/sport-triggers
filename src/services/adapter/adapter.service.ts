@@ -66,8 +66,12 @@ export class AdapterService {
   /**
    * executed in queue "store"
    */
-  async storeScopeSnapshot(snapshot: ScopeSnapshot) {
-    await this.snapshotCollection.append(snapshot)
+  async storeScopeSnapshot(snapshot: ScopeSnapshot) : Promise<boolean> {
+    if (await this.snapshotCollection.hasSnapshot(snapshot)) {
+      return false
+    }
+
+    return this.snapshotCollection.append(snapshot)
   }
 
   /**
@@ -152,6 +156,12 @@ export class AdapterService {
         ? activatedConditionCount >= trigger.threshold
         : activatedConditionCount == conditions.length
 
+    this.log.debug({ triggerId,
+      triggerActivated,
+      trigger,
+      activatedConditionCount,
+      totalConditionCount: conditions.length }, 'after checking threshold')
+
     if (triggerActivated) {
       // if trigger is activated should increment count of all events inside snapshot options
       await this.incrementCounters(trigger, snapshot)
@@ -159,6 +169,7 @@ export class AdapterService {
       // reset states
       for (const condition of conditions) {
         await this.triggerConditionCollection.update(condition.id, { activated: false })
+        this.log.debug({ triggerId, conditionId: condition.id }, 'condition state reset')
       }
     }
 
@@ -169,11 +180,16 @@ export class AdapterService {
 
     if (!next) {
       await this.triggerConditionCollection.unsubscribeTriggerFromEvents(trigger.id)
+      this.log.debug({ triggerId }, 'trigger unsubscribed from event, end of trigger lifecycle')
     }
 
     const counts = await this.triggerLimitCollection.getCounts(triggerId)
 
-    this.log.debug({ triggerId, triggerActivated, conditionCount: activatedConditionCount, next, counts }, 'trigger evaluation result')
+    this.log.debug({ triggerId,
+      triggerActivated,
+      conditionCount: activatedConditionCount,
+      next,
+      counts }, 'trigger evaluation result')
 
     return triggerActivated
   }
@@ -400,5 +416,7 @@ export class AdapterService {
       await this.triggerLimitCollection.incrCount(trigger.id, snapshot.id, eventName, eventValue)
       await this.entityLimitCollection.incrCount(trigger.entity, trigger.entityId, snapshot.id, eventName, eventValue)
     }
+
+    this.log.debug({ snapshot }, 'trigger counters incremented')
   }
 }

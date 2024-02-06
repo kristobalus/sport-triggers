@@ -45,7 +45,7 @@ export class ConditionEvaluator {
       }
     } // loop over options in condition
 
-    this.log.debug({ id: condition.id, snapshot, activated }, 'condition evaluation result')
+    this.log.debug({ condition, snapshot, activated }, 'condition evaluation result')
 
     return activated
   }

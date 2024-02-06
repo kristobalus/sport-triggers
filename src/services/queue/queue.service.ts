@@ -163,21 +163,24 @@ export class QueueService {
     const { snapshot } = job.data
 
     if (await adapterService.hasTriggers(snapshot)) {
-      this.log.debug({ id: job.id, snapshot }, 'at least one trigger is interested in the snapshot')
+      if (await adapterService.storeScopeSnapshot(snapshot)) {
+        this.log.debug({ id: job.id, snapshot }, 'at least one trigger is interested in the snapshot')
+        const uris = getEventUriListBySnapshot(snapshot)
+        for( const uri of uris) {
+          for await (const triggers of adapterService.getTriggersByUri(uri)) {
+            if ( triggers.length ) {
+              this.log.debug({ triggers, uri, snapshot }, 'trigger list from db')
 
-      const uris = getEventUriListBySnapshot(snapshot)
-      for( const uri of uris) {
-        for await (const triggers of adapterService.getTriggersByUri(uri)) {
-          if ( triggers.length ) {
-            this.log.debug({ triggers, uri, snapshot }, 'trigger list from db')
+              const jobs = triggers.map((trigger) => ({
+                name: 'evaluate',
+                data: { triggerId: trigger.id, snapshot } as TriggerJob }))
 
-            const jobs = triggers.map((trigger) => ({
-              name: 'evaluate',
-              data: { triggerId: trigger.id, snapshot } as TriggerJob }))
-
-            await triggerQueue.addBulk(jobs)
+              await triggerQueue.addBulk(jobs)
+            }
           }
         }
+      } else {
+        this.log.debug({ snapshot }, 'snapshot has been processed before or failed to store snapshot')
       }
     }
 
@@ -201,7 +204,7 @@ export class QueueService {
       await this.notificationQueue.add('notify', { triggerId, reason: snapshot.id } as NotificationJob)
     }
 
-    this.log.debug({ id: job.id, name: job.name, triggerActivated: activated }, 'trigger job completed')
+    this.log.debug({ id: job.id, name: job.name, snapshot, triggerId, activated }, 'trigger job completed')
 
     this.triggerJobCallback?.({ activated, job })
   }

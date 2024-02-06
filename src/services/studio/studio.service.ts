@@ -30,6 +30,7 @@ export interface StudioServiceOptions {
   subscriptionCollection: TriggerSubscriptionCollection
   triggerLimitCollection: TriggerLimitCollection
   entityLimitCollection: EntityLimitCollection
+  defaultLimits?: Record<string, number>
 }
 
 export class StudioService {
@@ -39,6 +40,7 @@ export class StudioService {
   private subscriptionCollection: TriggerSubscriptionCollection
   private triggerLimitCollection: TriggerLimitCollection
   private entityLimitCollection: EntityLimitCollection
+  private defaultLimits: Record<string, number>
 
   constructor(options: StudioServiceOptions) {
     this.log = options.log
@@ -47,6 +49,7 @@ export class StudioService {
     this.subscriptionCollection = options.subscriptionCollection
     this.triggerLimitCollection = options.triggerLimitCollection
     this.entityLimitCollection = options.entityLimitCollection
+    this.defaultLimits = options.defaultLimits
   }
 
   /**
@@ -73,7 +76,11 @@ export class StudioService {
       limits: limits
     }, 'create trigger')
 
-    let triggerId
+    let triggerId: string
+
+    if ( triggerData.useLimits == undefined ) {
+      triggerData.useLimits = true
+    }
 
     try {
       triggerId = await this.triggerCollection.add(triggerData)
@@ -93,7 +100,6 @@ export class StudioService {
         triggerData.scopeId,
         conditionData)
 
-
     } catch (err) {
       if (triggerId) {
         await this.triggerCollection.deleteOne(triggerId)
@@ -105,20 +111,19 @@ export class StudioService {
       throw new ArgumentError('failed to create trigger condition', err)
     }
 
-    if ( limits  ) {
-      try {
-        await this.triggerLimitCollection.setLimits(triggerId, limits)
-      } catch (err) {
-        if (triggerId) {
-          await this.triggerCollection.deleteOne(triggerId)
-          await this.triggerConditionCollection.deleteByTriggerId(triggerId)
-          await this.triggerLimitCollection.deleteByTriggerId(triggerId)
-        }
-
-        this.log.fatal({ err }, 'failed to create limits')
-
-        throw new ArgumentError('failed to create trigger', err)
+    try {
+      const combinedLimits = Object.assign({}, this.defaultLimits, limits ?? {})
+      await this.triggerLimitCollection.setLimits(triggerId, combinedLimits)
+    } catch (err) {
+      if (triggerId) {
+        await this.triggerCollection.deleteOne(triggerId)
+        await this.triggerConditionCollection.deleteByTriggerId(triggerId)
+        await this.triggerLimitCollection.deleteByTriggerId(triggerId)
       }
+
+      this.log.fatal({ err }, 'failed to create limits')
+
+      throw new ArgumentError('failed to create trigger', err)
     }
 
     this.log.debug({
@@ -213,8 +218,8 @@ export class StudioService {
 
   async deleteTrigger(triggerId: string) {
     const trigger = await this.triggerCollection.getOne(triggerId)
-    // TODO change for checking statistics
-    if ( trigger && !trigger.activated ) {
+    const counts = await this.triggerLimitCollection.getCounts(triggerId)
+    if ( trigger && counts.scope == 0 ) {
       await this.triggerCollection.deleteOne(triggerId)
       await this.triggerConditionCollection.deleteByTriggerId(triggerId)
       await this.subscriptionCollection.deleteByTriggerId(triggerId)

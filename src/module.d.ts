@@ -6,6 +6,7 @@ import { SignedRequestOptions } from './configs/signed-request'
 export interface TriggerConfig {
   triggerLifetimeSeconds: number
   concurrentConditions?: boolean
+  defaultLimits?: Record<string, number>
 }
 
 declare module '@microfleet/core-types' {

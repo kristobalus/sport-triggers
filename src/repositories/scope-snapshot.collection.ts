@@ -87,6 +87,13 @@ export class ScopeSnapshotCollection {
     return result == 'OK'
   }
 
+  async hasSnapshot(data: ScopeSnapshot) : Promise<boolean> {
+    const { datasource, sport, scope, scopeId, id } = data
+    const key = getSnapshotKey({ datasource, sport, scope, scopeId, snapshotId: id })
+    const count = await this.redis.exists(key)
+    return count > 0
+  }
+
   async getItem(
     datasource: string,
     sport: string,

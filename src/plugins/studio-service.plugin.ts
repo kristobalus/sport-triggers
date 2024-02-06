@@ -12,7 +12,7 @@ export function init(parent: FleetApp) {
   // eslint-disable-next-line require-await
   parent.addConnector(ConnectorsTypes.application, async () => {
     const { log, redis, config } = parent
-    const { triggerLifetimeSeconds } = config.triggers
+    const { triggerLifetimeSeconds, defaultLimits } = config.triggers
 
     const triggerCollection = new TriggerCollection(redis, triggerLifetimeSeconds)
     const conditionCollection = new TriggerConditionCollection(redis, triggerLifetimeSeconds)
@@ -27,7 +27,8 @@ export function init(parent: FleetApp) {
       conditionCollection,
       subscriptionCollection,
       triggerLimitCollection,
-      entityLimitCollection
+      entityLimitCollection,
+      defaultLimits
     } as StudioServiceOptions)
   })
 
