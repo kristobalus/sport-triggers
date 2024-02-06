@@ -14,7 +14,7 @@ async function Handler(this: FleetApp, request: ServiceRequest): Promise<any> {
   try {
     await queueService.addScopeSnapshot(event)
   } catch (err) {
-    log.error({ err }, 'error while writing to bullmq')
+    log.error({ err }, 'error while adding scope snapshot to queue')
   }
 
   return { ok: true }
