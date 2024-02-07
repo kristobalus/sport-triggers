@@ -197,6 +197,8 @@ export class QueueService {
           data: { triggerId: triggerId, snapshot } as TriggerJob }))
 
         await triggerQueue.addBulk(jobs)
+
+        this.log.debug({ jobs, snapshot }, 'trigger evaluation requested')
       } else {
         this.log.debug({ snapshot }, 'snapshot has been processed before or failed to store snapshot')
       }

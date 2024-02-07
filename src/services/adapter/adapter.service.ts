@@ -85,13 +85,13 @@ export class AdapterService {
 
     if (trigger.disabled) {
       this.log.debug({ triggerId, snapshot }, 'trigger skipped as disabled')
-      
+
       return false
     }
 
     if (trigger.disabledEntity) {
       this.log.debug({ triggerId, snapshot }, 'trigger skipped since entity is disabled')
-      
+
       return false
     }
 
@@ -99,7 +99,7 @@ export class AdapterService {
 
     if (skipped) {
       this.log.debug({ triggerId, snapshot }, 'evaluating trigger skipped')
-      
+
       return false
     }
 
@@ -118,7 +118,7 @@ export class AdapterService {
     const { datasource, scope, scopeId }  = snapshot
     const uri = Object.entries(snapshot.options).map(entry => {
       const [eventName] = entry
-      
+
       return getEventUri({ datasource, scope, scopeId, eventName })
     })
 
@@ -213,7 +213,7 @@ export class AdapterService {
   async notify(triggerId: string, reason: string) {
     const trigger = await this.triggerCollection.getOne(triggerId)
 
-    this.log.debug({ triggerId }, 'sending subscriptions')
+    this.log.debug({ triggerId, reason }, 'sending notification to subscriptions')
 
     const ids = await this.subscriptionCollection.getListByTrigger(triggerId)
     const limits = await this.triggerLimitCollection.getLimits(triggerId)
@@ -237,7 +237,7 @@ export class AdapterService {
           counts,
           next: trigger.next,
           triggerId: trigger.id,
-          entity: trigger.entityId,
+          entity: trigger.entity,
           entityId: trigger.entityId,
           scopeId: trigger.scopeId,
           scope: trigger.scope,
@@ -308,7 +308,7 @@ export class AdapterService {
 
     if (!appended) {
       this.log.debug({ result, snapshotKey }, 'condition has already processed this event')
-      
+
       return result
     }
 
