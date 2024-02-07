@@ -125,37 +125,47 @@ export class AdapterService {
     let activatedConditionCount = 0
 
     for (const condition of conditions) {
-      if (!condition.activated) {
-        const mutual = intersection(condition.uri, uri)
 
-        if ( mutual.length === condition.uri.length ) {
-          this.log.debug({
-            'condition.id': condition.id,
-            'condition.uri': condition.uri,
-            'snapshot.uri': uri,
-            mutual
-          }, 'evaluating condition')
+      const mutual = intersection(condition.uri, uri)
 
-          const result = await this.evaluateConditionUsingEvaluator(condition, snapshot)
-
-          condition.activated = result.activated
-          // condition.current = snapshot.value
-          await this.triggerConditionCollection.update(condition.id, { activated: result.activated })
-        } else {
-          this.log.debug({
-            'condition.id': condition.id,
-            'condition.uri': condition.uri,
-            'snapshot.uri': uri,
-            mutual
-          }, 'condition skipped since some uri from condition not found in the snapshot')
-        }
-      } else {
+      if ( mutual.length === condition.uri.length ) {
         this.log.debug({
           'condition.id': condition.id,
-          'condition.activated': condition.activated,
-          uri: uri,
-        }, 'condition skipped since it was activated earlier')
+          'condition.uri': condition.uri,
+          'snapshot.uri': uri,
+          mutual
+        }, 'evaluating condition')
+
+        const result = await this.evaluateConditionUsingEvaluator(condition, snapshot)
+
+        condition.activated = result.activated
+        // condition.current = snapshot.value
+
+        // this is a formality, not required if all conditions evaluated at once
+        await this.triggerConditionCollection.update(condition.id, { activated: result.activated })
+
+      } else {
+        condition.activated = false
+
+        // this is a formality, not required if all conditions evaluated at once
+        await this.triggerConditionCollection.update(condition.id, { activated: false })
+
+        this.log.debug({
+          'condition.id': condition.id,
+          'condition.uri': condition.uri,
+          'snapshot.uri': uri,
+          mutual
+        }, 'condition skipped as not-activated since some uri from condition not found in the snapshot')
       }
+
+      // if (!condition.activated) {
+      // } else {
+      //   this.log.debug({
+      //     'condition.id': condition.id,
+      //     'condition.activated': condition.activated,
+      //     uri: uri,
+      //   }, 'condition skipped since it was activated earlier')
+      // }
 
       if (condition.activated) {
         activatedConditionCount = activatedConditionCount + 1
@@ -179,8 +189,9 @@ export class AdapterService {
 
       // reset states
       for (const condition of conditions) {
-        await this.triggerConditionCollection.update(condition.id, { activated: false })
         this.log.debug({ triggerId, snapshot, conditionId: condition.id }, 'condition state reset')
+        // this is a formality, not required if all conditions evaluated at once
+        await this.triggerConditionCollection.update(condition.id, { activated: false })
       }
     }
 
