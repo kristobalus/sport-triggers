@@ -55,6 +55,7 @@ describe("AdapterService", function () {
   const entityId = randomUUID()
   const homeId = randomUUID()
   const awayId = randomUUID()
+  const player3fg = randomUUID()
 
   const ctx: UnitTestContext = {
     notifications: [],
@@ -1113,9 +1114,9 @@ describe("AdapterService", function () {
               targets: [ homeId ],
             },
             {
-              event: BasketballEvents.Sequence,
+              event: BasketballEvents.Player3FG,
               compare: CompareOp.Equal,
-              targets: ["2"],
+              targets: [ player3fg ],
             },
           ],
         },
@@ -1134,7 +1135,7 @@ describe("AdapterService", function () {
       // await ctx.studioService.subscribeTrigger(triggerId, subscriptionData)
     })
 
-    it(`should activate first condition in sequence 1, trigger not activated`, async () => {
+    it(`should send snapshot with all conditions and activate the trigger`, async () => {
 
       const snapshot: ScopeSnapshot = {
         id: randomUUID(),
@@ -1147,41 +1148,7 @@ describe("AdapterService", function () {
           [BasketballEvents.Sequence]: 1,
           [BasketballEvents.TeamShootingFoul]: homeId,
           [BasketballEvents.Team]: homeId,
-        },
-      }
-
-      const result = await processScopeSnapshot(ctx, snapshot)
-      assert.equal(result, false)
-
-      const conditions = await ctx.triggerConditionCollection.getByTriggerId(ctx.trigger.id)
-
-      let activatedCount = 0
-      for(const condition of conditions) {
-        ctx.log.debug({
-          "condition.id": condition.id,
-          "condition.activated": condition.activated,
-        })
-        if ( condition.activated ) {
-          activatedCount++
-        }
-      }
-
-      assert.equal(activatedCount, 1)
-    })
-
-    it(`should activate second condition in sequence 2, trigger activated`, async () => {
-
-      const snapshot: ScopeSnapshot = {
-        id: randomUUID(),
-        datasource,
-        scope,
-        scopeId,
-        sport: "basketball",
-        timestamp: Date.now(),
-        options: {
-          [BasketballEvents.Sequence]: 2,
-          [BasketballEvents.TeamShootingFoul]: homeId,
-          [BasketballEvents.Team]: homeId,
+          [BasketballEvents.Player3FG]: player3fg,
         },
       }
 

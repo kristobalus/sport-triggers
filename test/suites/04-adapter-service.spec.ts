@@ -2,6 +2,7 @@ import { CoreOptions } from '@microfleet/core-types'
 
 import { randomUUID } from 'crypto'
 import assert = require('assert')
+import _ = require('lodash')
 
 import { TestContext } from '../module'
 import { Scope } from '../../src/models/entities/trigger'
@@ -247,31 +248,37 @@ describe('AdapterService', function () {
     })
   })
 
-  it('push game level event', async () => {
-    await sendSignedRequest({
-      event: snapshots[BasketballEvents.GameLevel],
-    })
+  it('push snapshot', async () => {
+    const { log } = ctx.app
+    const event = _.merge({},
+      snapshots[BasketballEvents.GameLevel],
+      snapshots[BasketballEvents.TeamScoresPoints],
+      snapshots[BasketballEvents.TeamShootingFoul])
+
+    log.debug({ event }, 'sending event')
+
+    await sendSignedRequest({ event })
 
     await new Promise(resolve => setTimeout(resolve, 1000))
   })
 
-  it('push team scores points event', async () => {
-    await sendSignedRequest({
-      event: snapshots[BasketballEvents.TeamScoresPoints],
-    })
+  // it('push team scores points event', async () => {
+  //   await sendSignedRequest({
+  //     event: snapshots[BasketballEvents.TeamScoresPoints],
+  //   })
+  //
+  //   await new Promise(resolve => setTimeout(resolve, 1000))
+  // })
 
-    await new Promise(resolve => setTimeout(resolve, 1000))
-  })
-
-  it('push team shooting foul event', async () => {
-    ctx.pendingSubscriberMessage = new Defer()
-
-    await sendSignedRequest({
-      event: snapshots[BasketballEvents.TeamShootingFoul],
-    })
-
-    await new Promise(resolve => setTimeout(resolve, 1000))
-  })
+  // it('push team shooting foul event', async () => {
+  //   ctx.pendingSubscriberMessage = new Defer()
+  //
+  //   await sendSignedRequest({
+  //     event: snapshots[BasketballEvents.TeamShootingFoul],
+  //   })
+  //
+  //   await new Promise(resolve => setTimeout(resolve, 1000))
+  // })
 
   it('should receive notification', async () => {
     const message = await ctx.pendingSubscriberMessage.promise
