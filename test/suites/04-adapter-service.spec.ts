@@ -120,6 +120,7 @@ describe('AdapterService', function () {
       scopeId,
       entity,
       entityId,
+      sport,
     }
 
     const conditionData: EssentialConditionData[] = [

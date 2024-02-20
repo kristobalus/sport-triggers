@@ -80,6 +80,7 @@ describe('NVenue baseball', function () {
       scopeId,
       entity,
       entityId,
+      sport,
     }
 
     const conditionData: EssentialConditionData[] = [
