@@ -9,4 +9,5 @@ export interface SubscriptionNotification {
   entityId?: string
   scope?: string
   scopeId?: string
+  reason?: string
 }

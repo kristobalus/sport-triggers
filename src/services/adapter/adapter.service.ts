@@ -130,6 +130,7 @@ export class AdapterService {
 
       if ( mutual.length === condition.uri.length ) {
         this.log.debug({
+          snapshot,
           'condition.id': condition.id,
           'condition.uri': condition.uri,
           'snapshot.uri': uri,
@@ -151,6 +152,7 @@ export class AdapterService {
         await this.triggerConditionCollection.update(condition.id, { activated: false })
 
         this.log.debug({
+          snapshot,
           'condition.id': condition.id,
           'condition.uri': condition.uri,
           'snapshot.uri': uri,
@@ -181,6 +183,7 @@ export class AdapterService {
       triggerActivated,
       trigger,
       activatedConditionCount,
+      snapshot,
       totalConditionCount: conditions.length }, 'after checking threshold')
 
     if (triggerActivated) {
@@ -252,6 +255,7 @@ export class AdapterService {
           entityId: trigger.entityId,
           scopeId: trigger.scopeId,
           scope: trigger.scope,
+          reason: reason
         } as SubscriptionNotification, {
           confirm: true,
           mandatory: true,
@@ -268,7 +272,10 @@ export class AdapterService {
     const snapshotUris = getEventUriListBySnapshot(snapshot)
 
     for (const uri of snapshotUris) {
+
       const count = await this.triggerConditionCollection.countSubscribedToUri(uri)
+
+      this.log.debug({ uri, count }, 'trigger conditions subscribed for uri')
 
       if ( count > 0 ) {
         return true

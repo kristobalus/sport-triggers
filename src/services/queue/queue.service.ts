@@ -202,6 +202,8 @@ export class QueueService {
       } else {
         this.log.debug({ snapshot }, 'snapshot has been processed before or failed to store snapshot')
       }
+    } else {
+      this.log.debug({ id: job.id, snapshot }, 'no trigger found')
     }
 
     this.log.debug({ snapshot }, 'store job completed')

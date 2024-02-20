@@ -2,8 +2,9 @@ import { Microfleet } from '@microfleet/core-types'
 
 import { Redis } from 'ioredis'
 
-import { TriggerCondition } from '../../models/entities/trigger-condition'
+import { CompareOp, ConditionType, TriggerCondition } from '../../models/entities/trigger-condition'
 import { ScopeSnapshot } from '../../models/events/scope-snapshot'
+import { has } from '../../repositories/trigger-condition.collection'
 
 export class ConditionEvaluator {
   constructor(
@@ -71,53 +72,69 @@ export class ConditionEvaluator {
     return count ?? 0
   }
 
+  /**
+   *
+   * @param operation comparison operation
+   * @param value snapshot value for option event
+   * @param targets option targets, set by studio
+   * @param type predefined type of option value, known from metadata description for each kind of sport
+   * @private
+   */
   private compare(operation: string, value: any, targets: any[], type: string): boolean {
     const result = false
 
-    if (type === 'number') {
+    if (type === ConditionType.Number) {
       value = parseFloat(value)
       targets = targets.map((target) => parseFloat(target))
     }
 
-    if (type === 'string') {
+    if (type === ConditionType.String) {
       value = String(value)
       targets = targets.map((target) => String(target))
     }
 
-    if (operation === 'in') {
-      // Search value in the target set
-      const has = (arr: any[], value: any) => arr.includes(value)
+    if (type === ConditionType.StringList) {
+      value = String(value)
+      value = value.split(',')
+      targets = targets.map((target) => String(target))
+    }
 
+    if (operation === CompareOp.In) {
       // Equivalent of an OR condition, checks if value is one of several targets
       return has(targets, value)
+    }
+
+    // Only above-mentioned operations are allowed for type "string-list"
+    if (type === ConditionType.StringList) {
+      return result
     }
 
     // Single target for non-"in" ops
     const target = targets[0]
 
-    if (operation === 'eq') {
+    if (operation === CompareOp.Equal) {
       return value === target
     }
 
     // Only above-mentioned operations are allowed for type "string"
-    if (type === 'string') {
+    if (type === ConditionType.String) {
       return result
     }
 
     // Operations below are intended for type "number"
-    if (operation === 'gt') {
+    if (operation === CompareOp.GreaterThan) {
       return value > target
     }
 
-    if (operation === 'lt') {
+    if (operation === CompareOp.LessThan) {
       return value < target
     }
 
-    if (operation === 'ge') {
+    if (operation === CompareOp.GreaterOrEqual) {
       return value >= target
     }
 
-    if (operation === 'le') {
+    if (operation === CompareOp.LessOrEqual) {
       return value <= target
     }
 

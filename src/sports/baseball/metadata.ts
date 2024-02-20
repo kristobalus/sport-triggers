@@ -283,7 +283,7 @@ export const metadata: Record<string, EventMetadata> = {
     sport: 'baseball',
     label: 'Pitch Outcome',
     input: StudioInputs.SelectMulti,
-    type: ConditionType.String,
+    type: ConditionType.StringList,
     primary: false,
     compare: [
       // at least one out of...
@@ -301,7 +301,7 @@ export const metadata: Record<string, EventMetadata> = {
     sport: 'baseball',
     label: 'Pitch speed',
     input: StudioInputs.SelectMulti,
-    type: ConditionType.String,
+    type: ConditionType.StringList,
     primary: false,
     compare: [
       CompareOp.In
@@ -318,7 +318,7 @@ export const metadata: Record<string, EventMetadata> = {
     sport: 'baseball',
     label: 'Pitch type',
     input: StudioInputs.SelectMulti,
-    type: ConditionType.String,
+    type: ConditionType.StringList,
     primary: false,
     compare: [
       // at least one out of...
@@ -336,7 +336,7 @@ export const metadata: Record<string, EventMetadata> = {
     sport: 'baseball',
     label: 'AtBat Outcome',
     input: StudioInputs.SelectMulti,
-    type: ConditionType.String,
+    type: ConditionType.StringList,
     primary: false,
     compare: [
       CompareOp.In

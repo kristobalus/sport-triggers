@@ -1,7 +1,8 @@
 
 export enum ConditionType {
   Number = 'number',
-  String = 'string'
+  String = 'string',
+  StringList = 'string-list'
 }
 
 export enum CompareOp {

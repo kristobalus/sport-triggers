@@ -29,6 +29,18 @@ export function conditionLogKey(conditionId: string) {
   return `conditions/${conditionId}/log`
 }
 
+/**
+ * @description Search value in the target set
+ * @param arr haystack
+ * @param value needle, scalar or array
+ */
+export function has(arr: any[], value: any) {
+  if ( Array.isArray(value) ) {
+    return intersection(arr, value).length > 0
+  }
+  return arr.includes(value)
+}
+
 export function intersection(array1: any[], array2: any[]): any[] {
   const result = []
 
