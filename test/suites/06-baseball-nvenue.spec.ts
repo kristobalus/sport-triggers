@@ -39,7 +39,7 @@ describe('NVenue baseball', function () {
   const sport = Sport.Baseball
   const datasource = 'nvenue'
   const scope = Scope.Game
-  const scopeId = '0d996d35-85e5-4913-bd45-ac9cfedbf272'
+  const scopeId = '621b3a68-85ad-4059-ac92-c86b28bf3cb0'
   const entity = 'question'
   const entityId = randomUUID()
 
@@ -79,8 +79,7 @@ describe('NVenue baseball', function () {
       scope,
       scopeId,
       entity,
-      entityId,
-      sport,
+      entityId
     }
 
     const conditionData: EssentialConditionData[] = [
