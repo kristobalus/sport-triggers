@@ -139,6 +139,77 @@ describe("Baseball from NVenue", function () {
     ctx.redis.disconnect()
   })
 
+  describe('test baseball.atbat.outcomes for legacy string', function () {
+
+    before(async () => {
+      await ctx.redis.flushall()
+
+      const triggerData: EssentialTriggerData = {
+        name: "...",
+        description: "...",
+        datasource,
+        sport,
+        scope,
+        scopeId,
+        entity,
+        entityId,
+      }
+
+      const conditionData: EssentialConditionData[] = [
+        {
+          options: [
+            {
+              event: BaseballEvents.AtBatOutcome,
+              compare: CompareOp.In,
+              targets: [ AtBatOutcomeState.FO ],
+            }
+          ],
+        }
+      ]
+
+      ctx.triggerId = await ctx.studioService.createTrigger(triggerData, conditionData)
+      const { trigger } = await ctx.studioService.getTrigger(ctx.triggerId)
+      ctx.trigger = trigger
+
+      const subscriptionData = {
+        route: "some.route",
+        payload: { id: 1 },
+        entity: trigger.entity,
+        entityId: trigger.entityId
+      } as EssentialSubscriptionData
+
+      await ctx.studioService.subscribeTrigger(ctx.triggerId, subscriptionData)
+    })
+
+    it(`should find trigger conditions`, async () => {
+      assert.ok(ctx.trigger)
+      assert.ok(ctx.triggerId)
+      assert.ok(ctx.trigger.id)
+      assert.equal(ctx.triggerId, ctx.trigger.id)
+      const [ condition ] = await ctx.triggerConditionCollection.getByTriggerId(ctx.triggerId)
+      assert.ok(condition)
+      assert.ok(condition.options)
+    })
+
+    it(`should activate trigger for FO`, async () => {
+
+      const scopeSnapshot: ScopeSnapshot = {
+        id: randomUUID(),
+        datasource,
+        scope,
+        scopeId,
+        sport,
+        timestamp: Date.now(),
+        options: {
+          [BaseballEvents.AtBatOutcome]: AtBatOutcomeState.FO,
+        },
+      }
+
+      const result = await processScopeSnapshot(ctx, scopeSnapshot)
+      assert.equal(result, true)
+    })
+  })
+
   describe('test baseball.atbat.outcomes for string list value', function () {
 
     before(async () => {
