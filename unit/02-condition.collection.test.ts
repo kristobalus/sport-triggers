@@ -48,7 +48,7 @@ describe("ConditionCollection", function () {
     ctx.redis.disconnect()
   })
 
-  describe(`api v1`, function() {
+  describe(`api v1 - dummy change`, function() {
 
     before(async () => {
       await ctx.redis.flushall()
