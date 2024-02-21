@@ -21,7 +21,7 @@ import { EntityLimitCollection } from '../../repositories/entity-limit.collectio
 import { limits as limitDictionary } from '../../sports'
 import { CommonLimit } from '../../sports/common-limits'
 
-import { ConditionEvaluator } from './condition-evaluator'
+import { ConditionEvaluator } from "./condition-evaluator"
 
 export interface CompareResult {
   activated: boolean

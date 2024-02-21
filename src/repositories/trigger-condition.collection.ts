@@ -29,28 +29,31 @@ export function conditionLogKey(conditionId: string) {
   return `conditions/${conditionId}/log`
 }
 
-/**
- * @description Search value in the target set
- * @param arr haystack
- * @param value needle, scalar or array
- */
-export function has(arr: any[], value: any) {
-  if ( Array.isArray(value) ) {
-    return intersection(arr, value).length > 0
-  }
-  return arr.includes(value)
-}
+// export function intersection(array1: any[], array2: any[]): any[] {
+//   const result = []
+//
+//   for (const e1 of array1) {
+//     if (array2.indexOf(e1) > -1) {
+//       result.push(e1)
+//     }
+//   }
+//
+//   return result
+// }
 
 export function intersection(array1: any[], array2: any[]): any[] {
-  const result = []
+  // Convert array2 to a Set for faster lookups
+  const set2 = new Set(array2);
+  const result = [];
 
+  // Loop through array1 and add elements to result if they exist in set2
   for (const e1 of array1) {
-    if (array2.indexOf(e1) > -1) {
-      result.push(e1)
+    if (set2.has(e1)) {
+      result.push(e1);
     }
   }
 
-  return result
+  return result;
 }
 
 export function validateCondition(

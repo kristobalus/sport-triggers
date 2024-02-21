@@ -4,7 +4,19 @@ import { Redis } from 'ioredis'
 
 import { CompareOp, ConditionType, TriggerCondition } from '../../models/entities/trigger-condition'
 import { ScopeSnapshot } from '../../models/events/scope-snapshot'
-import { has } from '../../repositories/trigger-condition.collection'
+import { intersection } from '../../repositories/trigger-condition.collection'
+
+/**
+ * @description Search value in the target set
+ * @param arr haystack
+ * @param value needle, scalar or array
+ */
+export function has(arr: any[], value: any) {
+  if ( Array.isArray(value) ) {
+    return intersection(arr, value).length > 0
+  }
+  return arr.includes(value)
+}
 
 export class ConditionEvaluator {
   constructor(
