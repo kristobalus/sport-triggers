@@ -13,7 +13,11 @@ export enum PitchOutcomeState {
   StrikeLooking = 'strike_looking',
   StrikeSwinging = 'strike_swinging',
   BallInPlay = 'ball_in_play',
-  Foul = 'foul'
+  Foul = 'foul',
+  Strikeout = 'K',
+  InlpayOut = 'INPLAY-OUT',
+  InplayReach = 'INPLAY-REACH',
+  InplayHit = 'INPLAY-HIT',
 }
 
 export enum PitchSpeedState {

@@ -58,6 +58,22 @@ export const targetTree: StudioTargetTree = {
     [PitchOutcomeState.LT80]: {
       label: 'Less than 80mph',
     },
+
+    [PitchOutcomeState.Strikeout]: {
+      label: 'Strikeout',
+    },
+
+    [PitchOutcomeState.InlpayOut]: {
+      label: 'Inplay Out',
+    },
+
+    [PitchOutcomeState.InplayReach]: {
+      label: 'Inplay Reach',
+    },
+
+    [PitchOutcomeState.InplayHit]: {
+      label: 'Inplay Hit',
+    },
   },
 
   [Sources.AtBatOutcome]: {
