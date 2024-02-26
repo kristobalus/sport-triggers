@@ -132,7 +132,8 @@ export const targetTree: StudioTargetTree = {
     },
 
     [AtBatOutcomeState.OUT]: {
-      label: 'OUT'
+      label: 'OUT',
+      description: 'In baseball, an "at-bat" outcome designated as an "OUT" refers to any situation where the batter\'s attempt to reach base is unsuccessful, resulting in the batter being retired. OUT will include any GO, FO, KS (strikeout swinging), or KL (strikeout looking)'
     },
 
     [AtBatOutcomeState.KS]: {
@@ -155,15 +156,18 @@ export const targetTree: StudioTargetTree = {
     },
 
     [AtBatOutcomeState.HIT]: {
-      label: 'HIT'
+      label: 'HIT',
+      description: 'In baseball, an "at-bat" outcome designated as a "HIT" refers to any instance where a batter successfully hits the ball into fair territory and reaches at least first base safely without the benefit of an error or a fielder\'s choice by the opposing team. This outcome is critical for the offensive strategy and contributes directly to a team\'s ability to score runs.'
     },
 
     [AtBatOutcomeState.HR]: {
-      label: 'HR'
+      label: 'HR',
+      description: `In baseball, "HR" stands for Home Run, which is one of the most exciting plays in the game. A home run occurs when a batter hits the ball so it leaves the field of play, usually by clearing the outfield fence, and he is able to round all the bases and score without being put out by the opposing team. `
     },
 
     [AtBatOutcomeState.HBP]: {
-      label: 'HBP'
+      label: 'HBP',
+      description: 'The situation denoted as "at-bat HBP" (Hit By Pitch) in baseball occurs when a batter is struck by a pitched ball without swinging at it, while he is in the batter\'s box during his turn at bat.'
     },
   },
 
