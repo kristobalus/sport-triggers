@@ -14,10 +14,7 @@ use Triggers/ListTriggers by entity
 to search for triggers created within question/moderation.
 
 
-#### Search for trigger logs in axiom
-
-
-### trigger http endpoints
+#### Inspect trigger of interest via http endpoint
 
 Use HTTP endpoints to get full log of events absorbed by trigger.
 
@@ -322,3 +319,25 @@ Trigger in response contains logs of events absorbed by trigger conditions.
     }
 }
 ```
+
+#### Search for trigger logs in axiom
+
+check for trigger processing logs
+```text
+['staging-vector']
+| where container_name == "triggers" and triggerId  == "009b5568-565f-47e5-b2c2-9aab90aa0578"
+```
+
+#### Search for trigger activation event
+check if trigger was activated or not
+```text
+['staging-vector']
+| where container_name == "polls" and msg contains "question triggered" and questionId == 77285
+```
+
+#### Search for notification sent to poll
+```text
+['staging-vector']
+| where container_name == "triggers" and msg contains "subscription sent" and subscription contains "77272"
+```
+
