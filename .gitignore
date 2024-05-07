@@ -29,3 +29,5 @@ build/
 .DS_Store
 
 lib/
+adhoc/*.csv
+adhoc/*.json

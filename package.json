@@ -51,6 +51,7 @@
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-unicorn": "^47.0.0",
+    "json-2-csv": "^5.5.1",
     "lint-staged": "^13.1.0",
     "mocha": "^10.2.0",
     "pino-pretty": "^10.0.0",
