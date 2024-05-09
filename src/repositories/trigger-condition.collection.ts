@@ -180,7 +180,7 @@ export function validateOption(
     }
   }
 
-  option.parent = optionMetadata.parentOption
+  // option.parent = optionMetadata.parentOption
   option.type = optionMetadata.type
 
   if (!option.compare) {
@@ -230,6 +230,7 @@ export class TriggerConditionCollection {
       if (!condition.id) {
         condition.id = randomUUID()
       }
+
       condition.datasource = datasource
       condition.scope = scope
       condition.sport = sport

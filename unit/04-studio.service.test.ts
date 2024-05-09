@@ -97,9 +97,6 @@ describe('StudioService', function () {
 
     const conditionData: EssentialConditionData[] = [
       {
-        event: BasketballEvents.Team,
-        compare: CompareOp.In,
-        targets: [teamId],
         options: [
           {
             event: BasketballEvents.TeamScoresPoints,
@@ -178,6 +175,52 @@ describe('StudioService', function () {
     const documentUpdated = await ctx.studioService.getTrigger(ctx.triggerId, { showLog: false, trim: true })
     ctx.log.debug({ triggerUpdated: documentUpdated }, 'trigger by id')
     assert.ok(documentUpdated.trigger.name, 'Trigger Updated')
+  })
+
+  it(`parent field in options`, async () => {
+    const triggerData = {
+      name: "Trigger for inningNumber 7",
+      description: "This trigger is a great tool to capture game event. Quick brown fox jumps over the gate.",
+      datasource: "nvenue",
+      scope: "game",
+      scopeId: "2fd8607e-b598-4301-9b0d-48f82ff60829",
+      entity: "question",
+      sport: "baseball",
+      entityId: "69048",
+      useLimits: true
+    } as EssentialTriggerData
+
+    const conditionData = [
+      {
+        options: [
+          {
+            event: "baseball.atbat.outcomes",
+            compare: "in",
+            targets: ["B1"],
+            parent: "baseball.team.batter"
+          },
+          {
+            event: "baseball.team.batter",
+            compare: "in",
+            targets: ["NYY"]
+          },
+          {
+            event: "baseball.inningNumber",
+            compare: "eq",
+            targets: [ "7" ]
+          }
+        ]
+      }
+    ] as EssentialConditionData[]
+
+    const limits = {
+      scope: 100,
+      minute: 1
+    }
+
+    const response = await ctx.studioService.createTrigger(triggerData, conditionData, limits)
+
+    ctx.log.debug({ response }, 'trigger created')
   })
 
   after(async () => {
