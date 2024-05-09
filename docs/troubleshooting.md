@@ -341,3 +341,8 @@ check if trigger was activated or not
 | where container_name == "triggers" and msg contains "subscription sent" and subscription contains "77272"
 ```
 
+#### Search for trigger create request by question id
+```text
+['staging-vector']
+| where container_name contains "trigger" and msg contains "create trigger" and trigger contains "90288"
+```
